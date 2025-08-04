@@ -256,7 +256,9 @@ class InternationalTravel(db.Model):
         return f"InternationalTravel(ID: {self.id}, País Destino: {self.pais_destino_america})"
 
 class Caminata(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
+    finalizada = db.Column(db.Boolean, nullable=False, server_default='0')
     imagen_caminata_url = db.Column(db.String(255), nullable=True)
     actividad = db.Column(db.String(100), nullable=False)
     etapa = db.Column(db.String(255), nullable=True)
@@ -292,6 +294,7 @@ class Caminata(db.Model):
     altura_negativa = db.Column(db.Float, nullable=True)
     otros_datos = db.Column(db.Text, nullable=True)
     duracion_horas = db.Column(db.Float, nullable=True)
+
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     fecha_modificacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
     participantes = db.relationship(

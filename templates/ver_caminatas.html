@@ -3,7 +3,6 @@
     {% block title %}Listado de Caminatas{% endblock %}
 
     {% block head_content %}
-    {# Estilos específicos para esta página que no están en main.css o sobrescriben base.html #}
     <style>
         /* Estilos específicos para el botón flotante (FAB) de Añadir */
         .fab-container {
@@ -81,7 +80,29 @@
             visibility: visible;
             opacity: 1;
         }
-        /* --- FIN: NUEVOS ESTILOS --- */
+        
+        /* CAMBIO: Estilos para caminatas finalizadas */
+        .caminata-finalizada .card-img-top {
+            filter: grayscale(100%);
+        }
+        .caminata-finalizada .card-body {
+            position: relative;
+        }
+        .caminata-finalizada .card-body::after {
+            content: 'FINALIZADA';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 2rem;
+            font-weight: bold;
+            color: rgba(220, 53, 69, 0.5); /* Rojo con transparencia */
+            z-index: 1;
+            pointer-events: none; /* Para que no interfiera con los clics */
+        }
+        .caminata-finalizada .btn {
+            filter: grayscale(80%);
+        }
 
         .grid-list-content { display: block; }
         .image-only-content { display: none; }
@@ -299,7 +320,8 @@
         <div id="caminatasContent">
             {% for caminata in caminatas %}
             <div class="col mt-5">
-                <div class="grid-list-content">
+                {# CAMBIO: Se añade la clase 'caminata-finalizada' si la caminata está marcada como tal #}
+                <div class="grid-list-content {% if caminata.finalizada %}caminata-finalizada{% endif %}">
                     <div class="card h-100 shadow-sm">
                         <a href="{{ url_for('caminatas.detalle_caminata', caminata_id=caminata.id) }}" class="card-img-link">
                             <div class="card-img-wrapper">
@@ -328,7 +350,7 @@
                     </div>
                 </div>
 
-                <div class="image-only-content">
+                <div class="image-only-content {% if caminata.finalizada %}caminata-finalizada{% endif %}">
                     <a href="{{ url_for('caminatas.detalle_caminata', caminata_id=caminata.id) }}" class="image-only-link">
                         <div class="image-only-wrapper">
                             {% if caminata.imagen_caminata_url %}
@@ -350,10 +372,8 @@
         {% endif %}
     </div>
 
-    {# Elemento para la notificación Toast (inicialmente oculto) #}
     <div id="toast-notification">¡Enlace copiado al portapapeles!</div>
 
-    {# --- INICIO: NUEVOS BOTONES DE COMPARTIR --- #}
     <div class="fab-container-share">
         <a href="#" id="copyLinkButton" class="fab-button-share copy-link" title="Compartir Enlace">
             <i class="fas fa-share-alt"></i>
@@ -362,7 +382,6 @@
             <i class="fab fa-whatsapp"></i>
         </a>
     </div>
-    {# --- FIN: NUEVOS BOTONES DE COMPARTIR --- #}
 
     {% if session.role == 'Superuser' %}
     <div class="fab-container">
@@ -420,7 +439,6 @@
             listViewBtn.addEventListener('click', () => setView('list'));
             galleryViewBtn.addEventListener('click', () => setView('gallery'));
 
-            // --- INICIO: LÓGICA PARA BOTONES DE COMPARTIR ---
             const whatsappShareButton = document.getElementById('whatsappShareButton');
             if (whatsappShareButton) {
                 whatsappShareButton.addEventListener('click', (event) => {
@@ -468,9 +486,7 @@
                     }
                 });
             }
-            // --- FIN: LÓGICA PARA BOTONES DE COMPARTIR ---
-
-            // Lógica de Notificaciones Push (existente)
+            
             const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
             if ('serviceWorker' in navigator && 'PushManager' in window) {
                 // ... (código de notificaciones existente)

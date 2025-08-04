@@ -51,6 +51,28 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def role_required(roles):
+    """
+    Decorador para restringir el acceso a rutas basadas en roles.
+    """
+    if not isinstance(roles, list):
+        roles = [roles]
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'logged_in' not in session or not session['logged_in']:
+                flash('Por favor, inicia sesión para acceder a esta página.', 'info')
+                return redirect(url_for('login'))
+            
+            user_role = session.get('role')
+            if user_role not in roles:
+                flash('No tienes permiso para acceder a esta página.', 'danger')
+                return redirect(url_for('home'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -1289,7 +1311,7 @@ def exportar_caminata_pdf(caminata_id):
             pdf.set_font("Arial", '', 9)
         elif line.startswith('    Acompañante(s)'): # Para encabezado de acompañantes
             pdf.set_font("Arial", 'I', 9) # Itálica para el encabezado
-        elif line.strip().startswith(tuple('      ' + str(i) + '.' for i in range(1, 10))): # Para nombres de acompañantes numerados
+        elif line.strip().startswith(tuple('      ' + str(i) + '.' for i in range(1, 100))): # Para nombres de acompañantes numerados
             pdf.set_font("Arial", '', 9)
         else:
             pdf.set_font("Arial", size=10)
@@ -1299,6 +1321,7 @@ def exportar_caminata_pdf(caminata_id):
     response = current_app.response_class(pdf.output(dest='S').encode('latin1'), mimetype='application/pdf')
     response.headers.set('Content-Disposition', 'attachment', filename=f'caminata_{caminata.nombre}.pdf')
     return response
+
 
 @caminatas_bp.route('/caminatas/exportar/txt/<int:caminata_id>', methods=['GET'])
 @login_required
@@ -1473,3 +1496,22 @@ def exportar_caminata_jpg(caminata_id):
     response = current_app.response_class(buffer.getvalue(), mimetype='image/jpeg')
     response.headers.set('Content-Disposition', 'attachment', filename=f'caminata_{caminata.nombre}.jpg')
     return response
+
+# NUEVA RUTA PARA CAMBIAR EL ESTADO DE LA CAMINATA
+@caminatas_bp.route('/caminata/toggle_finalizada/<int:caminata_id>', methods=['POST'])
+@role_required(['Superuser'])
+def toggle_finalizada(caminata_id):
+    """
+    Cambia el estado de 'finalizada' de una caminata.
+    """
+    caminata = Caminata.query.get_or_404(caminata_id)
+    caminata.finalizada = not caminata.finalizada
+    try:
+        db.session.commit()
+        estado = "finalizada" if caminata.finalizada else "reactivada"
+        flash(f'La caminata "{caminata.nombre}" ha sido marcada como {estado}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al actualizar el estado de la caminata: {e}', 'danger')
+    
+    return redirect(url_for('caminatas.detalle_caminata', caminata_id=caminata.id))

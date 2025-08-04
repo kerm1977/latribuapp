@@ -325,9 +325,8 @@ def editar_contacto(user_id):
                     # se mantiene el rol actual.
                     pass
 
-
-            # Actualizar la fecha de actualización
-            user.fecha_actualizacion = datetime.utcnow()
+            # CORRECCIÓN: Se elimina la línea que intenta actualizar un atributo inexistente
+            # user.fecha_actualizacion = datetime.utcnow()
 
             db.session.commit()
             flash('¡Contacto actualizado exitosamente!', 'success')
@@ -434,8 +433,7 @@ def exportar_vcard(user_id):
                 photo.value = full_avatar_url
                 photo.type_param = 'URI'
 
-        if user.fecha_actualizacion:
-            card.add('rev').value = user.fecha_actualizacion.isoformat()
+        # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
         
         # Serializa cada vCard y añádelo a la lista
         all_vcard_data.append(card.serialize())
@@ -491,7 +489,7 @@ def exportar_excel(user_id):
         ("Capacidad", str(user.capacidad) if user.capacidad else ""),
         ("Participación", str(user.participacion) if user.participacion else ""),
         ("Fecha de Registro", user.fecha_registro.strftime('%d/%m/%Y %H:%M')),
-        ("Última Actualización", user.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') if user.fecha_actualizacion else "N/A"),
+        # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
         ("Rol", str(user.role)) # Añadir el rol al Excel
     ]
 
@@ -526,7 +524,7 @@ def exportar_todos_excel():
             "Nombre de Usuario", "Nombre", "Primer Apellido", "Segundo Apellido",
             "Teléfono", "Email", "Teléfono Emergencia", "Nombre Contacto Emergencia",
             "Empresa", "Cédula", "Dirección", "Actividad", "Capacidad", "Participación",
-            "Fecha de Registro", "Última Actualización", "Rol" # Añadir el rol
+            "Fecha de Registro", "Rol" # CORRECCIÓN: Se elimina "Última Actualización"
         ]
         sheet.append(headers)
 
@@ -548,7 +546,7 @@ def exportar_todos_excel():
                 str(user.capacidad) if user.capacidad else "",
                 str(user.participacion) if user.participacion else "",
                 user.fecha_registro.strftime('%d/%m/%Y %H:%M'),
-                user.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') if user.fecha_actualizacion else "N/A",
+                # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
                 str(user.role) # Añadir el rol
             ]
             sheet.append(row_data)
@@ -626,8 +624,7 @@ def exportar_todos_vcard():
                     photo.value = full_avatar_url
                     photo.type_param = 'URI'
 
-            if user.fecha_actualizacion:
-                card.add('rev').value = user.fecha_actualizacion.isoformat()
+            # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
             
             # Serializa cada vCard y añádelo a la lista
             all_vcard_data.append(card.serialize())
@@ -729,4 +726,3 @@ def admin_manage_roles():
         pass # No fetch all regular users by default
 
     return render_template('admin_roles.html', admin_users=admin_users, regular_users=regular_users, search_query_regular=search_query_regular)
-
