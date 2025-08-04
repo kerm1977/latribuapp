@@ -142,78 +142,75 @@ def _return_empty_pdf_or_txt(is_pdf=True):
 
 @rutas_bp.route('/rutas')
 def ver_rutas():
-    # Obtener el parámetro 'categoria' de la URL si existe
     categoria_seleccionada = request.args.get('categoria')
-
-    # Consulta inicial para todas las rutas
-    query = Ruta.query
-
-    # Obtener el estado de inicio de sesión del usuario
     user_logged_in = session.get('logged_in', False)
 
-    # Si el usuario NO ha iniciado sesión, excluye 'Caminatas por Reconocer' de la consulta general
+    # --- INICIO: LÓGICA PARA DATOS DEL GRÁFICO (VISIBLE PARA TODOS) ---
+    # 1. Obtener todas las rutas sin filtros de visibilidad para el gráfico
+    todas_las_rutas_para_grafico = Ruta.query.all()
+    
+    # 2. Categorías que nos interesan para el gráfico
+    categorias_grafico = PROVINCIAS + ["Caminatas Programadas", "Caminatas por Reconocer"]
+    
+    # 3. Contar rutas por categoría para el gráfico
+    conteo_categorias = defaultdict(int)
+    for ruta in todas_las_rutas_para_grafico:
+        if ruta.provincia in categorias_grafico:
+            conteo_categorias[ruta.provincia] += 1
+            
+    # 4. Filtrar categorías con 0 rutas para no saturar el gráfico
+    chart_data_dict = {k: v for k, v in conteo_categorias.items() if v > 0}
+    
+    # 5. Preparar datos para Chart.js
+    chart_labels = list(chart_data_dict.keys())
+    chart_values = list(chart_data_dict.values())
+    
+    datos_grafico = {
+        "labels": chart_labels,
+        "data": chart_values
+    }
+    # --- FIN: LÓGICA PARA DATOS DEL GRÁFICO ---
+
+    # --- INICIO: LÓGICA PARA LA LISTA DE RUTAS (CON FILTROS DE VISIBILIDAD) ---
+    query = Ruta.query
+
+    # Si el usuario NO ha iniciado sesión, excluye 'Caminatas por Reconocer' de la lista
     if not user_logged_in:
         query = query.filter(Ruta.provincia != 'Caminatas por Reconocer')
 
-    # Aplicar filtro si se seleccionó una categoría específica (que no sea "Todas las Categorías" o "Otros")
-    if categoria_seleccionada and categoria_seleccionada != 'Todas las Categorías' and categoria_seleccionada != 'Otros':
-        # Si la categoría seleccionada es 'Caminatas por Reconocer' y el usuario no está logueado,
-        # la consulta ya estará filtrada por la condición anterior, resultando en 0 rutas.
-        # Si el usuario está logueado, el filtro por categoria_seleccionada se aplica normalmente.
+    # Aplicar filtro de categoría si se seleccionó una
+    if categoria_seleccionada and categoria_seleccionada not in ['Todas las Categorías', 'Otros']:
         query = query.filter_by(provincia=categoria_seleccionada)
     
-    # Si la categoría seleccionada es 'Caminatas por Reconocer' y el usuario no está logueado,
-    # y no se seleccionó específicamente esa categoría, se aseguran que no aparezca en el listado general.
-    # Esta es una doble verificación para asegurar que siempre se excluya si no está logueado.
-    if not user_logged_in and categoria_seleccionada != 'Caminatas por Reconocer':
-        query = query.filter(Ruta.provincia != 'Caminatas por Reconocer')
-
-
-    # Obtener todas las rutas filtradas y ordenarlas por fecha
-    # Es importante ordenar por fecha para que la agrupación por mes sea consecutiva
-    rutas = query.order_by(Ruta.fecha.asc(), Ruta.nombre.asc()).all()
+    # Obtener las rutas para mostrar en la lista
+    rutas_para_vista = query.order_by(Ruta.fecha.asc(), Ruta.nombre.asc()).all()
     
-    # Si no se seleccionó ninguna categoría o se seleccionó "Todas las Categorías",
-    # asegúrate de que el dropdown muestre "Todas las Categorías"
     if not categoria_seleccionada:
         categoria_seleccionada = 'Todas las Categorías'
     
-    # Agrupar las rutas por su "provincia" (que ahora es la categoría)
-    # y luego, si la categoría es "Caminatas Programadas", agrupar por mes y año
-    rutas_por_categoria = defaultdict(lambda: defaultdict(list)) # Anidado para categoría -> mes/año -> rutas
-
+    # Agrupar las rutas para la vista
+    rutas_por_categoria = defaultdict(lambda: defaultdict(list))
     meses_espanol = {
-        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
+        7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
     }
 
-    for ruta in rutas:
-        # Asegurarse de no añadir 'Caminatas por Reconocer' si el usuario no está logueado
-        if not user_logged_in and ruta.provincia == 'Caminatas por Reconocer':
-            continue # Saltar esta ruta si el usuario no está logueado y es de la categoría restringida
-            
+    for ruta in rutas_para_vista:
         if ruta.provincia == 'Caminatas Programadas' and ruta.fecha:
-            # Si es "Caminatas Programadas" y tiene fecha, agrupar por mes y año
-            mes_anio_key = (ruta.fecha.year, ruta.fecha.month)
             nombre_mes = meses_espanol[ruta.fecha.month]
-            # Usar un formato legible para la clave del mes, por ejemplo "Enero 2024"
             rutas_por_categoria[ruta.provincia][f"{nombre_mes} {ruta.fecha.year}"].append(ruta)
         else:
-            # Para otras categorías, seguir agrupando directamente por provincia
-            # Se usa una clave genérica para estas categorías para que el HTML las maneje
-            # como un solo grupo si no se requiere sub-agrupación por mes.
-            # Convertimos la lista de rutas directamente en el valor del defaultdict
-            # para que la estructura sea consistente con el iterado en el template.
             if 'rutas_sin_fecha' not in rutas_por_categoria[ruta.provincia]:
                 rutas_por_categoria[ruta.provincia]['rutas_sin_fecha'] = []
             rutas_por_categoria[ruta.provincia]['rutas_sin_fecha'].append(ruta)
 
+    # --- FIN: LÓGICA PARA LA LISTA DE RUTAS ---
 
     return render_template('ver_rutas.html', 
                            rutas_por_categoria=rutas_por_categoria,
                            categorias_busqueda=CATEGORIAS_BUSQUEDA,
-                           provincia_seleccionada=categoria_seleccionada)
+                           provincia_seleccionada=categoria_seleccionada,
+                           chart_data=json.dumps(datos_grafico)) # Pasar datos del gráfico a la plantilla
     
 @rutas_bp.route('/rutas/crear', methods=['GET', 'POST'])
 @role_required('Superuser')
@@ -338,7 +335,7 @@ def editar_ruta(ruta_id):
         ruta.precio = None # Resetear el precio por si se envía vacío
         if precio_str:
             try:
-                precio = float(precio_str)
+                ruta.precio = float(precio_str)
             except ValueError:
                 flash('Formato de precio inválido. Por favor, ingresa un número válido.', 'danger')
                 return redirect(url_for('rutas.editar_ruta', ruta_id=ruta.id))

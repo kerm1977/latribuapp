@@ -107,7 +107,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem; /* Aumentado para que el icono de WhatsApp se vea mejor */
             transition: all 0.3s ease;
             color: #ffffff;
             border: none;
@@ -121,10 +121,13 @@
         }
         .fab-button-export.pdf { background-color: #dc3545; } /* Rojo para PDF */
         .fab-button-export.txt { background-color: #6c757d; } /* Gris para TXT */
+        .fab-button-export.whatsapp { background-color: #25D366; } /* Color oficial de WhatsApp */
+        .fab-button-export.copy-link { background-color: #0d6efd; } /* Azul para copiar enlace */
+
 
         /* Ajuste de posición para los botones de exportación para que no choquen con el de añadir */
         .fab-container-export {
-            bottom: 110px; /* Empieza más arriba que el botón de añadir ruta */
+            bottom: 140px; /* Empieza más arriba que el botón de añadir ruta */
         }
         /* Media query para pantallas pequeñas (móviles) */
         @media (max-width: 768px) {
@@ -133,7 +136,7 @@
             }
             /* Ajuste de posición de los FABs para móviles si es necesario */
             .fab-container-export {
-                bottom: 100px; /* Ajuste para móviles */
+                bottom: 130px; /* Ajuste para móviles */
                 right: 15px;
             }
             .btn-add-route {
@@ -162,6 +165,30 @@
             height: 2px;
             background-color: #ffc107; /* Color warning de Bootstrap */
             margin-bottom: 15px; /* Margen inferior para separar de la lista siguiente */
+        }
+        
+        /* Estilos para la notificación Toast */
+        #toast-notification {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 3000;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+            opacity: 0;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        #toast-notification.show {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
 
@@ -357,7 +384,22 @@
         <i class="fas fa-plus"></i>
     </a>
     {% endif %}
+
+    {# --- INICIO: NUEVA SECCIÓN PARA EL GRÁFICO --- #}
+    {% if chart_data and chart_data != '{"labels": [], "data": []}' %}
+    <div class="mt-5 pt-4">
+        <hr class="hr-warning" style="height: 3px; background-color: #ffc107; opacity: 1;">
+        <h2 class="text-center my-4 text-dark">Distribución de Rutas</h2>
+        <div style="width: 100%; max-width: 600px; margin: auto; padding: 0 15px;">
+            <canvas id="rutasPieChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+    {# --- FIN: NUEVA SECCIÓN PARA EL GRÁFICO --- #}
 </div>
+
+{# Elemento para la notificación Toast (inicialmente oculto) #}
+<div id="toast-notification">¡Enlace copiado al portapapeles!</div>
 
 {# Botón flotante para VOLVER ATRÁS #}
 <div class="fab-container-back">
@@ -366,8 +408,14 @@
     </a>
 </div>
 
-{# NUEVOS BOTONES FLOTANTES PARA EXPORTAR #}
+{# NUEVOS BOTONES FLOTANTES PARA EXPORTAR Y COMPARTIR #}
 <div class="fab-container-export">
+    <a href="#" id="copyLinkButton" class="fab-button-export copy-link" title="Compartir Enlace">
+        <i class="fas fa-share-alt"></i>
+    </a>
+    <a href="#" id="whatsappShareButton" class="fab-button-export whatsapp" title="Compartir por WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
     <a href="{{ url_for('rutas.exportar_todas_rutas_pdf', categoria=provincia_seleccionada) }}" class="fab-button-export pdf" title="Exportar a PDF">
         <i class="fas fa-file-pdf"></i>
     </a>
@@ -380,7 +428,131 @@
 
 {% block scripts %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    
+    <!-- CDN de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Opcional: Script para añadir interactividad si es necesario
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- INICIO: LÓGICA PARA EL GRÁFICO ---
+        {% if chart_data and chart_data != '{"labels": [], "data": []}' %}
+            const chartData = JSON.parse('{{ chart_data | safe }}');
+            
+            if (chartData.labels && chartData.labels.length > 0) {
+                const ctx = document.getElementById('rutasPieChart').getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'pie', // Tipo de gráfico: pastel
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: 'Número de Rutas',
+                            data: chartData.data,
+                            backgroundColor: [ // Colores para cada sección del pastel
+                                'rgba(0, 123, 255, 0.8)', 
+                                'rgba(40, 167, 69, 0.8)', 
+                                'rgba(255, 193, 7, 0.8)', 
+                                'rgba(220, 53, 69, 0.8)', 
+                                'rgba(23, 162, 184, 0.8)',
+                                'rgba(108, 117, 125, 0.8)', 
+                                'rgba(52, 58, 64, 0.8)',
+                                'rgba(111, 66, 193, 0.8)',
+                                'rgba(32, 201, 151, 0.8)',
+                                'rgba(253, 126, 20, 0.8)'
+                            ],
+                            borderColor: '#ffffff', // Borde blanco para separar las secciones
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom', // Posición de la leyenda
+                                labels: {
+                                    boxWidth: 12,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            title: {
+                                display: false, // El título ya está en el H2
+                            },
+                            tooltip: {
+                                // Personalizar el texto que aparece al pasar el mouse
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed;
+                                        const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                        return `${label}: ${value} rutas (${percentage})`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        {% endif %}
+
+        // --- INICIO: LÓGICA PARA BOTONES DE COMPARTIR ---
+
+        // Botón de Compartir por WhatsApp
+        const whatsappShareButton = document.getElementById('whatsappShareButton');
+        if (whatsappShareButton) {
+            whatsappShareButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                const text = '¡Hola! Te comparto este enlace para que veas las rutas de La Tribu CR:';
+                const url = 'https://www.latribucr.site/rutas/rutas';
+                const message = encodeURIComponent(`${text} ${url}`);
+                const whatsappUrl = `https://wa.me/?text=${message}`;
+                window.open(whatsappUrl, '_blank');
+            });
+        }
+
+        // Botón de Compartir/Copiar Enlace Genérico
+        const copyLinkButton = document.getElementById('copyLinkButton');
+        if (copyLinkButton) {
+            copyLinkButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const shareData = {
+                    title: 'Rutas de La Tribu CR',
+                    text: 'Descubre todas las rutas y caminatas disponibles.',
+                    url: 'https://www.latribucr.site/rutas/rutas'
+                };
+
+                try {
+                    if (navigator.share) {
+                        await navigator.share(shareData);
+                    } else {
+                        throw new Error('Share API not supported');
+                    }
+                } catch (err) {
+                    // Fallback: Copiar al portapapeles
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = shareData.url;
+                        textArea.style.position = 'fixed';
+                        textArea.style.left = '-9999px';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+
+                        // Mostrar notificación toast
+                        const toast = document.getElementById('toast-notification');
+                        toast.className = 'show';
+                        setTimeout(function(){ toast.className = toast.className.replace('show', ''); }, 3000);
+                    } catch (copyErr) {
+                        console.error('Error al copiar al portapapeles:', copyErr);
+                    }
+                }
+            });
+        }
+        // --- FIN: LÓGICA PARA BOTONES DE COMPARTIR ---
+    });
     </script>
 {% endblock %}

@@ -9,7 +9,7 @@ from functools import wraps # Importar wraps para decoradores
 import uuid # Importar uuid para generar nombres de archivo únicos
 from sqlalchemy.exc import IntegrityError # NUEVO: Importar IntegrityError
 # --- Añade esta línea ---
-from oauth import oauth_bp, init_oauth #(Necesita instalar con pip flask_login y authlib)
+from auth_setup import oauth_bp, init_oauth
 
 # MODIFICADO: Importa db, bcrypt, migrate y User desde models.py
 # ES CRUCIAL QUE EL MODELO USER Y LAS INSTANCIAS DE DB, BCRYPT Y MIGRATE
@@ -548,7 +548,17 @@ if __name__ == '__main__':
 # flask db upgrade
 
 # 21:56 ~/LATRIBU1 (main)$ source env/Scripts/activate
-# (env) 21:57 ~/LATRIBU1 (main)$ 
+# (env) 21:57 ~/LATRIBU1 (main)$
+
+# En caso de que no sirva el env/Scripts/activate
+# remover en env
+# 05:48 ~/latribuapp (main)$ rm -rf env
+# Crear nuevo
+# 05:49 ~/latribuapp (main)$ python -m venv env
+# 05:51 ~/latribuapp (main)$ source env/bin/activate
+# (env) 05:52 ~/latribuapp (main)$ 
+
+
 
 # Cuando se cambia de repositorio
 # git remote -v
