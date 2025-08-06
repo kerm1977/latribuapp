@@ -3,6 +3,7 @@
 {% block title %}Detalle de Póliza{% endblock %}
 
 {% block head_content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     /* Estilos para el contenedor principal de detalles */
     #policy-details-container {
@@ -207,8 +208,8 @@
         <ul class="dropdown-menu" aria-labelledby="exportDropdown">
             <li><a class="dropdown-item" href="{{ url_for('polizas.exportar_poliza', poliza_id=poliza.id, format='pdf') }}">Exportar a PDF</a></li>
             <li><a class="dropdown-item" href="{{ url_for('polizas.exportar_poliza', poliza_id=poliza.id, format='txt') }}">Exportar a TXT</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('polizas.exportar_poliza', poliza_id=poliza.id, format='jpg') }}">Exportar a JPG</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('polizas.exportar_poliza', poliza_id=poliza.id, format='excel') }}">Exportar a Excel</a></li>
+            <li><a class="dropdown-item" href="#" id="exportJpgBtn">Exportar a JPG</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('polizas.exportar_poliza', poliza_id=poliza.id, format='xls') }}">Exportar a XLS</a></li>
         </ul>
     </div>
 </div>
@@ -234,4 +235,44 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportJpgBtn = document.getElementById('exportJpgBtn');
+    if (exportJpgBtn) {
+        exportJpgBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const elementToCapture = document.getElementById('policy-details-container');
+            const actionButtons = document.querySelector('.fab-container-actions');
+            const backButton = document.querySelector('.fab-container-back');
+
+            // Ocultar botones antes de la captura
+            if (actionButtons) actionButtons.style.visibility = 'hidden';
+            if (backButton) backButton.style.visibility = 'hidden';
+
+            html2canvas(elementToCapture, {
+                scale: 2, // Mejorar resolución
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                // Volver a mostrar los botones
+                if (actionButtons) actionButtons.style.visibility = 'visible';
+                if (backButton) backButton.style.visibility = 'visible';
+
+                // Crear y descargar la imagen
+                const link = document.createElement('a');
+                link.download = 'detalle_poliza_{{ poliza.id }}.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            }).catch(err => {
+                // Asegurarse de que los botones sean visibles incluso si hay un error
+                if (actionButtons) actionButtons.style.visibility = 'visible';
+                if (backButton) backButton.style.visibility = 'visible';
+                console.error('Error al exportar a JPG:', err);
+                alert('Ocurrió un error al generar la imagen.');
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
