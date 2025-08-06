@@ -758,3 +758,73 @@ además que la información permanezca aun cuando el sitio esté deslogueado y s
 no utilizar firebase ni otras tecnologías.. unicamente js, html, css, python, flask, flash
 
 todo tiene que aplicarse únicamente desde base.html y crear_btns.html
+
+
+
+
+
+
+
+Genial ahora necesito crear un nueva área
+Todos los botones de borrar o eliminar tienen que ser construidos con Flask y Flash y el Modal con bootstrap
+las opciones de exportar a jpg, pdf, txt con utf-8 para que reconozca la ñ y las tildes (solo en caso de que existiera)
+cada archivo y cada vista vas a darmelo cuando te diga ok
+Permitir exporta a PDF, TXT, JPG, EXCEL 
+Los cards no pueden contener sombras. los botones de crear deben tener color warning.
+
+lógica
+en app.py solo vas a importar las lineas del archivo polizas.py y en 
+polizas.py absolutamente la lógica y tablas(modelos) de  polizas 
+
+vistas
+ver_polizas.html solo visible para superusuario y usuario registrado (Otros usuarios no pueden ver los datos de polizas de otros)
+
+crear_polizas.html
+Nombre del Coordinador de la Tribu Selector con el nombre de los superusuarios
+Nombre de Aseguradora (Solo visto por superusuarios)
+Nombre del Asesor (Solo visto por superusuarios)
+Nombre de la Aseguradora (Solo visto por superusuarios)
+Teléfono de la Aseguradora (Solo visto por superusuarios)
+Email de la Aseguradora (Solo visto por superusuarios)
+Teléfono del Asesor (Solo visto por superusuarios) 
+
+separador DATOS DEL ASEGURADO
+
+los campos que vamos a incluir son:
+Un campo que diga Nombre de Asegurado (Si no está registrado)
+
+Otro campo con un selector que permita seleccionar un usuario de la base de datos
+y auto rellene los siguientes campos: 
+Primer apellido (autollenar si hay datos en el usuario seleccionado)
+Segundo apellido (autollenar si hay datos en el usuario seleccionado)
+Teléfono (autollenar si hay datos en el usuario seleccionado)
+email (autollenar si hay datos en el usuario seleccionado)
+genero (Masculino, Femenino, Prefiero no Decirlo) (autollenar si hay datos en el usuario seleccionado)
+
+separador DATOS DEL BENEFICIARIO
+
+Un botón que permita ir agregando beneficiarios
+y cada beneficiario agregado debe colocarse
+Nombre
+Primer Apellido
+Segundo Apellido
+Cédula
+Parentesco
+Porcentaje
+
+separador DETALLES 
+
+Costo del Trámite ¢1000 (Solo visto por superusuarios)
+Un texteditor que permita agregar otros detalles
+fecha de registro (Hora y Fecha de Costa Rica)
+
+
+editar_polizas.html
+Permitir editar absolutamente todo lo que se ingresó por medio de crear_polizas.html 
+
+
+
+detalle_polizas.html
+estA vista mostrará absolutamente todo lo ingresado desde crear_polizas.html con los botones de exportar a jpg, pdf, txt con utf-8 editar y eliminar como te indiqué al inicio construidos con Flask y Flash y el Modal con bootstrap
+
+Agregar ver_polizas al perfil 

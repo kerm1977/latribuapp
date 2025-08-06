@@ -4,26 +4,50 @@
     <style>
         /* Estilos generales para el contenedor principal */
         .about-us-container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 25px;
-            /* Eliminado: background-color */
+            margin: 30px 15px; /* Margen superior/inferior de 30px y lateral de 15px */
+            padding: 0;
             border-radius: 12px;
-            /* Eliminado: box-shadow */
             font-family: 'Inter', sans-serif;
             color: #333;
         }
 
-        /* Estilo para el título principal */
+        /* Estilo para el título principal (ahora dentro de la pestaña) */
         .about-us-title {
             font-size: 2.5rem;
             font-weight: 700;
             color: #2c3e50;
             text-align: center;
             margin-bottom: 25px;
-            border-bottom: 2px solid #e0e0e0;
             padding-bottom: 15px;
         }
+
+        /* Estilos para las pestañas de navegación */
+        .nav-tabs {
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+            justify-content: center; /* Centrar las pestañas */
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid transparent;
+            border-top-left-radius: .5rem;
+            border-top-right-radius: .5rem;
+            color: #495057;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .nav-tabs .nav-link.active,
+        .nav-tabs .nav-item.show .nav-link {
+            color: #000;
+            background-color: #ffc107; /* Color amarillo para la pestaña activa */
+            border-color: #ffc107 #ffc107 #fff;
+        }
+        
+        .tab-content > .tab-pane {
+            padding: 1rem 0;
+        }
+
 
         /* Estilos para la sección del logo */
         .logo-section {
@@ -31,17 +55,14 @@
             flex-direction: column;
             align-items: center;
             margin-bottom: 30px;
-            padding: 20px;
-            /* Eliminado: background-color */
+            padding: 0;
             border-radius: 10px;
-            /* Eliminado: border */
         }
 
         .logo-image {
             max-width: 200px;
             height: auto;
             border-radius: 8px;
-            /* Eliminado: box-shadow */
             margin-bottom: 15px;
             transition: transform 0.3s ease;
         }
@@ -60,45 +81,33 @@
         /* Estilos para el detalle principal */
         .detail-section {
             font-size: 1.1rem;
-            line-height: 1.5; /* Interlineado de 1.5 aplicado directamente aquí */
+            line-height: 1.5;
             color: #444;
             margin-bottom: 30px;
-            padding: 20px;
-            /* Eliminado: background-color */
+            padding: 0;
             border-radius: 10px;
-            /* Eliminado: border */
             text-align: justify;
         }
 
-        /* Estilos para las fechas */
-        .date-info {
-            font-size: 0.95rem;
-            color: #777;
-            text-align: right;
-            border-top: 1px dashed #ddd;
-            padding-top: 15px;
-            margin-top: 25px;
-        }
-
-        /* Estilos para los botones de acción flotantes (replicados de editar_nota.html) */
+        /* Estilos para los botones de acción flotantes */
         .fab-container-actions {
-            position: fixed; /* Fija la posición en la ventana */
-            bottom: 70px;    /* 70px desde la parte inferior (como editar_nota.html) */
-            right: 20px;     /* 20px desde la derecha */
-            z-index: 1050;   /* Asegura que esté por encima de otros elementos */
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            z-index: 1050;
             display: flex;
-            flex-direction: column; /* Apila los botones verticalmente */
-            gap: 10px;       /* Espacio entre los botones */
+            flex-direction: column;
+            gap: 10px;
         }
 
         .fab-button-action {
-            width: 60px; /* Tamaño del botón (como editar_nota.html) */
-            height: 60px; /* Tamaño del botón (como editar_nota.html) */
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem; /* Tamaño del icono (como editar_nota.html) */
+            font-size: 1.8rem;
             transition: all 0.3s ease;
             text-decoration: none;
             border: none !important;
@@ -106,8 +115,8 @@
         }
 
         .fab-button-action:hover {
-            transform: scale(1.05); /* Efecto de escala al pasar el ratón */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra más pronunciada al pasar el ratón */
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
 
         /* Colores específicos para los botones */
@@ -117,31 +126,34 @@
         .fab-button-txt { background-color: #17a2b8; color: white !important; } /* Info-dark */
         .fab-button-jpg { background-color: #fd7e14; color: white !important; } /* Orange */
 
-        /* Estilos para el botón flotante (FAB) de volver atrás (copiado de editar_nota.html) */
+        /* Estilos para el botón flotante (FAB) de volver atrás */
         .fab-container-back {
             position: fixed;
-            bottom: 70px; /* Distancia desde abajo */
-            left: 20px; /* Distancia desde la izquierda */
-            right: auto; /* Anula la distancia derecha */
-            z-index: 1000; /* Asegura que esté por encima de otros elementos */
+            bottom: 70px;
+            left: 20px;
+            right: auto;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         .fab-button-back {
-            width: 60px; /* Tamaño del botón */
-            height: 60px; /* Tamaño del botón */
-            border-radius: 50%; /* Hacerlo circular */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem; /* Tamaño del icono */
+            font-size: 1.8rem;
             transition: all 0.3s ease;
-            background-color: #007bff; /* Color de fondo primary */
-            color: #ffffff; /* Color de texto blanco */
-            border: none; /* Asegurar que no haya borde */
-            text-decoration: none; /* Eliminar el subrayado */
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            text-decoration: none;
         }
         .fab-button-back:hover {
-            transform: scale(1.05); /* Pequeño efecto al pasar el ratón */
-            background-color: #0056b3; /* Tono más oscuro al pasar el ratón */
+            transform: scale(1.05);
+            background-color: #0056b3;
         }
 
         /* Estilos para el modal de confirmación */
@@ -168,52 +180,62 @@
         .btn-confirm-delete:hover {
             background-color: #c82333;
         }
-
-        /* Media query para dispositivos móviles (ancho máximo de 768px) */
-        @media (max-width: 768px) {
-            .about-us-container,
-            .logo-info,
-            .detail-section {
-                text-align: justify; /* Justificar el texto en vista móvil */
-            }
-            .about-us-title {
-                text-align: center; /* Mantener el título centrado */
-            }
-            .date-info {
-                text-align: right; /* Mantener la información de fecha a la derecha */
-            }
-        }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="about-us-container">
         {% if about_us_entry %}
-            <h1 class="about-us-title">{{ about_us_entry.title }}</h1>
+            <!-- Pestañas de Navegación -->
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="historia-tab" data-bs-toggle="tab" data-bs-target="#historia" type="button" role="tab" aria-controls="historia" aria-selected="true">Historia</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="oracion-tab" data-bs-toggle="tab" data-bs-target="#oracion" type="button" role="tab" aria-controls="oracion" aria-selected="false">Oración</button>
+                </li>
+            </ul>
 
-            <div class="logo-section">
-                {% if about_us_entry.logo_filename %}
-                    {# La ruta de la imagen debe ser relativa a la carpeta 'static' #}
-                    <img src="{{ url_for('static', filename='uploads/aboutus_images/' + about_us_entry.logo_filename) }}" 
-                         alt="Logo de la empresa" class="logo-image">
-                {% else %}
-                    <p class="text-muted">No hay logo disponible.</p>
-                {% endif %}
-                <p class="logo-info">{{ about_us_entry.logo_info }}</p>
+            <!-- Contenido de las Pestañas -->
+            <div class="tab-content" id="myTabContent">
+                <!-- Contenido de la Pestaña Historia -->
+                <div class="tab-pane fade show active" id="historia" role="tabpanel" aria-labelledby="historia-tab">
+                    <h1 class="about-us-title">{{ about_us_entry.title }}</h1>
+
+                    <div class="logo-section">
+                        {% if about_us_entry.logo_filename %}
+                            <img src="{{ url_for('static', filename='uploads/aboutus_images/' + about_us_entry.logo_filename) }}" 
+                                 alt="Logo de la empresa" class="logo-image">
+                        {% else %}
+                            <p class="text-muted">No hay logo disponible.</p>
+                        {% endif %}
+                        <p class="logo-info">{{ about_us_entry.logo_info }}</p>
+                    </div>
+        
+                    <div class="detail-section">
+                        {{ about_us_entry.detail | safe }}
+                    </div>
+                </div>
+
+                <!-- Contenido de la Pestaña Oración -->
+                <div class="tab-pane fade" id="oracion" role="tabpanel" aria-labelledby="oracion-tab">
+                    <h1 class="about-us-title">Nuestra Oración</h1>
+                    <div class="detail-section">
+                        <!-- Aquí se podría cargar el contenido de la oración desde la base de datos -->
+                        <!-- Ejemplo: {{ about_us_entry.oracion | safe }} -->
+                        <p>GRACIAS SEÑOR POR ESTE HERMOSO DÍA QUE NOS HAS REGALADO, POR NUESTROS AMIGOS Y AMIGAS QUE NOS ACOMPAÑAN EN ESTA ACTIVIDAD Y AQUELLOS QUE NO PUDIERO ESTAR HOY CON NOSOTROS.</p>
+                        <p>NOS AMPARAMOS A TU PROTECCIÓN Y LA DE NUESTROS FAMILIARES QUE NOS ESPERAN EN CASA.</p>
+                        <p>PONEMOS A TODAS LAS PERSONAS QUE HOY ESTAN EN LOS HOSPITALES O PRIVADOS DE LIBERTAD O MOVIMIENTO Y DESEAN TENER LA OPORTUNIDAD QUE NOSOTROS TENEMOS HOY...</p>
+                        <p>ACOMPAÑALOS Y DALES FUERZA PARA VENCER SU ANGUSTIA.</p>
+                        <p>QUE TU PROTECCIÓN LLEGUE A LOS DEMAS GRUPO Y SENDERISTAS DEL MUNDO QUE COMPARTEN NUESTRA MISMA PASIÓN PARA QUE LLEVEMOS UN CORAZÓN PASIVO, ALEGRE Y SERENO CON UN ESPÍRITU PROTECTOR DE LA NATURALEZA Y NUESTRO ENTORNO,</p>
+                        <p>DISFRUTANDO ASÍ CADA PASO QUE DAMOS EN NUESTRA NACIÓN Y NUESTRA TIERRA.</p>
+                        <p>QUE HOY LA NATURALEZA Y LA MONTAÑA SE SOMETAN A TU ORDEN Y A TU PROTECCIÓN PARA QUE CONVIVAMOS CON ELLA DE MANERA PASIVA Y ARMONIOSA.</p>
+                        <p>FORTALECE NUESTRA AMISTAD, FORTALECE NUESTRA HERMANDAD Y DIOS CUBRA CON SU SANGRE PRECIOSA A ESTE GRUPO LLAMADO LA TRIBU.</p>
+                        <p>AMEN</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="detail-section">
-                {# El contenido de Quill.js ya incluye sus propias etiquetas de bloque (p, div, etc.),
-                   por lo que no es necesario envolverlo en una etiqueta <p> adicional. #}
-                {{ about_us_entry.detail | safe }}
-            </div>
-
-     <!--        <div class="date-info">
-                <p>Fecha de Creación: {{ about_us_entry.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-                <p>Fecha de Modificación: {{ about_us_entry.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-            </div>
- -->
-            {# Contenedor para los botones de acción flotantes a la derecha #}
             {% if session.role == 'Superuser' %}
                 <div class="fab-container-actions">
                     <a href="{{ url_for('aboutus.editar_aboutus', aboutus_id=about_us_entry.id) }}" class="fab-button-action fab-button-edit" title="Editar">
@@ -234,14 +256,13 @@
                 </div>
             {% endif %}
 
-            {# Botón flotante para volver atrás (copiado de editar_nota.html) #}
-            {% if session.role == 'Superuser' %}
-                <div class="fab-container-back">
-                    <a href="{{ url_for('home') }}" class="fab-button-back" title="Volver a la Página Principal">
-                        <i class="fas fa-arrow-left"></i> {# Icono de flecha izquierda #}
-                    </a>
-                </div>
-            {% endif %}
+            <!-- Contenedor para botones flotantes de la izquierda -->
+            <div class="fab-container-back">
+                <!-- Botón para volver a la página principal -->
+                <a href="{{ url_for('home') }}" class="fab-button-back" title="Volver a la Página Principal">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
 
             <!-- Modal de Confirmación de Eliminación -->
             <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
@@ -267,7 +288,6 @@
         {% else %}
             <div class="text-center p-5 bg-light rounded-lg">
                 <p class="lead">Aún no se ha creado una sección "Acerca de Nosotros".</p>
-                {# Solo muestra el botón "Crear Ahora" si el usuario es un Superuser #}
                 {% if session.role == 'Superuser' %}
                     <a href="{{ url_for('aboutus.crear_aboutus') }}" class="btn btn-primary btn-lg mt-3">Crear Ahora</a>
                 {% endif %}

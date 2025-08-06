@@ -29,6 +29,8 @@ from player import player_bp
 from itinerario import itinerario_bp
 from aboutus import aboutus_bp
 from rutas import rutas_bp
+from polizas import polizas_bp # <-- NUEVA LÍNEA
+
 
 # CORRECCIÓN: Importa Version desde version.py donde está definida
 from version import version_bp, Version 
@@ -496,6 +498,7 @@ app.register_blueprint(rutas_bp, url_prefix='/rutas')
 app.register_blueprint(version_bp, url_prefix='/version')
 app.register_blueprint(files_bp, url_prefix='/files')
 app.register_blueprint(btns_bp) # REGISTRO DEL BLUEPRINT DE BTNS
+app.register_blueprint(polizas_bp) # <-- NUEVA LÍNEA
 
 # --- AÑADE ESTAS DOS LÍNEAS PARA CONECTAR OAUTH ---
 init_oauth(app)

@@ -554,3 +554,54 @@ class SiteStats(db.Model):
 
     def __repr__(self):
         return f"<SiteStats (ID: {self.id}, Visits: {self.visits})>"
+
+# NUEVOS MODELOS PARA PÓLIZAS
+class Poliza(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Datos del coordinador y aseguradora (visto por Superusuarios)
+    coordinador_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coordinador = db.relationship('User', foreign_keys=[coordinador_id])
+    
+    aseguradora_nombre = db.Column(db.String(150), nullable=True)
+    asesor_nombre = db.Column(db.String(150), nullable=True)
+    aseguradora_telefono = db.Column(db.String(20), nullable=True)
+    aseguradora_email = db.Column(db.String(120), nullable=True)
+    asesor_telefono = db.Column(db.String(20), nullable=True)
+    
+    # Datos del Asegurado
+    asegurado_registrado_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    asegurado_registrado = db.relationship('User', foreign_keys=[asegurado_registrado_id], backref='polizas_asegurado')
+    
+    asegurado_nombre_manual = db.Column(db.String(150), nullable=True) # Para no registrados
+    asegurado_primer_apellido = db.Column(db.String(100), nullable=True)
+    asegurado_segundo_apellido = db.Column(db.String(100), nullable=True)
+    asegurado_telefono = db.Column(db.String(20), nullable=True)
+    asegurado_email = db.Column(db.String(120), nullable=True)
+    genero = db.Column(db.String(50), nullable=True)
+
+    # Detalles de la Póliza
+    costo_tramite = db.Column(db.Float, default=1000.0, nullable=True)
+    otros_detalles = db.Column(db.Text, nullable=True)
+    fecha_registro = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+    # Relación con Beneficiarios
+    beneficiarios = db.relationship('Beneficiario', backref='poliza', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        asegurado = self.asegurado_registrado.nombre if self.asegurado_registrado else self.asegurado_nombre_manual
+        return f'<Poliza {self.id} para {asegurado}>'
+
+class Beneficiario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    poliza_id = db.Column(db.Integer, db.ForeignKey('poliza.id', ondelete='CASCADE'), nullable=False)
+    
+    nombre = db.Column(db.String(100), nullable=False)
+    primer_apellido = db.Column(db.String(100), nullable=True)
+    segundo_apellido = db.Column(db.String(100), nullable=True)
+    cedula = db.Column(db.String(20), nullable=True)
+    parentesco = db.Column(db.String(50), nullable=True)
+    porcentaje = db.Column(db.Float, nullable=True)
+
+    def __repr__(self):
+        return f'<Beneficiario {self.nombre} para Póliza {self.poliza_id}>'
