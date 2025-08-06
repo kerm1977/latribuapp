@@ -25,6 +25,31 @@
                margin-top: -150px; /* Se ajusta para que el contenido suba y esté cerca del navbar. */
             }
         }
+        
+        /* --- NUEVO: Estilos para el botón flotante de Pólizas/WhatsApp --- */
+        .whatsapp-poliza-fab {
+            position: fixed;
+            bottom: 140px; /* Posición vertical, encima de otros botones si es necesario */
+            left: 20px;
+            z-index: 1040;
+        }
+        .whatsapp-poliza-button {
+            background-color: #25D366; /* Color de WhatsApp */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px; /* Forma ovalada */
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Espacio entre el ícono y el texto */
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .whatsapp-poliza-button:hover {
+            transform: scale(1.05);
+            color: white;
+        }
 
         /* Estilos para el banner de instalación automático (Chromium) */
         #installBanner {
@@ -141,6 +166,8 @@
     {# MODIFICACIÓN AQUÍ: Añadimos un <span> para el texto "Instalar App" y el icono #}
     <button id="showManualInstallInstructionsButton" class="btn btn-primary">
         <i class="fas fa-download"></i> <span></span> </button>
+
+ 
 
     <div class="modal fade" id="manualInstallModal" tabindex="-1" aria-labelledby="manualInstallModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

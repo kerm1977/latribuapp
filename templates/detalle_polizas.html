@@ -84,6 +84,11 @@
     .fab-button-delete { background-color: #dc3545; } /* Danger */
     .fab-button-export { background-color: #17a2b8; } /* Info */
 
+    /* --- NUEVA REGLA PARA CORREGIR EL BOTÓN DE EXPORTAR --- */
+    .fab-button-export.dropdown-toggle::after {
+        display: none; /* Oculta la flecha extra de Bootstrap */
+    }
+
     /* Estilos para el modal de confirmación */
     .modal-content {
         border-radius: 10px;

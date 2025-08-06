@@ -87,14 +87,21 @@ def crear_poliza():
             asegurado_email = request.form.get('asegurado_email')
             genero = request.form.get('genero')
             
-            costo_tramite = request.form.get('costo_tramite', 1000.0, type=float)
+            costo_tramite = request.form.get('costo_tramite')
+            costo_tramite = float(costo_tramite) if costo_tramite else 1000.0
+
             otros_detalles = request.form.get('otros_detalles')
 
             # --- Recopilar NUEVOS CAMPOS ---
             fecha_vencimiento_str = request.form.get('fecha_vencimiento')
             fecha_vencimiento = datetime.strptime(fecha_vencimiento_str, '%Y-%m-%d').date() if fecha_vencimiento_str else None
-            precio_poliza = request.form.get('precio_poliza', type=float)
-            monto_cancelacion = request.form.get('monto_cancelacion', type=float)
+            
+            precio_poliza_str = request.form.get('precio_poliza')
+            precio_poliza = float(precio_poliza_str) if precio_poliza_str else None
+
+            monto_cancelacion_str = request.form.get('monto_cancelacion')
+            monto_cancelacion = float(monto_cancelacion_str) if monto_cancelacion_str else None
+
             banco = request.form.get('banco')
             cuenta_deposito = request.form.get('cuenta_deposito')
             sinpe_deposito = request.form.get('sinpe_deposito')
@@ -210,14 +217,22 @@ def editar_poliza(poliza_id):
             poliza.asegurado_telefono = request.form.get('asegurado_telefono')
             poliza.asegurado_email = request.form.get('asegurado_email')
             poliza.genero = request.form.get('genero')
-            poliza.costo_tramite = request.form.get('costo_tramite', type=float)
+            
+            costo_tramite_str = request.form.get('costo_tramite')
+            poliza.costo_tramite = float(costo_tramite_str) if costo_tramite_str else 1000.0
+
             poliza.otros_detalles = request.form.get('otros_detalles')
 
             # --- Actualizar NUEVOS CAMPOS ---
             fecha_vencimiento_str = request.form.get('fecha_vencimiento')
             poliza.fecha_vencimiento = datetime.strptime(fecha_vencimiento_str, '%Y-%m-%d').date() if fecha_vencimiento_str else None
-            poliza.precio_poliza = request.form.get('precio_poliza', type=float)
-            poliza.monto_cancelacion = request.form.get('monto_cancelacion', type=float)
+            
+            precio_poliza_str = request.form.get('precio_poliza')
+            poliza.precio_poliza = float(precio_poliza_str) if precio_poliza_str else None
+
+            monto_cancelacion_str = request.form.get('monto_cancelacion')
+            poliza.monto_cancelacion = float(monto_cancelacion_str) if monto_cancelacion_str else None
+
             poliza.banco = request.form.get('banco')
             poliza.cuenta_deposito = request.form.get('cuenta_deposito')
             poliza.sinpe_deposito = request.form.get('sinpe_deposito')
