@@ -336,7 +336,7 @@
                             
                             <p class="card-text mb-1"><small class="text-muted"><strong>Actividad:</strong> {{ caminata.actividad }}</small></p>
                             <p class="card-text mb-1"><small class="text-muted"><strong>Fecha:</strong> {{ caminata.fecha.strftime('%d de %B de %Y') }}</small></p>
-                            <h4 class="card-text mb-1 precio-text"><small class="text-muted "><strong>Precio:</strong> ¢{{ caminata.precio|int }}</small></h4>
+                            <h4 class="card-text mb-1 precio-text"><small class="text-muted "><strong>Precio:</strong> {% if caminata.moneda == 'USD' %}${% else %}¢{% endif %}{{ caminata.precio|int }}</small></h4>
                         </div>
                         <hr class="my-2 border-warning">
                                           

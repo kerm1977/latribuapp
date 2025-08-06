@@ -300,6 +300,10 @@ class Caminata(db.Model):
     # CAMBIO CRUCIAL: 'pais' renombrado a 'etapa'
     etapa = db.Column(db.String(255), nullable=True)
     
+    # --- INICIO DE LA MODIFICACIÓN ---
+    moneda = db.Column(db.String(10), nullable=False, default='CRC') # NUEVO CAMPO PARA LA MONEDA
+    # --- FIN DE LA MODIFICACIÓN ---
+    
     nombre = db.Column(db.String(255), nullable=False)
     precio = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.Date, nullable=False)

@@ -147,7 +147,7 @@
                 <p><strong>Actividad:</strong> {{ caminata.actividad }}</p>
                 {% if caminata.etapa and caminata.etapa != 'N/A' %}<p><strong>Etapa:</strong> {{ caminata.etapa }}</p>{% endif %}
                 <p><strong>Nombre:</strong> {{ caminata.nombre }}</p>
-                <p><strong>Precio:</strong> ¢{{ caminata.precio | int }}</p>
+                <p><strong>Precio:</strong> {% if caminata.moneda == 'USD' %}${% else %}¢{% endif %}{{ caminata.precio | int }}</p>
                 <p><strong>Fecha:</strong> {{ caminata.fecha.strftime('%d-%m-%Y') }}</p>
                 {% if caminata.hora_salida %}<p><strong>Hora de Salida:</strong> {{ caminata.hora_salida.strftime('%H:%M') }}</p>{% endif %}
                 {% if caminata.hora_regreso %}<p><strong>Hora de Regreso:</strong> {{ caminata.hora_regreso.strftime('%H:%M') }}</p>{% endif %}
@@ -298,10 +298,11 @@
     </div>
 
 <div class="fab-container-actions">
+    {% set currency_symbol = '$' if caminata.moneda == 'USD' else '¢' %}
     {% set whatsapp_message = "Hola, estoy interesad@ en esta caminata: " ~
                               "Actividad: " ~ caminata.actividad ~ ", " ~
                               "Nombre: " ~ caminata.nombre ~ ", " ~
-                              "Precio: ¢" ~ (caminata.precio | int) ~ ", " ~
+                              "Precio: " ~ currency_symbol ~ (caminata.precio | int) ~ ", " ~
                               "Fecha: " ~ caminata.fecha.strftime('%d-%m-%Y') ~ ", " ~
                               "Dificultad: " ~ (caminata.dificultad if caminata.dificultad != 'N/A' else 'N/A') %}
     <a href="https://wa.me/50686227500?text={{ whatsapp_message | urlencode }}" class="fab-button-action fab-button-whatsapp" title="Consultar por WhatsApp" target="_blank">
@@ -309,7 +310,6 @@
     </a>
 
     {% if session.role == 'Superuser' %}
-        {# CAMBIO: Botón para finalizar/reactivar caminata #}
         <a href="#" onclick="document.getElementById('toggleFinalizadaForm').submit(); return false;" 
            class="fab-button-action {% if caminata.finalizada %}fab-button-reactivate{% else %}fab-button-finalize{% endif %}" 
            title="{% if caminata.finalizada %}Reactivar Caminata{% else %}Marcar como Finalizada{% endif %}">

@@ -31,19 +31,15 @@
     }
 </style>
 
-{# MODIFICACIÓN: Se eliminó 'mt-4' del contenedor principal para que coincida con ver_caminatas #}
 <div class="container">
-    {# MODIFICACIÓN: Se reincorporaron 'p-4' y 'mb-5' para mantener un espaciado adecuado dentro del formulario #}
     <div class="p-4 mb-5">
         <h2 class="card-title text-center mb-4 text-warning">Editar Caminata: {{ caminata.nombre }}</h2>
-        {# MODIFICACIÓN: Añadir ID al formulario para el FAB #}
         <form method="POST" enctype="multipart/form-data" action="{{ url_for('caminatas.editar_caminata', caminata_id=caminata.id) }}" id="editCaminataForm">
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="imagen_caminata" class="form-label">Imagen de la Caminata:</label>
                     <input type="file" class="form-control" id="imagen_caminata" name="imagen_caminata" accept="image/png, image/jpeg, image/jpg, image/gif">
                     <small class="form-text text-muted">Formatos permitidos: PNG, JPG, JPEG, GIF. Dejar en blanco para mantener la imagen actual.</small>
-                    {# NUEVO: Advertencia sobre caracteres especiales en el nombre del archivo #}
                     <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
                     {% if caminata.imagen_caminata_url %}
                         <img src="{{ url_for('static', filename=caminata.imagen_caminata_url) }}" alt="Imagen actual" class="img-thumbnail mt-2" style="max-height: 100px;">
@@ -110,19 +106,23 @@
                 </div>
             </div>
 
-            <div class="row mb-3">
+            <div class="row mb-3 align-items-end">
                 <div class="col-md-4">
                     <label for="precio" class="form-label">Precio <span class="text-danger">*</span>:</label>
-                    <div class="input-group">
-                        <span class="input-group-text">¢</span>
-                        <input type="number" step="0.01" class="form-control" id="precio" name="precio" value="{{ caminata.precio or '' }}" required min="0">
-                    </div>
+                    <input type="number" step="0.01" class="form-control" id="precio" name="precio" value="{{ caminata.precio or '' }}" required min="0">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label for="moneda" class="form-label">Moneda <span class="text-danger">*</span>:</label>
+                    <select class="form-select" id="moneda" name="moneda" required>
+                        <option value="CRC" {% if caminata.moneda == 'CRC' %}selected{% endif %}>¢ (CRC)</option>
+                        <option value="USD" {% if caminata.moneda == 'USD' %}selected{% endif %}>$ (USD)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label for="fecha" class="form-label">Fecha <span class="text-danger">*</span>:</label>
                     <input type="date" class="form-control" id="fecha" name="fecha" value="{{ caminata.fecha.strftime('%Y-%m-%d') if caminata.fecha else '' }}" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="hora_salida" class="form-label">Hora de Salida <span class="text-danger">*</span>:</label>
                     <input type="time" class="form-control" id="hora_salida" name="hora_salida" value="{{ caminata.hora_salida.strftime('%H:%M') if caminata.hora_salida else '' }}" required>
                 </div>
@@ -184,7 +184,6 @@
                     <label for="nombre_guia" class="form-label">Nombre del Guía:</label>
                     <input type="text" class="form-control" id="nombre_guia" name="nombre_guia" value="{{ caminata.nombre_guia or '' }}">
                 </div>
-                {# Se eliminó el campo "Se Requiere" #}
                 <div class="col-md-6">
                     <label for="provincia" class="form-label">Provincia:</label>
                     <select class="form-select" id="provincia" name="provincia">
@@ -252,6 +251,7 @@
                             "Ferry",
                             "Avion"
                         ] %}
+                        {% set selected_transportes = caminata.tipo_transporte | from_json %}
                         {% for option in tipo_transporte_opciones %}
                         <option value="{{ option }}" {% if option in selected_transportes %}selected{% endif %}>{{ option }}</option>
                         {% endfor %}
@@ -344,9 +344,7 @@
             </div>
 
             <div class="d-grid gap-2">
-                {# MODIFICACIÓN: Se oculta el botón "Actualizar Caminata" original #}
                 <button type="submit" class="btn btn-warning btn-lg d-none" style="color: black;">Actualizar Caminata</button>
-                {# Se eliminó el botón "Cancelar" cuadrado #}
             </div>
         </form>
     </div>
@@ -372,11 +370,20 @@
             if (selectElement) {
                 let selectedValues = [];
                 try {
-                    if (caminata && caminata[id]) {
-                        if (typeof caminata[id] === 'string') {
-                            selectedValues = from_json_parse(caminata[id]);
-                        } else if (Array.isArray(caminata[id])) {
-                            selectedValues = caminata[id];
+                    // This part is tricky because Jinja templates are rendered server-side.
+                    // A better approach is to pass the JSON strings directly to the template
+                    // and parse them here. Let's assume `caminata` object is not directly available in JS.
+                    // We will rely on the Jinja pre-selecting the options.
+                    // The below code is a fallback, but might not be reliable.
+                    let caminataDataElement = document.getElementById('caminata-data');
+                    if(caminataDataElement) {
+                        let caminata = JSON.parse(caminataDataElement.textContent);
+                        if (caminata && caminata[id]) {
+                            if (typeof caminata[id] === 'string') {
+                                selectedValues = from_json_parse(caminata[id]);
+                            } else if (Array.isArray(caminata[id])) {
+                                selectedValues = caminata[id];
+                            }
                         }
                     }
                 } catch (e) {
@@ -394,14 +401,12 @@
     });
 </script>
 
-{# NUEVO: Botón flotante para guardar cambios #}
 <div class="fab-container">
     <a href="#" class="btn btn-warning fab-button" title="Guardar Cambios" onclick="document.getElementById('editCaminataForm').submit(); return false;">
         <i class="fas fa-save" style="color: black;"></i>
     </a>
 </div>
 
-{# Nuevo botón flotante para volver atrás a la izquierda #}
 <div class="fab-container left">
     <a href="{{ url_for('caminatas.detalle_caminata', caminata_id=caminata.id) }}" class="btn btn-primary fab-button" title="Volver a Detalle de Caminata">
         <i class="fas fa-arrow-left"></i>

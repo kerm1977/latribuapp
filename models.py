@@ -263,6 +263,11 @@ class Caminata(db.Model):
     actividad = db.Column(db.String(100), nullable=False)
     etapa = db.Column(db.String(255), nullable=True)
     nombre = db.Column(db.String(255), nullable=False)
+    
+    # --- INICIO DE LA CORRECCIÓN ---
+    moneda = db.Column(db.String(10), nullable=False, server_default='CRC', default='CRC')
+    # --- FIN DE LA CORRECCIÓN ---
+    
     precio = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.Date, nullable=False)
     hora = db.Column(db.Time, nullable=True)
@@ -310,7 +315,6 @@ class Caminata(db.Model):
         db.Index('idx_caminata_fecha_desc', fecha.desc()),
         db.Index('idx_caminata_actividad', actividad),
     )
-
 class AbonoCaminata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     caminata_id = db.Column(db.Integer, db.ForeignKey('caminata.id'), nullable=False)

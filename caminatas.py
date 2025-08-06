@@ -134,6 +134,10 @@ def crear_caminata():
         actividad = request.form['actividad']
         etapa = request.form.get('etapa') 
         
+        # --- INICIO DE LA MODIFICACIÓN ---
+        moneda = request.form.get('moneda', 'CRC') # Obtener la moneda del formulario
+        # --- FIN DE LA MODIFICACIÓN ---
+
         # --- Manejo de campos numéricos y de fecha con validación ---
         try:
             precio = float(request.form['precio']) if request.form['precio'] else 0.0 # Manejo de cadena vacía
@@ -242,6 +246,7 @@ def crear_caminata():
             nombre=nombre,
             actividad=actividad,
             etapa=etapa, 
+            moneda=moneda, # Añadir moneda al crear el objeto
             precio=precio,
             fecha=fecha,
             dificultad=dificultad,
@@ -449,6 +454,10 @@ def editar_caminata(caminata_id):
         caminata.actividad = request.form['actividad']
         caminata.etapa = request.form.get('etapa') 
         
+        # --- INICIO DE LA MODIFICACIÓN ---
+        caminata.moneda = request.form.get('moneda', 'CRC') # Actualizar la moneda
+        # --- FIN DE LA MODIFICACIÓN ---
+
         # --- Manejo de campos numéricos y de fecha con validación en edición ---
         try:
             caminata.precio = float(request.form['precio']) if request.form['precio'] else 0.0
@@ -842,6 +851,11 @@ def exportar_abono_pdf(caminata_id, user_id):
     participante = User.query.get_or_404(user_id)
     abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(desc(AbonoCaminata.fecha_abono)).all()
 
+    # --- INICIO DE LA MODIFICACIÓN ---
+    currency_symbol = '¢' if caminata.moneda == 'CRC' else '$'
+    currency_code = 'CRC' if caminata.moneda == 'CRC' else 'USD'
+    # --- FIN DE LA MODIFICACIÓN ---
+
     # Convertir las fechas de los abonos a la zona horaria de Costa Rica para exportar
     for abono in abonos:
         if abono.fecha_abono.tzinfo is None:
@@ -871,15 +885,16 @@ def exportar_abono_pdf(caminata_id, user_id):
     pdf.ln(10)
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 10, f'Caminata: {caminata.nombre}', 0, 1)
-    # MODIFICACIÓN: Formato con nombre del mes en español y primera letra en mayúscula
     pdf.cell(0, 10, f'Fecha de Caminata: {caminata.fecha.strftime("%d de %B de %Y")}', 0, 1)
     pdf.cell(0, 10, f'Participante: {participante.nombre} {participante.primer_apellido}', 0, 1)
-    pdf.cell(0, 10, f'Precio por Persona: {caminata.precio:,.0f} CRC', 0, 1)
-    pdf.cell(0, 10, f'Total a Pagar (incluyendo acompañantes): {total_a_pagar_por_participante:,.0f} CRC', 0, 1)
-    pdf.set_text_color(0, 128, 0) # Green for total_abonado
-    pdf.cell(0, 10, f'Total Abonado: {total_abonado:,.0f} CRC', 0, 1)
     
-    # MODIFICACIÓN: Mostrar el estado general del participante
+    # --- INICIO DE LA MODIFICACIÓN ---
+    pdf.cell(0, 10, f'Precio por Persona: {currency_symbol}{caminata.precio:,.0f} {currency_code}', 0, 1)
+    pdf.cell(0, 10, f'Total a Pagar (incluyendo acompañantes): {currency_symbol}{total_a_pagar_por_participante:,.0f} {currency_code}', 0, 1)
+    pdf.set_text_color(0, 128, 0) # Green for total_abonado
+    pdf.cell(0, 10, f'Total Abonado: {currency_symbol}{total_abonado:,.0f} {currency_code}', 0, 1)
+    # --- FIN DE LA MODIFICACIÓN ---
+    
     if estado_general_participante == "Cancelación":
         pdf.set_text_color(255, 165, 0) # Naranja
         pdf.cell(0, 10, f'Estado del Participante: {estado_general_participante}', 0, 1)
@@ -895,7 +910,9 @@ def exportar_abono_pdf(caminata_id, user_id):
         
     if monto_restante > 0 and estado_general_participante != "Cancelación": # Solo mostrar monto restante si no está cancelado
         pdf.set_text_color(255, 0, 0) # Rojo para Monto Restante
-        pdf.cell(0, 10, f'Monto Restante: {monto_restante:,.0f} CRC', 0, 1)
+        # --- INICIO DE LA MODIFICACIÓN ---
+        pdf.cell(0, 10, f'Monto Restante: {currency_symbol}{monto_restante:,.0f} {currency_code}', 0, 1)
+        # --- FIN DE LA MODIFICACIÓN ---
         
     pdf.set_text_color(0, 0, 0) # Volver a negro para el texto normal
     pdf.ln(10)
@@ -906,12 +923,13 @@ def exportar_abono_pdf(caminata_id, user_id):
         for abono in abonos:
             nombres_acom = json.loads(abono.nombres_acompanantes) if abono.nombres_acompanantes else []
             nombres_str = ", ".join(nombres_acom) if nombres_acom else "N/A"
-            # MODIFICACIÓN: Mantener el formato numérico para el historial de abonos, si no se desea el nombre del mes aquí
             pdf.cell(0, 7, f'  Fecha: {abono.fecha_abono.strftime("%d/%m/%Y %H:%M")}', 0, 1)
-            pdf.cell(0, 7, f'  Opción: {abono.opcion}', 0, 1) # Mostrar la opción de cada abono
+            pdf.cell(0, 7, f'  Opción: {abono.opcion}', 0, 1) 
             pdf.cell(0, 7, f'  Acompañantes: {abono.cantidad_acompanantes}', 0, 1)
             pdf.cell(0, 7, f'  Nombres: {nombres_str}', 0, 1)
-            pdf.cell(0, 7, f'  Monto: {abono.monto_abono:,.0f} CRC', 0, 1)
+            # --- INICIO DE LA MODIFICACIÓN ---
+            pdf.cell(0, 7, f'  Monto: {currency_symbol}{abono.monto_abono:,.0f} {currency_code}', 0, 1)
+            # --- FIN DE LA MODIFICACIÓN ---
             pdf.ln(2)
     else:
         pdf.cell(0, 10, 'No hay abonos registrados.', 0, 1)
@@ -928,6 +946,11 @@ def exportar_abono_jpg(caminata_id, user_id):
     participante = User.query.get_or_404(user_id)
     abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(desc(AbonoCaminata.fecha_abono)).all()
 
+    # --- INICIO DE LA MODIFICACIÓN ---
+    currency_symbol = '¢' if caminata.moneda == 'CRC' else '$'
+    currency_code = 'CRC' if caminata.moneda == 'CRC' else 'USD'
+    # --- FIN DE LA MODIFICACIÓN ---
+
     for abono in abonos:
         if abono.fecha_abono.tzinfo is None:
             abono.fecha_abono = UTC_TZ.localize(abono.fecha_abono)
@@ -935,7 +958,6 @@ def exportar_abono_jpg(caminata_id, user_id):
 
     total_abonado = sum(abono.monto_abono for abono in abonos)
 
-    # Obtener el último estado del abono para mostrarlo en el resumen
     ultimo_abono = AbonoCaminata.query.filter_by(
         caminata_id=caminata.id,
         user_id=participante.id
@@ -954,13 +976,16 @@ def exportar_abono_jpg(caminata_id, user_id):
     text_lines.append(f"Caminata: {caminata.nombre}")
     text_lines.append(f"Fecha de Caminata: {caminata.fecha.strftime('%d de %B de %Y')}")
     text_lines.append(f"Participante: {participante.nombre} {participante.primer_apellido}")
-    text_lines.append(f"Precio por Persona: {caminata.precio:,.0f} CRC")
-    text_lines.append(f"Total a Pagar (incluyendo acompañantes): {total_a_pagar_por_participante:,.0f} CRC")
-    text_lines.append(f"Total Abonado: {total_abonado:,.0f} CRC")
-    text_lines.append(f"Estado del Participante: {estado_general_participante}") # Mostrar el estado general
+    
+    # --- INICIO DE LA MODIFICACIÓN ---
+    text_lines.append(f"Precio por Persona: {currency_symbol}{caminata.precio:,.0f} {currency_code}")
+    text_lines.append(f"Total a Pagar (incluyendo acompañantes): {currency_symbol}{total_a_pagar_por_participante:,.0f} {currency_code}")
+    text_lines.append(f"Total Abonado: {currency_symbol}{total_abonado:,.0f} {currency_code}")
+    text_lines.append(f"Estado del Participante: {estado_general_participante}") 
 
     if monto_restante > 0 and estado_general_participante != "Cancelación":
-        text_lines.append(f"Monto Restante: {monto_restante:,.0f} CRC")
+        text_lines.append(f"Monto Restante: {currency_symbol}{monto_restante:,.0f} {currency_code}")
+    # --- FIN DE LA MODIFICACIÓN ---
     
     text_lines.append("")
     text_lines.append("--- Historial de Abonos ---")
@@ -969,27 +994,26 @@ def exportar_abono_jpg(caminata_id, user_id):
         for i, abono in enumerate(abonos):
             nombres_acom = json.loads(abono.nombres_acompanantes) if abono.nombres_acompanantes else []
             nombres_str = ", ".join(nombres_acom) if nombres_acom else "N/A"
-            # MODIFICACIÓN: Mantener el formato numérico para el historial de abonos, si no se desea el nombre del mes aquí
             text_lines.append(f"  {i+1}. Fecha: {abono.fecha_abono.strftime('%d/%m/%Y %H:%M')}")
-            text_lines.append(f"     Opción: {abono.opcion}") # Mostrar la opción de cada abono
+            text_lines.append(f"     Opción: {abono.opcion}")
             text_lines.append(f"     Acompañantes: {abono.cantidad_acompanantes}")
             text_lines.append(f"     Nombres: {nombres_str}")
-            text_lines.append(f"     Monto: {abono.monto_abono:,.0f} CRC")
+            # --- INICIO DE LA MODIFICACIÓN ---
+            text_lines.append(f"     Monto: {currency_symbol}{abono.monto_abono:,.0f} {currency_code}")
+            # --- FIN DE LA MODIFICACIÓN ---
             text_lines.append("")
     else:
         text_lines.append("No hay abonos registrados.")
 
-    # Convertir a cadena de texto para dibujar en la imagen
     full_text = "\n".join(text_lines)
 
-    # Configuración de la fuente y tamaño
     font_size = 20
     font_path = os.path.join(current_app.root_path, 'static', 'fonts', 'arial.ttf')
     try:
         font = ImageFont.truetype(font_path, font_size)
-        font_bold = ImageFont.truetype(font_path.replace('.ttf', 'bd.ttf'), font_size) # Asume que hay un arialbd.ttf
-        font_small = ImageFont.truetype(font_path, int(font_size * 0.8)) # Fuente más pequeña para detalles
-        font_italic = ImageFont.truetype(font_path.replace('.ttf', 'i.ttf'), font_size) # Asume que hay un ariali.ttf
+        font_bold = ImageFont.truetype(font_path.replace('.ttf', 'bd.ttf'), font_size)
+        font_small = ImageFont.truetype(font_path, int(font_size * 0.8))
+        font_italic = ImageFont.truetype(font_path.replace('.ttf', 'i.ttf'), font_size)
     except IOError:
         print("Advertencia: No se encontraron las fuentes Arial. Usando la fuente por defecto.")
         font = ImageFont.load_default()
@@ -997,35 +1021,30 @@ def exportar_abono_jpg(caminata_id, user_id):
         font_small = ImageFont.load_default()
         font_italic = ImageFont.load_default()
 
-    # Calcular el tamaño de la imagen necesario
-    # Usar ImageDraw para obtener el tamaño real del texto
     dummy_img = Image.new('RGB', (1, 1))
     dummy_draw = ImageDraw.Draw(dummy_img)
 
-    # Calcular dimensiones de cada línea para el ajuste dinámico
     lines = full_text.split('\n')
     max_line_width = 0
     total_text_height = 0
     
-    # Calcular la altura y el ancho máximo considerando las diferentes fuentes
     for line in lines:
         current_font = font
         if line.startswith("---"):
             current_font = font_bold
-        elif line.strip().startswith(("Fecha:", "Opción:", "Acompañantes:", "Nombres:", "Monto:")): # Modificado para incluir "Opción"
+        elif line.strip().startswith(("Fecha:", "Opción:", "Acompañantes:", "Nombres:", "Monto:")):
             current_font = font_small
         
-        # Calcular el tamaño del cuadro delimitador del texto
         bbox = dummy_draw.textbbox((0, 0), line, font=current_font)
         line_width = bbox[2] - bbox[0]
-        line_height = bbox[3] - bbox[1] + 5 # Añadir un pequeño margen entre líneas
+        line_height = bbox[3] - bbox[1] + 5
 
         max_line_width = max(max_line_width, line_width)
         total_text_height += line_height
 
     padding = 20
     img_width = int(max_line_width + (2 * padding))
-    img_height = int(total_text_height + (2 * padding)) # Usar la altura calculada
+    img_height = int(total_text_height + (2 * padding))
     
     img = Image.new('RGB', (img_width, img_height), color='white')
     d = ImageDraw.Draw(img)
@@ -1035,17 +1054,14 @@ def exportar_abono_jpg(caminata_id, user_id):
         current_font = font
         if line.startswith("---"):
             current_font = font_bold
-        elif line.strip().startswith(("Fecha:", "Opción:", "Acompañantes:", "Nombres:", "Monto:")): # Modificado para incluir "Opción"
+        elif line.strip().startswith(("Fecha:", "Opción:", "Acompañantes:", "Nombres:", "Monto:")):
             current_font = font_small
 
         d.text((padding, y_offset), line, fill=(0, 0, 0), font=current_font) 
-        # Volver a calcular la altura de la línea con la fuente correcta
         bbox = d.textbbox((0,0), line, font=current_font)
         line_height_actual = bbox[3] - bbox[1] + 5
         y_offset += line_height_actual
 
-
-    # Guardar la imagen en un buffer de memoria
     img_byte_arr = io.BytesIO()
     img.save(img_byte_arr, format='JPEG')
     img_byte_arr.seek(0)
@@ -1060,7 +1076,10 @@ def exportar_abono_txt(caminata_id, user_id):
     participante = User.query.get_or_404(user_id)
     abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(desc(AbonoCaminata.fecha_abono)).all()
 
-    # Convertir las fechas de los abonos a la zona horaria de Costa Rica para exportar
+    # --- INICIO DE LA MODIFICACIÓN ---
+    currency_symbol = '¢' if caminata.moneda == 'CRC' else '$'
+    # --- FIN DE LA MODIFICACIÓN ---
+
     for abono in abonos:
         if abono.fecha_abono.tzinfo is None:
             abono.fecha_abono = UTC_TZ.localize(abono.fecha_abono)
@@ -1068,7 +1087,6 @@ def exportar_abono_txt(caminata_id, user_id):
 
     total_abonado = sum(abono.monto_abono for abono in abonos)
     
-    # Obtener el último estado del abono para mostrarlo en el resumen
     ultimo_abono = AbonoCaminata.query.filter_by(
         caminata_id=caminata.id,
         user_id=participante.id
@@ -1084,31 +1102,34 @@ def exportar_abono_txt(caminata_id, user_id):
     content = []
     content.append("--- Detalle de Abonos para Caminata ---\n\n")
     content.append(f"Caminata: {caminata.nombre}\n")
-    # MODIFICACIÓN: Formato con nombre del mes en español y primera letra en mayúscula
     content.append(f"Fecha de Caminata: {caminata.fecha.strftime('%d de %B de %Y')}\n") 
     content.append(f"Actividad: {caminata.actividad}\n")
     content.append(f"Dificultad: {caminata.dificultad if caminata.dificultad else 'N/A'}\n")
     content.append(f"Distancia: {caminata.distancia:.1f} km\n" if caminata.distancia is not None else "Distancia: N/A\n")
     content.append(f"\nParticipante: {participante.nombre} {participante.primer_apellido} ({participante.username})\n")
-    content.append(f"Total a Pagar (incluyendo acompañantes): ¢{total_a_pagar_por_participante:,.0f}\n")
-    content.append(f"Total Abonado: ¢{total_abonado:,.0f}\n")
-    content.append(f"Estado del Participante: {estado_general_participante}\n") # Mostrar el estado general
+    
+    # --- INICIO DE LA MODIFICACIÓN ---
+    content.append(f"Total a Pagar (incluyendo acompañantes): {currency_symbol}{total_a_pagar_por_participante:,.0f}\n")
+    content.append(f"Total Abonado: {currency_symbol}{total_abonado:,.0f}\n")
+    content.append(f"Estado del Participante: {estado_general_participante}\n")
 
-    # MODIFICACIÓN: Lógica condicional para Monto Restante/Estado Cancelado en TXT
     if monto_restante > 0 and estado_general_participante != "Cancelación":
-        content.append(f"Monto Restante: ¢{monto_restante:,.0f}\n")
+        content.append(f"Monto Restante: {currency_symbol}{monto_restante:,.0f}\n")
+    # --- FIN DE LA MODIFICACIÓN ---
+    
     content.append("\n--- Historial de Abonos ---\n")
 
     if abonos:
         for abono in abonos:
             nombres_acom = json.loads(abono.nombres_acompanantes) if abono.nombres_acompanantes else []
             nombres_str = ", ".join(nombres_acom) if nombres_acom else "N/A"
-            # MODIFICACIÓN: Mantener el formato numérico para el historial de abonos, si no se desea el nombre del mes aquí
             content.append(f"Fecha: {abono.fecha_abono.strftime('%d/%m/%Y %H:%M')}\n") 
             content.append(f"  Opción: {abono.opcion}\n") 
             content.append(f"  Cantidad de Acompañantes: {abono.cantidad_acompanantes}\n")
             content.append(f"  Nombres de Acompañantes: {nombres_str}\n")
-            content.append(f"  Monto Abonado: ¢{abono.monto_abono:,.0f}\n")
+            # --- INICIO DE LA MODIFICACIÓN ---
+            content.append(f"  Monto Abonado: {currency_symbol}{abono.monto_abono:,.0f}\n")
+            # --- FIN DE LA MODIFICACIÓN ---
     else:
         content.append("No hay abonos registrados para este participante en esta caminata aún.\n")
 
@@ -1132,8 +1153,12 @@ def _get_caminata_details_as_text(caminata, participantes_con_info=None):
         participantes_con_info = []
 
     details = []
+    
+    # --- INICIO DE LA MODIFICACIÓN ---
+    currency_symbol = '¢' if caminata.moneda == 'CRC' else '$'
+    currency_code = 'CRC' if caminata.moneda == 'CRC' else 'USD'
+    # --- FIN DE LA MODIFICACIÓN ---
 
-    # Helper function to check if a value should be excluded
     def should_exclude(value):
         if value is None or (isinstance(value, str) and value.strip() == ''):
             return True
@@ -1141,7 +1166,6 @@ def _get_caminata_details_as_text(caminata, participantes_con_info=None):
             return True
         return False
 
-    # Detalle de la Caminata
     if caminata.nombre and not should_exclude(caminata.nombre):
         details.append(f"Detalle de la Caminata: {caminata.nombre}")
         details.append(f"----------------------------------------")
@@ -1151,7 +1175,9 @@ def _get_caminata_details_as_text(caminata, participantes_con_info=None):
     if caminata.etapa and not should_exclude(caminata.etapa):
         details.append(f"Etapa: {caminata.etapa}")
     if caminata.precio is not None and not should_exclude(caminata.precio):
-        details.append(f"Precio: {caminata.precio:,.0f} CRC")
+        # --- INICIO DE LA MODIFICACIÓN ---
+        details.append(f"Precio: {currency_symbol}{caminata.precio:,.0f} {currency_code}")
+        # --- FIN DE LA MODIFICACIÓN ---
     if caminata.fecha:
         details.append(f"Fecha: {caminata.fecha.strftime('%d de %B de %Y')}")
     if caminata.hora_salida and not should_exclude(caminata.hora_salida):
@@ -1222,7 +1248,6 @@ def _get_caminata_details_as_text(caminata, participantes_con_info=None):
                 elif participant_info['estado_abono'] == 'Cancelación':
                     status_text = " (Estado: CANCELADO)"
             
-            # Asegurarse de que el nombre de participante y el nombre de usuario no estén vacíos/N/A
             if (participant_info['nombre'] and not should_exclude(participant_info['nombre'])) and \
                (participant_info['primer_apellido'] and not should_exclude(participant_info['primer_apellido'])) and \
                (participant_info['username'] and not should_exclude(participant_info['username'])):
@@ -1233,9 +1258,7 @@ def _get_caminata_details_as_text(caminata, participantes_con_info=None):
                 if participant_info.get('telefono') and not should_exclude(participant_info['telefono']):
                     details.append(f"    Teléfono: {participant_info['telefono']}")
                 
-                # Si hay acompañantes registrados para este participante
                 if participant_info.get('acompanantes'):
-                    # Filtrar nombres de acompañantes vacíos/None
                     filtered_companions = [c for c in participant_info['acompanantes'] if c and not should_exclude(c)]
                     if filtered_companions:
                         companion_sub_counter = 1
@@ -1255,7 +1278,6 @@ def _get_caminata_details_as_text(caminata, participantes_con_info=None):
 def exportar_caminata_pdf(caminata_id):
     caminata = Caminata.query.get_or_404(caminata_id)
     
-    # Replicar la lógica de detalle_caminata para obtener participantes_con_info
     participantes_con_info = []
     for participant in caminata.participantes:
         ultimo_abono = AbonoCaminata.query.filter_by(
@@ -1302,16 +1324,15 @@ def exportar_caminata_pdf(caminata_id):
 
     
     for line in caminata_text.split('\n'):
-        # Ajustar el tamaño de la fuente si la línea es demasiado larga
         if len(line) > 70: 
             pdf.set_font("Arial", size=9)
-        elif line.strip().startswith(tuple(str(i) + '.' for i in range(1, 10))): # Para participantes numerados (1. 2. etc.)
-            pdf.set_font("Arial", 'B', 10) # Negrita para participantes
-        elif line.startswith('    Email:') or line.startswith('    Teléfono:'): # Para contactos
+        elif line.strip().startswith(tuple(str(i) + '.' for i in range(1, 10))):
+            pdf.set_font("Arial", 'B', 10) 
+        elif line.startswith('    Email:') or line.startswith('    Teléfono:'):
             pdf.set_font("Arial", '', 9)
-        elif line.startswith('    Acompañante(s)'): # Para encabezado de acompañantes
-            pdf.set_font("Arial", 'I', 9) # Itálica para el encabezado
-        elif line.strip().startswith(tuple('      ' + str(i) + '.' for i in range(1, 100))): # Para nombres de acompañantes numerados
+        elif line.startswith('    Acompañante(s)'):
+            pdf.set_font("Arial", 'I', 9)
+        elif line.strip().startswith(tuple('      ' + str(i) + '.' for i in range(1, 100))):
             pdf.set_font("Arial", '', 9)
         else:
             pdf.set_font("Arial", size=10)
@@ -1328,7 +1349,6 @@ def exportar_caminata_pdf(caminata_id):
 def exportar_caminata_txt(caminata_id):
     caminata = Caminata.query.get_or_404(caminata_id)
     
-    # Replicar la lógica de detalle_caminata para obtener participantes_con_info
     participantes_con_info = []
     for participant in caminata.participantes:
         ultimo_abono = AbonoCaminata.query.filter_by(
@@ -1379,7 +1399,6 @@ def exportar_caminata_txt(caminata_id):
 def exportar_caminata_jpg(caminata_id):
     caminata = Caminata.query.get_or_404(caminata_id)
     
-    # Replicar la lógica de detalle_caminata para obtener participantes_con_info
     participantes_con_info = []
     for participant in caminata.participantes:
         ultimo_abono = AbonoCaminata.query.filter_by(
@@ -1423,9 +1442,9 @@ def exportar_caminata_jpg(caminata_id):
     font_path = os.path.join(current_app.root_path, 'static', 'fonts', 'arial.ttf')
     try:
         font = ImageFont.truetype(font_path, 18)
-        font_small = ImageFont.truetype(font_path, 14) # Fuente más pequeña para detalles
-        font_bold = ImageFont.truetype(os.path.join(current_app.root_path, 'static', 'fonts', 'arialbd.ttf'), 18) # Fuente negrita
-        font_italic = ImageFont.truetype(os.path.join(current_app.root_path, 'static', 'fonts', 'ariali.ttf'), 14) # Fuente itálica
+        font_small = ImageFont.truetype(font_path, 14) 
+        font_bold = ImageFont.truetype(os.path.join(current_app.root_path, 'static', 'fonts', 'arialbd.ttf'), 18)
+        font_italic = ImageFont.truetype(os.path.join(current_app.root_path, 'static', 'fonts', 'ariali.ttf'), 14)
     except IOError:
         font = ImageFont.load_default()
         font_small = ImageFont.load_default()
@@ -1435,14 +1454,12 @@ def exportar_caminata_jpg(caminata_id):
 
     lines = caminata_text.split('\n')
     
-    # Calcular la altura necesaria para la imagen de forma más dinámica
     total_text_height = 0
     max_line_width = 0
     for line in lines:
         current_font = font
         if line.startswith("--- Participantes de la Caminata ---"):
             current_font = font_bold
-        # Aquí se añade la lógica para detectar líneas de participantes con el estado
         elif line.strip().startswith(tuple(str(i) + '.' for i in range(1, 100))): 
             current_font = font_bold
         elif line.startswith("    Email:") or line.startswith("    Teléfono:"):
@@ -1452,9 +1469,8 @@ def exportar_caminata_jpg(caminata_id):
         elif line.strip().startswith(tuple('      ' + str(i) + '.' for i in range(1, 100))):
             current_font = font_small
 
-        # Usar textbbox para calcular el tamaño exacto del texto
         bbox = d_temp.textbbox((0,0), line, font=current_font)
-        line_height = bbox[3] - bbox[1] + 5 # Alto del texto más un pequeño padding
+        line_height = bbox[3] - bbox[1] + 5
         line_width = bbox[2] - bbox[0]
         
         total_text_height += line_height
@@ -1463,7 +1479,7 @@ def exportar_caminata_jpg(caminata_id):
     
     padding = 30
     img_width = int(max_line_width + (2 * padding))
-    img_height = int(total_text_height + (2 * padding)) # Usar la altura calculada
+    img_height = int(total_text_height + (2 * padding))
     
     img = Image.new('RGB', (img_width, img_height), color='white')
     d = ImageDraw.Draw(img)
@@ -1473,7 +1489,6 @@ def exportar_caminata_jpg(caminata_id):
         current_font = font
         if line.startswith("--- Participantes de la Caminata ---"):
             current_font = font_bold
-        # Aquí se añade la lógica para detectar líneas de participantes con el estado
         elif line.strip().startswith(tuple(str(i) + '.' for i in range(1, 100))):
             current_font = font_bold
         elif line.startswith("    Email:") or line.startswith("    Teléfono:"):
@@ -1484,7 +1499,6 @@ def exportar_caminata_jpg(caminata_id):
             current_font = font_small
 
         d.text((padding, y_offset), line, fill=(0, 0, 0), font=current_font) 
-        # Volver a calcular la altura de la línea con la fuente correcta
         bbox = d.textbbox((0,0), line, font=current_font)
         line_height_actual = bbox[3] - bbox[1] + 5
         y_offset += line_height_actual
