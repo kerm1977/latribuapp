@@ -1,6 +1,6 @@
 # En perfil.py (o donde manejes las estadísticas)
 from flask import Blueprint, current_app, render_template, session, redirect, url_for, flash, request, send_file # Añadido Blueprint
-from models import db, bcrypt, User, SiteStats, Caminata, Project, CalendarEvent, Note # Asegúrate de importar tus modelos y db
+from models import db, bcrypt, User, SiteStats, Caminata, Project, CalendarEvent, Note, Poliza # Asegúrate de importar tus modelos y db
 from sqlalchemy import func # Importar func para funciones de agregación como count
 import os
 from datetime import datetime, date # Importar date para manejar fechas
@@ -386,21 +386,14 @@ def dashboard_stats():
         db.session.commit()
 
     total_users = db.session.query(func.count(User.id)).scalar()
-
-    # --- NUEVAS CONSULTAS PARA OBTENER LOS CONTEOS ---
-    # Conteo de Caminatas Activas
-    # Asume que una caminata es "activa" si su fecha de inicio es en el futuro o hoy
     active_caminatas_count = Caminata.query.filter(Caminata.fecha >= date.today()).count()
-
-    # Conteo total de Proyectos Creados
     total_projects_count = Project.query.count()
-
-    # Conteo total de Eventos de Calendario Creados
     total_calendar_events_count = CalendarEvent.query.count()
-
-    # Conteo total de Notas Creadas
     total_notes_count = Note.query.count()
-    # --- FIN DE NUEVAS CONSULTAS ---
+    
+    # --- NUEVA LÍNEA: Contar personas con póliza ---
+    total_polizas_count = db.session.query(func.count(Poliza.id)).scalar()
+
 
     return render_template('admin_dashboard_stats.html',
                            site_stats=site_stats,
@@ -408,4 +401,5 @@ def dashboard_stats():
                            active_caminatas_count=active_caminatas_count,
                            total_projects_count=total_projects_count,
                            total_calendar_events_count=total_calendar_events_count,
-                           total_notes_count=total_notes_count)
+                           total_notes_count=total_notes_count,
+                           total_polizas_count=total_polizas_count) # <-- Pasar el nuevo conteo

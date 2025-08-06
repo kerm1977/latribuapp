@@ -814,6 +814,13 @@ Porcentaje
 
 separador DETALLES 
 
+Fecha de vencimiento de Poliza (datepicker)
+Precio de la Poliza
+Monto de Cancelación a la fecha
+cuenta de depósito
+sinpe de depósito
+
+
 Costo del Trámite ¢1000 (Solo visto por superusuarios)
 Un texteditor que permita agregar otros detalles
 fecha de registro (Hora y Fecha de Costa Rica)

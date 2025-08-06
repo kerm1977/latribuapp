@@ -67,6 +67,15 @@
                             0
                         {% endif %}
                     </li>
+                    <!-- NUEVA LÍNEA PARA PÓLIZAS -->
+                    <li class="list-group-item">
+                        <strong>Personas con Póliza:</strong> 
+                        {% if total_polizas_count is not none %}
+                            {{ total_polizas_count }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </li>
                     <li class="list-group-item">
                         <strong>Última Actualización de Estadísticas:</strong> 
                         {% if site_stats and site_stats.last_updated %}
