@@ -585,6 +585,14 @@ class Poliza(db.Model):
     otros_detalles = db.Column(db.Text, nullable=True)
     fecha_registro = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
+    # --- NUEVOS CAMPOS ---
+    fecha_vencimiento = db.Column(db.Date, nullable=True)
+    precio_poliza = db.Column(db.Float, nullable=True)
+    monto_cancelacion = db.Column(db.Float, nullable=True)
+    banco = db.Column(db.String(100), nullable=True)
+    cuenta_deposito = db.Column(db.String(100), nullable=True)
+    sinpe_deposito = db.Column(db.String(20), nullable=True)
+
     # Relación con Beneficiarios
     beneficiarios = db.relationship('Beneficiario', backref='poliza', lazy=True, cascade="all, delete-orphan")
 

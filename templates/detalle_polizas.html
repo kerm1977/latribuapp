@@ -164,11 +164,22 @@
                 <p>No hay beneficiarios registrados para esta póliza.</p>
                 {% endif %}
 
+                <!-- DATOS DE PAGO Y VIGENCIA -->
+                <h4 class="section-title">Datos de Pago y Vigencia</h4>
+                <ul class="list-group list-group-flush details-list">
+                    <li class="list-group-item"><strong>Fecha de Vencimiento:</strong> <span>{{ poliza.fecha_vencimiento.strftime('%d/%m/%Y') if poliza.fecha_vencimiento else 'No especificada' }}</span></li>
+                    <li class="list-group-item"><strong>Precio de la Póliza:</strong> <span>₡{{ "{:,.0f}".format(poliza.precio_poliza) if poliza.precio_poliza is not none else 'No especificado' }}</span></li>
+                    <li class="list-group-item"><strong>Monto Cancelado:</strong> <span>₡{{ "{:,.0f}".format(poliza.monto_cancelacion) if poliza.monto_cancelacion is not none else 'No especificado' }}</span></li>
+                    <li class="list-group-item"><strong>Banco:</strong> <span>{{ poliza.banco or 'No especificado' }}</span></li>
+                    <li class="list-group-item"><strong>Cuenta de Depósito:</strong> <span>{{ poliza.cuenta_deposito or 'No especificado' }}</span></li>
+                    <li class="list-group-item"><strong>SINPE Móvil:</strong> <span>{{ poliza.sinpe_deposito or 'No especificado' }}</span></li>
+                </ul>
+
                 <!-- DETALLES ADICIONALES -->
                 <h4 class="section-title">Detalles Adicionales</h4>
                 <ul class="list-group list-group-flush details-list">
                     {% if session.role == 'Superuser' %}
-                    <li class="list-group-item"><strong>Costo del Trámite:</strong> <span>₡{{ "{:,.2f}".format(poliza.costo_tramite) }}</span></li>
+                    <li class="list-group-item"><strong>Costo del Trámite:</strong> <span>₡{{ "{:,.0f}".format(poliza.costo_tramite) }}</span></li>
                     {% endif %}
                     <li class="list-group-item"><strong>Fecha de Registro:</strong> <span>{{ poliza.fecha_registro.strftime('%d/%m/%Y a las %I:%M %p') }}</span></li>
                 </ul>

@@ -227,15 +227,60 @@
                         <i class="fas fa-plus"></i> Agregar Beneficiario
                     </button>
 
+                    <!-- SEPARADOR: DATOS DE PAGO Y VIGENCIA -->
+                    <div class="section-separator"><span>DATOS DE PAGO Y VIGENCIA</span></div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="fecha_vencimiento" class="form-label">Fecha de Vencimiento</label>
+                            <input type="date" class="form-control" id="fecha_vencimiento" name="fecha_vencimiento" value="{{ poliza.fecha_vencimiento.strftime('%Y-%m-%d') if poliza.fecha_vencimiento }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="precio_poliza" class="form-label">Precio de la Póliza</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₡</span>
+                                <input type="number" class="form-control" id="precio_poliza" name="precio_poliza" value="{{ poliza.precio_poliza|int if poliza.precio_poliza is not none else '' }}" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="monto_cancelacion" class="form-label">Monto Cancelado a la Fecha</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₡</span>
+                                <input type="number" class="form-control" id="monto_cancelacion" name="monto_cancelacion" value="{{ poliza.monto_cancelacion|int if poliza.monto_cancelacion is not none else '' }}" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="banco" class="form-label">Banco</label>
+                        <select class="form-select" id="banco" name="banco">
+                            <option value="">Seleccione un banco</option>
+                            {% for banco_opcion in bancos %}
+                            <option value="{{ banco_opcion }}" {% if poliza.banco == banco_opcion %}selected{% endif %}>{{ banco_opcion }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cuenta_deposito" class="form-label">Número de Cuenta de Depósito</label>
+                            <input type="text" class="form-control" id="cuenta_deposito" name="cuenta_deposito" value="{{ poliza.cuenta_deposito or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sinpe_deposito" class="form-label">Teléfono SINPE de Depósito</label>
+                            <input type="tel" class="form-control" id="sinpe_deposito" name="sinpe_deposito" value="{{ poliza.sinpe_deposito or '' }}">
+                        </div>
+                    </div>
+
                     <!-- SEPARADOR: DETALLES -->
-                    <div class="section-separator"><span>DETALLES</span></div>
+                    <div class="section-separator"><span>DETALLES ADICIONALES</span></div>
 
                     {% if session.role == 'Superuser' %}
                     <div class="mb-3">
                         <label for="costo_tramite" class="form-label">Costo del Trámite</label>
                         <div class="input-group">
                             <span class="input-group-text">₡</span>
-                            <input type="number" class="form-control" id="costo_tramite" name="costo_tramite" value="{{ poliza.costo_tramite or '1000' }}" step="0.01">
+                            <input type="number" class="form-control" id="costo_tramite" name="costo_tramite" value="{{ poliza.costo_tramite|int if poliza.costo_tramite is not none else '1000' }}" step="1">
                         </div>
                     </div>
                     {% endif %}
