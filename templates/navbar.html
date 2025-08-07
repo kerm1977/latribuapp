@@ -11,6 +11,26 @@
         -webkit-backdrop-filter: blur(5px); /* Para compatibilidad con Safari */
         border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Línea sutil en la parte inferior */
     }
+    
+    /* ¡NUEVO! Ajustes para alinear el logo y el botón de Cast */
+    .navbar-brand-container {
+        display: flex;
+        align-items: center;
+    }
+
+    /* ¡ESTILO CORREGIDO Y FINAL! Estilo para el botón de Chromecast en el navbar */
+    google-cast-launcher {
+        --d-cast-button-size: 40px; /* Tamaño del icono interno */
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        --d-cast-button-color: #333; /* Color del icono */
+        margin-left: 15px; /* Espacio entre el logo y el botón */
+        cursor: pointer;
+        display: inline-block; /* ¡CAMBIO! Asegura que el elemento tenga dimensiones y fluya en la línea */
+        vertical-align: middle; /* ¡CAMBIO! Alinea el botón verticalmente con el texto del logo */
+    }
+
     /* Puedes necesitar un padding-top en el body de base.html si el navbar superpone el contenido */
 
     /* Mostrar icono y texto en móviles para ciertos enlaces */
@@ -105,12 +125,19 @@
 </style>
 <nav class="navbar navbar-expand-lg custom-navbar">
         <div class="container-fluid">
-            {# Condición para cambiar el href del brand según el estado de la sesión #}
-            {% if session.logged_in %}
-                <a class="navbar-brand" href="{{ url_for('home') }}">La Tribu</a>
-            {% else %}
-                <a class="navbar-brand" href="{{ url_for('caminatas.ver_caminatas') }}">La Tribu</a>
-            {% endif %}
+            <!-- Contenedor para alinear logo y botón Cast -->
+            <div class="navbar-brand-container">
+                {# Condición para cambiar el href del brand según el estado de la sesión #}
+                {% if session.logged_in %}
+                    <a class="navbar-brand" href="{{ url_for('home') }}">La Tribu</a>
+                {% else %}
+                    <a class="navbar-brand" href="{{ url_for('caminatas.ver_caminatas') }}">La Tribu</a>
+                {% endif %}
+                
+                <!-- Botón de Chromecast añadido aquí -->
+                <google-cast-launcher></google-cast-launcher>
+            </div>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>

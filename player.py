@@ -1,5 +1,6 @@
 # player.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify
+from flask_cors import CORS # 1. IMPORTAR CORS
 import os
 from functools import wraps
 import re
@@ -44,6 +45,7 @@ ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 
 # Crea un Blueprint para las rutas relacionadas con el reproductor
 player_bp = Blueprint('player', __name__)
+CORS(player_bp) # 2. HABILITAR CORS PARA ESTE BLUEPRINT
 
 def allowed_file(filename):
     """Verifica si la extensión del archivo es permitida (para imágenes y música)."""
@@ -116,8 +118,9 @@ def show_player():
             'title': song.title,
             'artist': song.artist,
             'album': song.album,
-            'file_path': url_for('static', filename=normalized_file_path) if normalized_file_path else None,
-            'cover_image_path': url_for('static', filename=normalized_cover_path) if normalized_cover_path else None
+            # CORRECCIÓN: Añadir _external=True para generar URLs absolutas
+            'file_path': url_for('static', filename=normalized_file_path, _external=True) if normalized_file_path else None,
+            'cover_image_path': url_for('static', filename=normalized_cover_path, _external=True) if normalized_cover_path else None
         }
         songs.append(song_data)
 
@@ -326,7 +329,8 @@ def get_available_covers():
         for filename in os.listdir(covers_folder):
             if allowed_image_file(filename):
                 relative_path = os.path.join('uploads', 'covers', filename).replace(os.sep, '/')
-                available_covers.append(url_for('static', filename=relative_path))
+                # CORRECCIÓN: Añadir _external=True para generar URLs absolutas
+                available_covers.append(url_for('static', filename=relative_path, _external=True))
     return jsonify({'covers': available_covers})
 
 
@@ -361,7 +365,7 @@ def apply_cover_to_all():
     
     return redirect(url_for('player.show_player'))
 
-# RUTA EDITADA PARA MANEJAR CAMBIO DE ARCHIVO DE AUDIO
+# RUTA CORREGIDA PARA MANEJAR CAMBIO DE ARCHIVO DE AUDIO
 @player_bp.route('/player/edit_song/<int:song_id>', methods=['POST'])
 @role_required('Superuser')
 def edit_song(song_id):

@@ -113,7 +113,10 @@
     <link rel="apple-touch-icon" href="/static/uploads/icons/icon-192x192.jpg"> {# Asegúrate de que esta ruta sea correcta #}
     <meta name="msapplication-TileImage" content="/static/uploads/icons/icon-192x192.jpg"> {# Asegúrate de que esta ruta sea correcta #}
     <meta name="msapplication-TileColor" content="#fe3000"> {# Usa el color de tu tema #}
-    </head>
+
+    <!-- Framework de Google Cast -->
+    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+</head>
 <body>
 
     {% include "navbar.html" %}
@@ -191,6 +194,22 @@
     {% block scripts %}{% endblock %} {# Bloque para scripts adicionales de cada página #}
 
     <script>
+        // ¡CAMBIO CLAVE! Lógica de Chromecast movida aquí para una inicialización más fiable.
+        window['__onGCastApiAvailable'] = function(isAvailable) {
+          if (isAvailable) {
+            initializeCastApi();
+          }
+        };
+
+        function initializeCastApi() {
+          const applicationId = cast.framework.CastContext.DEFAULT_MEDIA_RECEIVER_APP_ID;
+          cast.framework.CastContext.getInstance().setOptions({
+            receiverApplicationId: applicationId,
+            autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+          });
+          console.log('Chromecast API inicializada desde base.html.');
+        }
+
         let deferredPrompt; // Variable para almacenar el evento de instalación
         const installBanner = document.getElementById('installBanner');
         const installButton = document.getElementById('installButton');

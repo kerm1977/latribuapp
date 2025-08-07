@@ -1,713 +1,716 @@
 <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reproductor de Música</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==\" crossorigin=\\\"anonymous\\\" referrerpolicy=\\\"no-referrer\\\" />
-        <style>
-            body {
-                font-family: 'Inter', sans-serif;
-                background-color: #ffc107; /* Fondo naranja (warning color de Bootstrap) */
-            }
-            .music-player-container {
-                padding: 2rem;
-                margin-top: 5rem; /* Margen superior aumentado */
-                width: 90%; /* Más responsivo */
-                max-width: 960px; /* Aumentado para hacerlo más ancho */
-                margin-left: auto;
-                margin-right: auto;
-                border-radius: 20px; /* Se solicitó mantener este borde redondeado */
-            }
-            
-            .volume-control-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 60%;
-                max-width: 250px;
-                margin: 0 auto 1.5rem auto;
-                color: white;
-            }
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor de Música</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffc107; /* Fondo naranja (warning color de Bootstrap) */
+        }
+        .music-player-container {
+            padding: 2rem;
+            margin-top: 5rem; /* Margen superior aumentado */
+            width: 90%; /* Más responsivo */
+            max-width: 960px; /* Aumentado para hacerlo más ancho */
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 20px; /* Se solicitó mantener este borde redondeado */
+        }
+        
+        .volume-control-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 60%;
+            max-width: 250px;
+            margin: 0 auto 1.5rem auto;
+            color: white;
+        }
 
-            .volume-slider {
-                -webkit-appearance: none;
-                width: 100%;
-                height: 5px;
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 5px;
-                outline: none;
-                transition: opacity .2s;
-            }
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            outline: none;
+            transition: opacity .2s;
+        }
 
-            .volume-slider::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                appearance: none;
-                width: 15px;
-                height: 15px;
-                background: white;
-                cursor: pointer;
-                border-radius: 50%;
-            }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+        }
 
-            .volume-slider::-moz-range-thumb {
-                width: 15px;
-                height: 15px;
-                background: white;
-                cursor: pointer;
-                border-radius: 50%;
-            }
-
-
-            .cover-art-wrapper {
-                width: 80%; 
-                max-width: 300px; 
-                aspect-ratio: 1 / 1;
-                display: flex; 
-                justify-content: center;
-                align-items: center;
-                border-radius: 1rem;
-                margin: 0 auto 1.5rem auto; 
-                overflow: hidden; 
-                background-color: #ffc927; 
-            }
-            .cover-art { 
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                border-radius: 1rem;
-            }
-            .no-cover-text {
-                color: white; 
-                font-size: 0.8rem; 
-                text-align: center;
-            }
-
-            .btn, .modal-content {
-                box-shadow: none !important;
-            }
-
-            .play-button-large {
-                font-size: 3rem; 
-                padding: 1.2rem 1.8rem;
-                border-radius: 50px;
-                margin: 0 0.1rem; 
-                transition: all 0.2s ease-in-out;
-                display: inline-flex; 
-                align-items: center;
-                justify-content: center;
-                background-color: transparent; 
-                border: 2px solid white; 
-                color: white; 
-            }
-            .play-button-large:hover {
-                transform: translateY(-2px);
-            }
-
-            .control-button-medium {
-                font-size: 1.1rem; 
-                padding: 0.7rem 1rem; 
-                border-radius: 50px;
-                margin: 0 0.1rem; 
-                transition: all 0.2s ease-in-out;
-                margin-top: 12px; 
-                display: inline-flex; 
-                align-items: center;
-                justify-content: center;
-                background-color: transparent; 
-                border: 2px solid #efb300; 
-                color: #343a40; 
-            }
-            .control-button-medium:hover {
-                transform: translateY(-2px);
-            }
-
-            .control-button-small {
-                font-size: 1rem; 
-                width: 45px; 
-                height: 45px; 
-                padding: 0; 
-                border-radius: 50%; 
-                margin: 0 0.1rem; 
-                transition: all 0.2s ease-in-out;
-                margin-top: 17px; 
-                display: inline-flex; 
-                align-items: center;
-                justify-content: center;
-                background-color: transparent; 
-                border: none; 
-                color: #343a40; 
-            }
-            .control-button-small:hover {
-                transform: translateY(-1px);
-            }
-
-            .player-small-btn { 
-                font-size: 1rem;
-                padding: 0.5rem 0.8rem;
-                border-radius: 50px; 
-                margin: 0.2rem;
-                transition: all 0.2s ease-in-out;
-                background-color: transparent; 
-                border: 2px solid #ffffff; 
-                color: #343a40; 
-            }
-            .player-small-btn:hover {
-                transform: translateY(-1px);
-            }
-
-            .list-group-item .btn-sm {
-                font-size: 0.9rem;
-                padding: 0.5rem 0.7rem;
-                border-radius: 50%; 
-                transition: all 0.2s ease-in-out;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                margin: 0 0.2rem; 
-            }
-
-            .list-group-item .btn-outline-primary {
-                background-color: #0d6efd;
-                color: white;
-                border: none;
-            }
-            .list-group-item .btn-outline-primary:hover {
-                background-color: #0b5ed7;
-                color: white;
-            }
-
-            .list-group-item .btn-outline-danger {
-                background-color: #dc3545;
-                color: white;
-                border: none;
-            }
-            .list-group-item .btn-outline-danger:hover {
-                background-color: #c82333;
-                color: white;
-            }
-            
-            .btn-edit-info {
-                background-color: #198754; 
-                color: white;
-                border: none;
-            }
-            .btn-edit-info:hover {
-                background-color: #157347; 
-            }
-
-            .list-group-item .btn-outline-stop { 
-                background-color: #ff6f00;
-                color: white;
-                border: none;
-            }
-            .list-group-item .btn-outline-stop:hover {
-                background-color: #e06200;
-                color: white;
-            }
-
-            .btn-download {
-                background-color: #0dcaf0;
-                color: white;
-                border: none;
-            }
-            .btn-download:hover {
-                background-color: #0aa9c4;
-                color: white;
-            }
-
-            .btn-success {
-                background-color: transparent;
-                border: 2px solid #198754; 
-                color: #198754;
-            }
-            .btn-success:hover {
-                background-color: #198754;
-                color: white;
-            }
-
-            .btn-danger {
-                background-color: transparent;
-                border: 2px solid #dc3545; 
-                color: #dc3545;
-            }
-            .btn-danger:hover {
-                background-color: #dc3545;
-                color: white;
-            }
-            
-            .btn-outline-dark { 
-                background-color: transparent;
-                border: 2px solid #212529; 
-                color: #212529;
-            }
-            .btn-outline-dark:hover {
-                background-color: #212529;
-                color: white;
-            }
-
-            .btn-warning { 
-                background-color: transparent;
-                border: 2px solid #ffc107; 
-                color: #ffc107;
-            }
-            .btn-warning:hover {
-                background-color: #ffc107;
-                color: #212529;
-            }
-
-            .btn-secondary { 
-                background-color: transparent;
-                border: 2px solid #6c757d; 
-                color: #6c757d;
-            }
-            .btn-secondary:hover {
-                background-color: #6c757d;
-                color: white;
-            }
+        .volume-slider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+        }
 
 
-            .progress-bar-container {
-                height: 8px;
-                background-color: #e0e0e0;
-                border-radius: 5px;
-                margin: 1.5rem 0;
-                cursor: pointer;
-            }
-            .progress-bar {
-                height: 100%;
-                width: 0%; 
-                background-color: #0d6efd;
-                border-radius: 5px;
-                transition: width 0.1s linear;
-            }
-            .section-title {
-                font-size: clamp(1.5rem, 5vw, 1.8rem); 
-                color: white; 
-                margin-bottom: 1.5rem;
-                padding-bottom: 0.5rem;
-                white-space: nowrap; 
-                overflow: hidden; 
-                text-overflow: ellipsis; 
-            }
+        .cover-art-wrapper {
+            width: 80%; 
+            max-width: 300px; 
+            aspect-ratio: 1 / 1;
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            border-radius: 1rem;
+            margin: 0 auto 1.5rem auto; 
+            overflow: hidden; 
+            background-color: #ffc927; 
+        }
+        .cover-art { 
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 1rem;
+        }
+        .no-cover-text {
+            color: white; 
+            font-size: 0.8rem; 
+            text-align: center;
+        }
 
-            .songs-list-card {
-                background-color: #ffc927; 
-                padding: 1.5rem 0.5rem; 
-                border-radius: 1rem; 
-                margin-bottom: 3rem; 
-            }
+        .btn, .modal-content {
+            box-shadow: none !important;
+        }
 
-            .songs-list-card .list-group {
-                margin-bottom: 0; 
-            }
+        .play-button-large {
+            font-size: 3rem; 
+            padding: 1.2rem 1.8rem;
+            border-radius: 50px;
+            margin: 0 0.1rem; 
+            transition: all 0.2s ease-in-out;
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            background-color: transparent; 
+            border: 2px solid white; 
+            color: white; 
+        }
+        .play-button-large:hover {
+            transform: translateY(-2px);
+        }
 
-            .songs-list-card .list-group-item {
-                background-color: transparent; 
-                border: none; 
-                padding: 0.5rem 0; 
-                border-radius: 0; 
-                margin-bottom: 0; 
-            }
+        .control-button-medium {
+            font-size: 1.1rem; 
+            padding: 0.7rem 1rem; 
+            border-radius: 50px;
+            margin: 0 0.1rem; 
+            transition: all 0.2s ease-in-out;
+            margin-top: 12px; 
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            background-color: transparent; 
+            border: 2px solid #efb300; 
+            color: #343a40; 
+        }
+        .control-button-medium:hover {
+            transform: translateY(-2px);
+        }
 
-            .songs-list-card .list-item-separator {
-                border-top: 1px solid #ffcc66; 
-                margin: 1rem 0; 
-            }
+        .control-button-small {
+            font-size: 1rem; 
+            width: 45px; 
+            height: 45px; 
+            padding: 0; 
+            border-radius: 50%; 
+            margin: 0 0.1rem; 
+            transition: all 0.2s ease-in-out;
+            margin-top: 17px; 
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            background-color: transparent; 
+            border: none; 
+            color: #343a40; 
+        }
+        .control-button-small:hover {
+            transform: translateY(-1px);
+        }
 
-            .songs-list-card .list-group-item:last-child .list-item-separator {
-                display: none; 
-            }
+        .player-small-btn { 
+            font-size: 1rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 50px; 
+            margin: 0.2rem;
+            transition: all 0.2s ease-in-out;
+            background-color: transparent; 
+            border: 2px solid #ffffff; 
+            color: #343a40; 
+        }
+        .player-small-btn:hover {
+            transform: translateY(-1px);
+        }
 
-            .list-group-item { 
-                display: flex;
-                flex-direction: column;
+        .list-group-item .btn-sm {
+            font-size: 0.9rem;
+            padding: 0.5rem 0.7rem;
+            border-radius: 50%; 
+            transition: all 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 0.2rem; 
+        }
+
+        .list-group-item .btn-outline-primary {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+        }
+        .list-group-item .btn-outline-primary:hover {
+            background-color: #0b5ed7;
+            color: white;
+        }
+
+        .list-group-item .btn-outline-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+        }
+        .list-group-item .btn-outline-danger:hover {
+            background-color: #c82333;
+            color: white;
+        }
+        
+        .btn-edit-info {
+            background-color: #198754; 
+            color: white;
+            border: none;
+        }
+        .btn-edit-info:hover {
+            background-color: #157347; 
+        }
+
+        .list-group-item .btn-outline-stop { 
+            background-color: #ff6f00;
+            color: white;
+            border: none;
+        }
+        .list-group-item .btn-outline-stop:hover {
+            background-color: #e06200;
+            color: white;
+        }
+
+        .btn-download {
+            background-color: #0dcaf0;
+            color: white;
+            border: none;
+        }
+        .btn-download:hover {
+            background-color: #0aa9c4;
+            color: white;
+        }
+
+        .btn-success {
+            background-color: transparent;
+            border: 2px solid #198754; 
+            color: #198754;
+        }
+        .btn-success:hover {
+            background-color: #198754;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: transparent;
+            border: 2px solid #dc3545; 
+            color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-outline-dark { 
+            background-color: transparent;
+            border: 2px solid #212529; 
+            color: #212529;
+        }
+        .btn-outline-dark:hover {
+            background-color: #212529;
+            color: white;
+        }
+
+        .btn-warning { 
+            background-color: transparent;
+            border: 2px solid #ffc107; 
+            color: #ffc107;
+        }
+        .btn-warning:hover {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-secondary { 
+            background-color: transparent;
+            border: 2px solid #6c757d; 
+            color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+
+        .progress-bar-container {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin: 1.5rem 0;
+            cursor: pointer;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%; 
+            background-color: #0d6efd;
+            border-radius: 5px;
+            transition: width 0.1s linear;
+        }
+        .section-title {
+            font-size: clamp(1.5rem, 5vw, 1.8rem); 
+            color: white; 
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+
+        .songs-list-card {
+            background-color: #ffc927; 
+            padding: 1.5rem 0.5rem; 
+            border-radius: 1rem; 
+            margin-bottom: 3rem; 
+        }
+
+        .songs-list-card .list-group {
+            margin-bottom: 0; 
+        }
+
+        .songs-list-card .list-group-item {
+            background-color: transparent; 
+            border: none; 
+            padding: 0.5rem 0; 
+            border-radius: 0; 
+            margin-bottom: 0; 
+        }
+
+        .songs-list-card .list-item-separator {
+            border-top: 1px solid #ffcc66; 
+            margin: 1rem 0; 
+        }
+
+        .songs-list-card .list-group-item:last-child .list-item-separator {
+            display: none; 
+        }
+
+        .list-group-item { 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+        }
+        
+        .song-info-text {
+            text-align: center;
+            width: 100%;
+        }
+        
+        .audio-visualizer {
+            width: 80px; 
+            height: 30px; 
+            margin: 0.5rem 0;
+            display: none; 
+        }
+
+        .list-group-item .song-buttons-container {
+            display: flex;
+            justify-content: center; 
+            width: 100%; 
+        }
+
+        @media (min-width: 768px) { 
+            .list-group-item {
+                display: grid;
+                grid-template-columns: 1fr auto auto; /* Texto | Visualizador | Botones */
+                grid-template-areas: "text visualizer buttons";
                 align-items: center;
                 padding: 0.75rem 1.25rem;
             }
-            
             .song-info-text {
-                text-align: center;
-                width: 100%;
+                grid-area: text;
+                text-align: left;
+                width: auto;
             }
-            
             .audio-visualizer {
-                width: 80px; 
-                height: 30px; 
-                margin: 0.5rem 0;
+                grid-area: visualizer;
+                margin: 0 1rem;
+            }
+            .song-buttons-container {
+                grid-area: buttons;
+            }
+            .songs-list-card .list-item-separator {
                 display: none; 
             }
+        }
 
-            .list-group-item .song-buttons-container {
-                display: flex;
-                justify-content: center; 
-                width: 100%; 
-            }
+        .form-control-file {
+            display: block;
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: var(--bs-body-color);
+            background-color: var(--bs-form-control-bg);
+            background-clip: padding-box;
+            border: var(--bs-border-width) solid var(--bs-border-color);
+            border-radius: var(--bs-border-radius);
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
 
-            @media (min-width: 768px) { 
-                .list-group-item {
-                    display: grid;
-                    grid-template-columns: 1fr auto auto; /* Texto | Visualizador | Botones */
-                    grid-template-areas: "text visualizer buttons";
-                    align-items: center;
-                    padding: 0.75rem 1.25rem;
-                }
-                .song-info-text {
-                    grid-area: text;
-                    text-align: left;
-                    width: auto;
-                }
-                .audio-visualizer {
-                    grid-area: visualizer;
-                    margin: 0 1rem;
-                }
-                .song-buttons-container {
-                    grid-area: buttons;
-                }
-                .songs-list-card .list-item-separator {
-                    display: none; 
-                }
-            }
+        .back-to-walks-btn {
+            background-color: transparent;
+            border: 2px solid white;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            margin-bottom: 2rem; 
+            transition: all 0.2s ease-in-out;
+        }
+        .back-to-walks-btn:hover {
+            transform: translateY(-2px);
+            background-color: white;
+            color: #ffc107; 
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: .15em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container music-player-container">
+        <div class="mb-5">
+            <div class="card-body text-center">
+                <button class="btn back-to-walks-btn mb-4" onclick="goToWalks()" title="Volver a Caminatas">
+                    <i class="fas fa-home me-2"></i> Volver a Caminatas
+                </button>
 
-            .form-control-file {
-                display: block;
-                width: 100%;
-                padding: 0.375rem 0.75rem;
-                font-size: 1rem;
-                font-weight: 400;
-                line-height: 1.5;
-                color: var(--bs-body-color);
-                background-color: var(--bs-form-control-bg);
-                background-clip: padding-box;
-                border: var(--bs-border-width) solid var(--bs-border-color);
-                border-radius: var(--bs-border-radius);
-                transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-            }
-
-            .back-to-walks-btn {
-                background-color: transparent;
-                border: 2px solid white;
-                color: white;
-                padding: 0.8rem 1.5rem;
-                border-radius: 50px;
-                margin-bottom: 2rem; 
-                transition: all 0.2s ease-in-out;
-            }
-            .back-to-walks-btn:hover {
-                transform: translateY(-2px);
-                background-color: white;
-                color: #ffc107; 
-            }
-            .spinner-border-sm {
-                width: 1rem;
-                height: 1rem;
-                border-width: .15em;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container music-player-container">
-            <div class="mb-5">
-                <div class="card-body text-center">
-                    <button class="btn back-to-walks-btn mb-4" onclick="goToWalks()" title="Volver a Caminatas">
-                        <i class="fas fa-home me-2"></i> Volver a Caminatas
-                    </button>
-
-                    <div class="volume-control-container">
-                        <i class="fas fa-volume-down me-2"></i>
-                        <input type="range" class="form-range volume-slider" id="volume-slider" min="0" max="1" step="0.01" value="1">
-                        <i class="fas fa-volume-up ms-2"></i>
-                    </div>
-
-                    <div class="cover-art-wrapper">
-                        <img id="current-cover-art" src="" alt="Carátula del Álbum" class="img-fluid cover-art">
-                        <div id="no-cover-text" class="no-cover-text" style="display: none;">la tribu de los libres</div>
-                    </div>
-                    <h3 id="current-song-title" class="mb-1 text-primary">Nombre de la Canción Actual</h3>
-                    <p id="current-song-artist" class="text-muted mb-3">Artista - Álbum</p>
-
-                    <div class="d-flex justify-content-center align-items-center player-controls mb-4">
-                        <button class="btn control-button-small" id="prev-song-btn" title="Canción Anterior"><i class="fas fa-step-backward"></i></button>
-                        <button class="btn control-button-medium" id="rewind-btn" title="Rebobinar"><i class="fas fa-backward"></i></button>
-                        <button class="btn mx-1 play-button-large" id="play-pause-btn" title="Reproducir/Pausar"><i class="fas fa-play"></i></button>
-                        <button class="btn control-button-medium" id="forward-btn" title="Adelantar"><i class="fas fa-forward"></i></button>
-                        <button class="btn control-button-small" id="next-song-btn" title="Siguiente Canción"><i class="fas fa-step-forward"></i></button>
-                    </div>
-
-                    <div class="d-flex justify-content-center align-items-center player-controls mb-4">
-                        <button class="btn player-small-btn me-2" id="repeat-song-btn" title="Repetir Canción"><i class="fas fa-redo-alt"></i></button>
-                        <button class="btn player-small-btn" id="repeat-list-btn" title="Repetir Lista"><i class="fas fa-sync-alt"></i></button>
-                    </div>
-
-                    <div class="progress-bar-container" id="progress-bar-container">
-                        <div class="progress-bar" id="progress-bar"></div>
-                    </div>
-                    <div class="d-flex justify-content-between text-muted small">
-                        <span id="current-time">0:00</span>
-                        <span id="duration">0:00</span>
-                    </div>
+                <div class="volume-control-container">
+                    <i class="fas fa-volume-down me-2"></i>
+                    <input type="range" class="form-range volume-slider" id="volume-slider" min="0" max="1" step="0.01" value="1">
+                    <i class="fas fa-volume-up ms-2"></i>
                 </div>
-            </div>
 
-            <h3 class="section-title text-center">Canciones de La Tribu</h3>
-            <div class="songs-list-card">
-                <div class="list-group">
-                    {% if songs %}
-                        {% for song in songs %}
-                            <div class="list-group-item">
-                                <div class="song-info-text">
-                                    <span class="me-2 text-muted">{{ loop.index }}.</span> <strong>{{ song.title }}</strong>{% if song.artist and song.artist.strip() %} - <span class="text-muted">{{ song.artist }}</span>{% endif %}
-                                </div>
-                                <canvas class="audio-visualizer" id="visualizer-{{ song.id }}" width="80" height="30"></canvas>
-                                <div class="song-buttons-container">
-                                    <button class="btn btn-sm btn-outline-primary" id="play-button-{{ song.id }}" data-song-id="{{ song.id }}" onclick="playSong({{ song.id }})"><i class="fas fa-play"></i></button>
-                                    <button class="btn btn-sm btn-outline-stop" data-song-id="{{ song.id }}" onclick="stopPlayback()" title="Detener"><i class="fas fa-stop"></i></button>
-                                    
-                                    <a href="{{ song.file_path }}" download class="btn btn-sm btn-download" title="Descargar">
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                <div class="cover-art-wrapper">
+                    <img id="current-cover-art" src="" alt="Carátula del Álbum" class="img-fluid cover-art">
+                    <div id="no-cover-text" class="no-cover-text" style="display: none;">la tribu de los libres</div>
+                </div>
+                <h3 id="current-song-title" class="mb-1 text-primary">Nombre de la Canción Actual</h3>
+                <p id="current-song-artist" class="text-muted mb-3">Artista - Álbum</p>
 
-                                    {% if user_role == 'Superuser' %}
-                                    <button class="btn btn-sm btn-edit-info" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#editSongModal" 
-                                            data-song-id="{{ song.id }}" 
-                                            data-song-title="{{ song.title }}" 
-                                            data-song-artist="{{ song.artist or '' }}" 
-                                            data-song-album="{{ song.album or '' }}"
-                                            title="Editar Información">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteSongModal" data-song-id="{{ song.id }}" data-song-title="{{ song.title }}"><i class="fas fa-trash-alt"></i></button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% if not loop.last %}
-                                <hr class="list-item-separator">
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-center text-muted p-3 mb-0">Aún no hay canciones. ¡Sube algunas!</p>
-                    {% endif %}
+                <div class="d-flex justify-content-center align-items-center player-controls mb-4">
+                    <button class="btn control-button-small" id="prev-song-btn" title="Canción Anterior"><i class="fas fa-step-backward"></i></button>
+                    <button class="btn control-button-medium" id="rewind-btn" title="Rebobinar"><i class="fas fa-backward"></i></button>
+                    <button class="btn mx-1 play-button-large" id="play-pause-btn" title="Reproducir/Pausar"><i class="fas fa-play"></i></button>
+                    <button class="btn control-button-medium" id="forward-btn" title="Adelantar"><i class="fas fa-forward"></i></button>
+                    <button class="btn control-button-small" id="next-song-btn" title="Siguiente Canción"><i class="fas fa-step-forward"></i></button>
                 </div>
-            </div>
 
-            {% if user_role == 'Superuser' %}
-            <h3 class="section-title">Gestión de Canciones</h3>
-            <div class="row mb-5">
-                <div class="col-12 col-md-6 mb-3">
-                    <button type="button" class="btn btn-success w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#uploadSongModal">
-                        <i class="fas fa-upload me-2"></i> Subir Canción
-                    </button>
+                <!-- SECCIÓN DE BOTONES MODIFICADA -->
+                <div class="d-flex justify-content-center align-items-center player-controls mb-4">
+                    <button class="btn player-small-btn me-2" id="repeat-song-btn" title="Repetir Canción"><i class="fas fa-redo-alt"></i></button>
+                    
+                    <!-- BOTÓN DE CHROMECAST AÑADIDO AQUÍ -->
+                    <!-- <button class="btn player-small-btn me-2" id="cast-player-btn" title="Enviar a Chromecast">
+                        <i class="fas fa-tv"></i>
+                    </button> -->
+                    
+                    <button class="btn player-small-btn" id="repeat-list-btn" title="Repetir Lista"><i class="fas fa-sync-alt"></i></button>
                 </div>
-                <div class="col-12 col-md-6 mb-3">
-                    <button type="button" class="btn btn-danger w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteSongSelectionModal">
-                        <i class="fas fa-minus-circle me-2"></i> Eliminar Canción
-                    </button>
-                </div>
-            </div>
 
-            <div class="row mb-5">
-                <div class="col-12 col-md-6 mb-3">
-                    <button type="button" class="btn btn-outline-dark w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#changeCoverModal">
-                        <i class="fas fa-image me-2"></i> Cambiar Carátula
-                    </button>
+                <div class="progress-bar-container" id="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
                 </div>
-                <div class="col-12 col-md-6 mb-3">
-                    <button type="button" class="btn btn-outline-danger w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteCoverModal">
-                        <i class="fas fa-trash-alt me-2"></i> Borrar Carátula
-                    </button>
-                </div>
-                <div class="col-12 col-md-6 mb-3">
-                    <button type="button" class="btn btn-info w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#applyCoverToAllModal">
-                        <i class="fas fa-copy me-2"></i> Aplicar Carátula a Todas
-                    </button>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Modal para Editar Información de la Canción -->
-        <div class="modal fade" id="editSongModal" tabindex="-1" aria-labelledby="editSongModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content rounded-4">
-                    <div class="modal-header bg-warning text-dark rounded-top-4">
-                        <h5 class="modal-title" id="editSongModalLabel">Editar Información de la Canción</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <form id="edit-song-form" method="POST" action="" enctype="multipart/form-data">
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="edit_title" class="form-label">Título:</label>
-                                <input type="text" class="form-control rounded-pill" id="edit_title" name="edit_title" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit_artist" class="form-label">Artista:</label>
-                                <input type="text" class="form-control rounded-pill" id="edit_artist" name="edit_artist">
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit_album" class="form-label">Álbum:</label>
-                                <input type="text" class="form-control rounded-pill" id="edit_album" name="edit_album">
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit_audio_file" class="form-label">Cambiar Archivo de Audio (Opcional):</label>
-                                <input type="file" class="form-control-file rounded-pill" id="edit_audio_file" name="edit_audio_file" accept="audio/*">
-                                <small class="form-text text-muted">Si seleccionas un nuevo archivo, reemplazará al actual.</small>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-warning rounded-pill">Guardar Cambios</button>
-                        </div>
-                    </form>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span id="current-time">0:00</span>
+                    <span id="duration">0:00</span>
                 </div>
             </div>
         </div>
 
-        <!-- Modal para Confirmación de Eliminación de Canción Específica (usado por botones de la lista) -->
-        <div class="modal fade" id="deleteSongModal" tabindex="-1" aria-labelledby="deleteSongModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content rounded-4">
-                    <div class="modal-header bg-danger text-white rounded-top-4">
-                        <h5 class="modal-title" id="deleteSongModalLabel">Eliminar Canción</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
+        <!-- TÍTULO DE LA LISTA (SE ELIMINÓ EL BOTÓN ANTIGUO DE CAST) -->
+        <div class="d-flex justify-content-center align-items-center mb-4">
+            <h3 class="section-title text-center mb-0">Canciones de La Tribu</h3>
+        </div>
+
+        <div class="songs-list-card">
+            <div class="list-group">
+                {% if songs %}
+                    {% for song in songs %}
+                        <div class="list-group-item">
+                            <div class="song-info-text">
+                                <span class="me-2 text-muted">{{ loop.index }}.</span> <strong>{{ song.title }}</strong>{% if song.artist and song.artist.strip() %} - <span class="text-muted">{{ song.artist }}</span>{% endif %}
+                            </div>
+                            <canvas class="audio-visualizer" id="visualizer-{{ song.id }}" width="80" height="30"></canvas>
+                            <div class="song-buttons-container">
+                                <button class="btn btn-sm btn-outline-primary" id="play-button-{{ song.id }}" data-song-id="{{ song.id }}" onclick="playSong({{ song.id }})"><i class="fas fa-play"></i></button>
+                                <button class="btn btn-sm btn-outline-stop" data-song-id="{{ song.id }}" onclick="stopPlayback()" title="Detener"><i class="fas fa-stop"></i></button>
+                                
+                                <a href="{{ song.file_path }}" download class="btn btn-sm btn-download" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </a>
+
+                                {% if user_role == 'Superuser' %}
+                                <button class="btn btn-sm btn-edit-info" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editSongModal" 
+                                        data-song-id="{{ song.id }}" 
+                                        data-song-title="{{ song.title }}" 
+                                        data-song-artist="{{ song.artist or '' }}" 
+                                        data-song-album="{{ song.album or '' }}"
+                                        title="Editar Información">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteSongModal" data-song-id="{{ song.id }}" data-song-title="{{ song.title }}"><i class="fas fa-trash-alt"></i></button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not loop.last %}
+                            <hr class="list-item-separator">
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted p-3 mb-0">Aún no hay canciones. ¡Sube algunas!</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user_role == 'Superuser' %}
+        <h3 class="section-title">Gestión de Canciones</h3>
+        <div class="row mb-5">
+            <div class="col-12 col-md-6 mb-3">
+                <button type="button" class="btn btn-success w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#uploadSongModal">
+                    <i class="fas fa-upload me-2"></i> Subir Canción
+                </button>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+                <button type="button" class="btn btn-danger w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteSongSelectionModal">
+                    <i class="fas fa-minus-circle me-2"></i> Eliminar Canción
+                </button>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12 col-md-6 mb-3">
+                <button type="button" class="btn btn-outline-dark w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#changeCoverModal">
+                    <i class="fas fa-image me-2"></i> Cambiar Carátula
+                </button>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+                <button type="button" class="btn btn-outline-danger w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteCoverModal">
+                    <i class="fas fa-trash-alt me-2"></i> Borrar Carátula
+                </button>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+                <button type="button" class="btn btn-info w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#applyCoverToAllModal">
+                    <i class="fas fa-copy me-2"></i> Aplicar Carátula a Todas
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Modales (sin cambios) -->
+    <div class="modal fade" id="editSongModal" tabindex="-1" aria-labelledby="editSongModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-warning text-dark rounded-top-4">
+                    <h5 class="modal-title" id="editSongModalLabel">Editar Información de la Canción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="edit-song-form" method="POST" action="" enctype="multipart/form-data">
                     <div class="modal-body">
-                        <p>¿Estás seguro de que quieres eliminar la canción <strong id="song-title-to-delete"></strong>?</p>
-                        <p class="text-muted">Esta acción no se puede deshacer.</p>
+                        <div class="mb-3">
+                            <label for="edit_title" class="form-label">Título:</label>
+                            <input type="text" class="form-control rounded-pill" id="edit_title" name="edit_title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_artist" class="form-label">Artista:</label>
+                            <input type="text" class="form-control rounded-pill" id="edit_artist" name="edit_artist">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_album" class="form-label">Álbum:</label>
+                            <input type="text" class="form-control rounded-pill" id="edit_album" name="edit_album">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_audio_file" class="form-label">Cambiar Archivo de Audio (Opcional):</label>
+                            <input type="file" class="form-control-file rounded-pill" id="edit_audio_file" name="edit_audio_file" accept="audio/*">
+                            <small class="form-text text-muted">Si seleccionas un nuevo archivo, reemplazará al actual.</small>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                        <form id="delete-song-form" method="POST" action="">
-                            <button type="submit" class="btn btn-danger rounded-pill">Eliminar</button>
-                        </form>
+                        <button type="submit" class="btn btn-warning rounded-pill">Guardar Cambios</button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
-
-        <!-- Nuevo Modal para Selección de Canción a Eliminar (usado por el botón de gestión) -->
-        <div class="modal fade" id="deleteSongSelectionModal" tabindex="-1" aria-labelledby="deleteSongSelectionModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content rounded-4">
-                    <div class="modal-header bg-danger text-white rounded-top-4">
-                        <h5 class="modal-title" id="deleteSongSelectionModalLabel">Seleccionar Canción para Eliminar</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <form id="delete-song-selection-form" method="POST" action="">
-                        <div class="modal-body">
-                            <p>Selecciona la canción que deseas eliminar:</p>
-                            <select class="form-select rounded-pill mb-3" id="selectSongToDelete" name="song_id">
-                                <option value="">Selecciona una canción</option>
-                                {% for song in songs %}
-                                    <option value="{{ song.id }}">{{ song.title }} - {{ song.artist }}</option>
-                                {% endfor %}
-                            </select>
-                            <p class="text-muted">Esta acción eliminará la canción y su carátula asociada.</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-danger rounded-pill">Eliminar Canción</button>
-                        </div>
+    </div>
+    <div class="modal fade" id="deleteSongModal" tabindex="-1" aria-labelledby="deleteSongModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-danger text-white rounded-top-4">
+                    <h5 class="modal-title" id="deleteSongModalLabel">Eliminar Canción</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que quieres eliminar la canción <strong id="song-title-to-delete"></strong>?</p>
+                    <p class="text-muted">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <form id="delete-song-form" method="POST" action="">
+                        <button type="submit" class="btn btn-danger rounded-pill">Eliminar</button>
                     </form>
                 </div>
             </div>
         </div>
-
-        <div class="modal fade" id="uploadSongModal" tabindex="-1" aria-labelledby="uploadSongModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content rounded-4">
-                    <div class="modal-header bg-warning text-white rounded-top-4"> <h5 class="modal-title" id="uploadSongModalLabel">Subir Nueva Canción</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <form id="upload-song-form" method="POST" action="{{ url_for('player.upload_song') }}" enctype="multipart/form-data">
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="songTitle" class="form-label">Título:</label>
-                                <input type="text" class="form-control rounded-pill" id="songTitle" name="title" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="songAlbum" class="form-label">Álbum:</label>
-                                <input type="text" class="form-control rounded-pill" id="songAlbum" name="album">
-                            </div>
-                            <div class="mb-3">
-                                <label for="songFile" class="form-label">Archivo de Audio:</label>
-                                <input type="file" class="form-control-file rounded-pill" id="songFile" name="file" accept="audio/*" required>
-                                <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="coverImage" class="form-label">Carátula (Opcional):</label>
-                                <input type="file" class="form-control-file rounded-pill" id="coverImage" name="cover_image" accept="image/*">
-                                <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-warning rounded-pill">Subir Canción</button> </div>
-                    </form>
+    </div>
+    <div class="modal fade" id="deleteSongSelectionModal" tabindex="-1" aria-labelledby="deleteSongSelectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-danger text-white rounded-top-4">
+                    <h5 class="modal-title" id="deleteSongSelectionModalLabel">Seleccionar Canción para Eliminar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
+                <form id="delete-song-selection-form" method="POST" action="">
+                    <div class="modal-body">
+                        <p>Selecciona la canción que deseas eliminar:</p>
+                        <select class="form-select rounded-pill mb-3" id="selectSongToDelete" name="song_id">
+                            <option value="">Selecciona una canción</option>
+                            {% for song in songs %}
+                                <option value="{{ song.id }}">{{ song.title }} - {{ song.artist }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-muted">Esta acción eliminará la canción y su carátula asociada.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger rounded-pill">Eliminar Canción</button>
+                    </div>
+                </form>
             </div>
         </div>
-
-        <div class="modal fade" id="changeCoverModal" tabindex="-1" aria-labelledby="changeCoverModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content rounded-4">
-                    <div class="modal-header bg-dark text-white rounded-top-4">
-                        <h5 class="modal-title" id="changeCoverModalLabel">Cambiar Carátula</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <form id="change-cover-form" method="POST" action="" enctype="multipart/form-data">
-                        <div class="modal-body">
-                            <p>Seleccionar una canción para cambiar su carátula:</p>
-                            <select class="form-select rounded-pill mb-3" id="selectSongChangeCover" name="song_id">
-                                <option value="">Selecciona una canción</option>
-                                {% for song in songs %}
-                                    <option value="{{ song.id }}">{{ song.title }} - {{ song.artist }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="mb-3">
-                                <label for="newCoverFile" class="form-label">Nueva Imagen de Carátula:</label>
-                                <input type="file" class="form-control-file rounded-pill" id="newCoverFile" name="new_cover_image" accept="image/*" required>
-                                <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-dark rounded-pill">Cambiar Carátula</button>
-                        </div>
-                    </form>
+    </div>
+    <div class="modal fade" id="uploadSongModal" tabindex="-1" aria-labelledby="uploadSongModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-warning text-white rounded-top-4"> <h5 class="modal-title" id="uploadSongModalLabel">Subir Nueva Canción</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
+                <form id="upload-song-form" method="POST" action="{{ url_for('player.upload_song') }}" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="songTitle" class="form-label">Título:</label>
+                            <input type="text" class="form-control rounded-pill" id="songTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="songAlbum" class="form-label">Álbum:</label>
+                            <input type="text" class="form-control rounded-pill" id="songAlbum" name="album">
+                        </div>
+                        <div class="mb-3">
+                            <label for="songFile" class="form-label">Archivo de Audio:</label>
+                            <input type="file" class="form-control-file rounded-pill" id="songFile" name="file" accept="audio/*" required>
+                            <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="coverImage" class="form-label">Carátula (Opcional):</label>
+                            <input type="file" class="form-control-file rounded-pill" id="coverImage" name="cover_image" accept="image/*">
+                            <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning rounded-pill">Subir Canción</button> </div>
+                </form>
             </div>
         </div>
-
-        <div class="modal fade" id="deleteCoverModal" tabindex="-1" aria-labelledby="deleteCoverModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content rounded-4">
-                    <div class="modal-header bg-danger text-white rounded-top-4">
-                        <h5 class="modal-title" id="deleteCoverModalLabel">Eliminar Carátula</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <form id="delete-cover-form" method="POST" action="">
-                        <div class="modal-body">
-                            <p>Seleccionar la canción de la cual deseas eliminar la carátula:</p>
-                            <select class="form-select rounded-pill mb-3" id="selectSongDeleteCover" name="song_id">
-                                <option value="">Selecciona una canción</option>
-                                {% for song in songs %}
-                                    <option value="{{ song.id }}">{{ song.title }} - {{ song.artist }}</option>
-                                {% endfor %}
-                            </select>
-                            <p class="text-muted">Esto eliminará solo la carátula, no la canción.</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-danger rounded-pill">Eliminar</button>
-                        </div >
-                    </form>
+    </div>
+    <div class="modal fade" id="changeCoverModal" tabindex="-1" aria-labelledby="changeCoverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-dark text-white rounded-top-4">
+                    <h5 class="modal-title" id="changeCoverModalLabel">Cambiar Carátula</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
+                <form id="change-cover-form" method="POST" action="" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <p>Seleccionar una canción para cambiar su carátula:</p>
+                        <select class="form-select rounded-pill mb-3" id="selectSongChangeCover" name="song_id">
+                            <option value="">Selecciona una canción</option>
+                            {% for song in songs %}
+                                <option value="{{ song.id }}">{{ song.title }} - {{ song.artist }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="mb-3">
+                            <label for="newCoverFile" class="form-label">Nueva Imagen de Carátula:</label>
+                            <input type="file" class="form-control-file rounded-pill" id="newCoverFile" name="new_cover_image" accept="image/*" required>
+                            <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-dark rounded-pill">Cambiar Carátula</button>
+                    </div>
+                </form>
             </div>
         </div>
-
+    </div>
+    <div class="modal fade" id="deleteCoverModal" tabindex="-1" aria-labelledby="deleteCoverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-danger text-white rounded-top-4">
+                    <h5 class="modal-title" id="deleteCoverModalLabel">Eliminar Carátula</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="delete-cover-form" method="POST" action="">
+                    <div class="modal-body">
+                        <p>Seleccionar la canción de la cual deseas eliminar la carátula:</p>
+                        <select class="form-select rounded-pill mb-3" id="selectSongDeleteCover" name="song_id">
+                            <option value="">Selecciona una canción</option>
+                            {% for song in songs %}
+                                <option value="{{ song.id }}">{{ song.title }} - {{ song.artist }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-muted">Esto eliminará solo la carátula, no la canción.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger rounded-pill">Eliminar</button>
+                    </div >
+                </form>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="applyCoverToAllModal" tabindex="-1" aria-labelledby="applyCoverToAllModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content rounded-4">
@@ -744,6 +747,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" xintegrity="sha384-I7E8VVD/ismYTF4hNIPjVpZVjmwvEKzXq5kK4d1x+YQ6b+Vw6oTzWrzfMxJcE89n" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" xintegrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <!-- Framework de Google Cast -->
+    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
     <script>
         // JavaScript para manejar la lógica del reproductor y los modales
@@ -778,6 +783,114 @@
         let source;
         let dataArray;
         let animationFrameId;
+
+        // --- NUEVA VARIABLE DE ESTADO ---
+        let isCastApiAvailable = false;
+
+        // ======================= INICIO: LÓGICA DE CHROMECAST =======================
+
+        window['__onGCastApiAvailable'] = function(isAvailable) {
+          if (isAvailable) {
+            initializeCastApi();
+          }
+        };
+
+        function initializeCastApi() {
+          const castPlayerButton = document.getElementById('cast-player-btn');
+          try {
+              cast.framework.CastContext.getInstance().setOptions({
+                receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+                autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+              });
+              console.log('Chromecast API inicializada y lista.');
+              isCastApiAvailable = true;
+              // Habilita el botón solo cuando la API está lista
+              if (castPlayerButton && songs.length > 0) {
+                  castPlayerButton.disabled = false;
+                  castPlayerButton.title = 'Enviar a Chromecast';
+              }
+          } catch (err) {
+              console.error('Error inicializando Cast API:', err);
+              if (castPlayerButton) {
+                  castPlayerButton.disabled = true;
+                  castPlayerButton.title = 'Chromecast no disponible';
+              }
+          }
+        }
+
+        /**
+         * Inicia la reproducción de la lista de canciones completa en un dispositivo Chromecast.
+         */
+        function castPlaylist() {
+            // --- VERIFICACIÓN DE SEGURIDAD ---
+            if (!isCastApiAvailable) {
+                console.error('Se intentó castear pero la API de Chromecast no está lista.');
+                flashMessage('La funcionalidad de Chromecast no está disponible o aún no ha cargado.', 'danger');
+                return;
+            }
+
+            if (songs.length === 0) {
+                flashMessage('No hay canciones en la lista para enviar.', 'warning');
+                return;
+            }
+
+            console.log('Intentando castear la lista de reproducción completa.');
+
+            const castContext = cast.framework.CastContext.getInstance();
+            if (!castContext) {
+                flashMessage('La funcionalidad de Chromecast no está disponible.', 'danger');
+                return;
+            }
+
+            const queueItems = songs.map(song => {
+                const songUrl = song.file_path;
+                let contentType = 'audio/mpeg';
+                if (songUrl.endsWith('.mp3')) contentType = 'audio/mpeg';
+                else if (songUrl.endsWith('.m4a')) contentType = 'audio/mp4';
+                else if (songUrl.endsWith('.wav')) contentType = 'audio/wav';
+
+                const mediaInfo = new chrome.cast.media.MediaInfo(songUrl, contentType);
+                mediaInfo.metadata = new chrome.cast.media.MusicTrackMediaMetadata();
+                mediaInfo.metadata.title = song.title;
+                mediaInfo.metadata.artist = song.artist || 'Artista Desconocido';
+                mediaInfo.metadata.albumName = song.album || 'La Tribu de los Libres';
+
+                if (song.cover_image_path) {
+                    const coverUrl = song.cover_image_path;
+                    mediaInfo.metadata.images = [new chrome.cast.Image(coverUrl)];
+                }
+                
+                const queueItem = new chrome.cast.media.QueueItem(mediaInfo);
+                queueItem.itemId = song.id;
+                return queueItem;
+            });
+
+            const queueLoadRequest = new chrome.cast.media.QueueLoadRequest(queueItems);
+            queueLoadRequest.startIndex = 0; 
+            queueLoadRequest.repeatMode = chrome.cast.media.RepeatMode.OFF; 
+
+            castContext.requestSession()
+                .then(() => {
+                    const currentSession = castContext.getCurrentSession();
+                    return currentSession.queueLoad(queueLoadRequest);
+                })
+                .then(() => {
+                    console.log('¡Lista de reproducción enviada a Chromecast con éxito!');
+                    flashMessage('Lista de reproducción enviada a Chromecast.', 'success');
+                    if (isPlaying) {
+                        stopPlayback();
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error al iniciar la sesión de Cast o cargar la cola:', error);
+                    if (error.code !== 'cancel') {
+                        flashMessage('No se pudo conectar o cargar la lista en el dispositivo Chromecast.', 'danger');
+                    }
+                });
+        }
+
+        // ======================= FIN: LÓGICA DE CHROMECAST =======================
+
 
         function setupAudioContext() {
             if (!audioContext) {
@@ -1089,10 +1202,18 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const flaskSongs = JSON.parse('{{ songs | tojson }}');
+            const flaskSongs = JSON.parse('{{ songs | tojson | safe }}');
             songs = flaskSongs;
             console.log('Songs loaded from Flask:', songs);
             loadSongs(flaskSongs);
+
+            const castPlayerButton = document.getElementById('cast-player-btn');
+            if (castPlayerButton) {
+                // --- CAMBIO: Deshabilitar el botón por defecto ---
+                castPlayerButton.disabled = true;
+                castPlayerButton.title = 'Cargando Chromecast...';
+                castPlayerButton.addEventListener('click', castPlaylist);
+            }
 
             const deleteSongButton = document.querySelector('button[data-bs-target="#deleteSongSelectionModal"]');
             const deleteCoverButton = document.querySelector('button[data-bs-target="#deleteCoverModal"]');
@@ -1102,6 +1223,10 @@
                 if (deleteSongButton) {
                     deleteSongButton.disabled = true;
                     deleteSongButton.title = 'No hay canciones para eliminar.';
+                }
+                if(castPlayerButton) {
+                    castPlayerButton.disabled = true;
+                    castPlayerButton.title = 'No hay canciones para enviar.';
                 }
             }
 
@@ -1335,11 +1460,12 @@
 
 
         function flashMessage(message, category = 'info') {
-            const alertContainer = document.querySelector('.alert-container');
+            let alertContainer = document.querySelector('.alert-container');
             if (!alertContainer) {
                 const newContainer = document.createElement('div');
-                newContainer.classList.add('alert-container', 'fixed-top', 'p-3', 'text-center');
-                document.body.prepend(newContainer);
+                newContainer.className = 'alert-container position-fixed top-0 start-50 translate-middle-x p-3';
+                newContainer.style.zIndex = "1056";
+                document.body.appendChild(newContainer);
                 alertContainer = newContainer;
             }
             const alertHtml = `
@@ -1349,16 +1475,14 @@
                 </div>
             `;
             alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+            const newAlert = alertContainer.lastElementChild;
             setTimeout(() => {
-                const newAlert = alertContainer.lastElementChild;
                 if (newAlert) {
-                    const bsAlert = new bootstrap.Alert(newAlert);
-                    bsAlert.close();
+                    bootstrap.Alert.getOrCreateInstance(newAlert).close();
                 }
             }, 5000);
         }
 
-        // CAMBIO: Lógica de playSong actualizada
         function playSong(songId) {
             const songToPlay = songs.find(s => s.id === songId);
             if (!songToPlay) {
@@ -1366,18 +1490,15 @@
                 return;
             }
 
-            // Inicializa el AudioContext en la primera interacción si no existe
             if (!audioContext) {
                 setupAudioContext();
             }
 
             const newIndex = songs.indexOf(songToPlay);
 
-            // Si es la misma canción, simplemente alterna la reproducción
             if (currentSongIndex === newIndex && audio.src.endsWith(songToPlay.file_path)) {
                 togglePlayPause();
             } else {
-                // Si es una canción nueva, cárgala y reprodúcela
                 loadSong(newIndex);
                 audio.play();
                 isPlaying = true;

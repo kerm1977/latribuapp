@@ -30,6 +30,7 @@ from itinerario import itinerario_bp
 from aboutus import aboutus_bp
 from rutas import rutas_bp
 from polizas import polizas_bp # <-- NUEVA LÍNEA
+from flask_cors import CORS  # 1. Importar CORS
 
 
 # CORRECCIÓN: Importa Version desde version.py donde está definida
@@ -42,6 +43,8 @@ from btns import btns_bp # Importa el Blueprint desde btns.py (ASUMIMOS QUE btns
 
 
 app = Flask(__name__, instance_relative_config=True)
+CORS(app)  # 2. Habilitar CORS para toda la aplicación
+
 
 # ¡IMPORTANTE! Cargar la configuración ANTES de usar app.config
 app.config.from_object(Config)
