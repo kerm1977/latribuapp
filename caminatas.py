@@ -14,6 +14,7 @@ import locale # NUEVO: Importar módulo locale
 from flask_wtf.csrf import generate_csrf # Añade esta línea
 from sqlalchemy.exc import IntegrityError # NUEVO: Importar IntegrityError para manejar errores de integridad
 import re # NUEVO: Importar re para expresiones regulares
+from btns import load_button_config
 
 # Intenta configurar el locale para español.
 # La cadena exacta puede variar según el sistema operativo (Linux, Windows, macOS).
@@ -111,10 +112,12 @@ def generate_unique_filename(original_filename, upload_folder):
 
 # --- Rutas de Caminatas ---
 
-# Ruta principal para ver todas las caminatas
 @caminatas_bp.route('/ver_caminatas')
-# @login_required # Comentado para permitir ver caminatas sin login, puedes descomentar si lo necesitas
 def ver_caminatas():
+    # --- ¡CAMBIO 1: Cargar la configuración! ---
+    button_config = load_button_config()
+
+    # (Tu código original para buscar caminatas se mantiene igual)
     all_caminatas = Caminata.query.order_by(Caminata.fecha.desc()).all()
     search_actividad = request.args.get('actividad')
 
@@ -123,7 +126,13 @@ def ver_caminatas():
     else:
         caminatas = Caminata.query.all()
 
-    return render_template('ver_caminatas.html', caminatas=caminatas, search_actividad=search_actividad)
+    # --- ¡CAMBIO 2: Pasar la configuración a la plantilla! ---
+    return render_template(
+        'ver_caminatas.html', 
+        caminatas=caminatas, 
+        search_actividad=search_actividad,
+        config=button_config  # <-- Esta es la línea clave que se añade
+    )
   
 # Ruta para crear una nueva caminata
 @caminatas_bp.route('/crear_caminata', methods=['GET', 'POST'])
