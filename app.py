@@ -31,7 +31,7 @@ from aboutus import aboutus_bp
 from rutas import rutas_bp
 from polizas import polizas_bp # <-- NUEVA LÍNEA
 from flask_cors import CORS  # 1. Importar CORS
-
+from flask_mail import Mail, Message #pip install flask_mail
 
 # CORRECCIÓN: Importa Version desde version.py donde está definida
 from version import version_bp, Version 
@@ -40,10 +40,11 @@ from btns import btns_bp # Importa el Blueprint desde btns.py (ASUMIMOS QUE btns
 
 
 
-
+# --- Instanciar las extensiones globalmente, sin la app ---
+mail = Mail()
 
 app = Flask(__name__, instance_relative_config=True)
-CORS(app)  # 2. Habilitar CORS para toda la aplicación
+CORS(app)  # Habilitar CORS para toda la aplicación
 
 
 # ¡IMPORTANTE! Cargar la configuración ANTES de usar app.config
@@ -62,6 +63,7 @@ if not os.path.exists(app.instance_path):
 db.init_app(app)
 bcrypt.init_app(app)
 migrate.init_app(app, db)
+mail.init_app(app) # <-- LÍNEA AÑADIDA PARA CORREGIR EL ERROR
 
 
 
@@ -476,6 +478,72 @@ def logout():
     flash('Has cerrado sesión exitosamente.', 'info')
     return redirect(url_for('login'))
 
+
+
+
+# --- INICIO: RUTAS DE RECUPERACIÓN DE CONTRASEÑA ---
+
+def send_reset_email(user):
+    token = user.get_reset_token()
+    msg = Message('Solicitud de Restablecimiento de Contraseña',
+                  sender=current_app.config['MAIL_DEFAULT_SENDER'],
+                  recipients=[user.email])
+    msg.body = f'''Para restablecer tu contraseña, visita el siguiente enlace:
+{url_for('reset_password', token=token, _external=True)}
+
+Si no solicitaste este cambio, simplemente ignora este correo y no se realizará ningún cambio.
+'''
+    mail.send(msg)
+
+
+@app.route('/request_password_reset', methods=['GET', 'POST'])
+def request_password_reset():
+    if session.get('logged_in'):
+        return redirect(url_for('home'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if user:
+            send_reset_email(user)
+            flash('Se ha enviado un correo con las instrucciones para restablecer tu contraseña.', 'info')
+            return redirect(url_for('login'))
+        else:
+            flash('No se encontró una cuenta con ese correo electrónico.', 'warning')
+    return render_template('request_password_reset.html')
+
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if session.get('logged_in'):
+        return redirect(url_for('home'))
+    user = User.verify_reset_token(token)
+    if not user:
+        flash('El token es inválido o ha expirado.', 'warning')
+        return redirect(url_for('request_password_reset'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not password or not confirm_password or password != confirm_password:
+            flash('Las contraseñas no coinciden.', 'danger')
+            return render_template('reset_password.html', token=token)
+
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        user.password = hashed_password
+        db.session.commit()
+        flash('Tu contraseña ha sido actualizada. Ahora puedes iniciar sesión.', 'success')
+        return redirect(url_for('login'))
+        
+    return render_template('reset_password.html', token=token)
+
+# --- FIN: RUTAS DE RECUPERACIÓN DE CONTRASEÑA ---
+
+
+
+
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -586,4 +654,4 @@ if __name__ == '__main__':
 # (env) 23:32 ~/LATRIBU1 (main)$ flask db init
 # (env) 23:33 ~/LATRIBU1 (main)$ flask db migrate -m "Initial migration with all models"
 # (env) 23:34 ~/LATRIBU1 (main)$ flask db upgrade
-# (env) 23:34 ~/LATRIBU1 (main)$ ls -l instance/db.db
+# (env) 23:34 ~/LATRIBU1 (main)$ ls -l instance/db

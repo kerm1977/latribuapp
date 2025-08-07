@@ -4,7 +4,8 @@ from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from datetime import datetime, date, time
 import json
-
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from flask import current_app
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean, Date, Time, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -69,6 +70,19 @@ class User(db.Model):
         UniqueConstraint('email', name='uq_user_email'),
     )
     # --- FIN: RESTRICCIONES NOMBRADAS ---
+
+    def get_reset_token(self, expires_sec=1800):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id})
+
+    @staticmethod
+    def verify_reset_token(token, expires_sec=1800):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, max_age=expires_sec)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
 
     def __repr__(self):
         return f'<User {self.username}>'
