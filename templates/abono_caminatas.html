@@ -79,6 +79,24 @@
                 {# El monto restante en CRC es el precio en CRC menos todo lo que se ha pagado en CRC (original + convertido) #}
                 {% set remaining_crc = price_in_crc - total_paid_in_crc %}
 
+                {# --- NUEVA LÓGICA PARA DETERMINAR SI ESTÁ CANCELADO --- #}
+                {% set is_cancelled = false %}
+                {% if caminata.moneda == 'USD' %}
+                    {# Si el precio en CRC es calculable (hay tipo de cambio), comparamos en CRC #}
+                    {% if price_in_crc > 0 and total_paid_in_crc >= price_in_crc %}
+                        {% set is_cancelled = true %}
+                    {# Si no hay tipo de cambio, pero el pago en USD ya cubre el precio en USD, también está cancelado #}
+                    {% elif paid_usd_from_db >= price %}
+                        {% set is_cancelled = true %}
+                    {% endif %}
+                {% else %} {# Moneda es CRC #}
+                    {# Comparamos en CRC. El total pagado en CRC ya incluye la conversión de USD #}
+                    {% if total_paid_in_crc >= price %}
+                        {% set is_cancelled = true %}
+                    {% endif %}
+                {% endif %}
+                {# --- FIN NUEVA LÓGICA --- #}
+
                 <div class="totals-grid mt-3">
                     <div>
                         <h5 class="text-success">Total Abonado CRC:</h5>
@@ -90,11 +108,19 @@
                     </div>
                     <div>
                         <h5 class="text-danger">Monto Restante CRC:</h5>
-                        <h4><strong id="display_remaining_crc">¢{{ remaining_crc | int }}</strong></h4>
+                        {% if is_cancelled %}
+                            <h4><strong id="display_remaining_crc" class="text-success">CANCELADO</strong></h4>
+                        {% else %}
+                            <h4><strong id="display_remaining_crc">¢{{ remaining_crc | int }}</strong></h4>
+                        {% endif %}
                     </div>
                     <div>
                         <h5 class="text-danger">Monto Restante USD:</h5>
-                        <h4><strong>${{ remaining_usd | int }}</strong></h4>
+                        {% if is_cancelled %}
+                            <h4><strong id="display_remaining_usd" class="text-success">CANCELADO</strong></h4>
+                        {% else %}
+                            <h4><strong id="display_remaining_usd">${{ remaining_usd | int }}</strong></h4>
+                        {% endif %}
                     </div>
                 </div>
                  <!-- === FIN MODIFICACIÓN === -->
@@ -126,20 +152,26 @@
                 </div>
                 <div class="col-md-4">
                     <label for="tipo_cambio_bcr" class="form-label">Tipo de Cambio USD-BCCR:</label>
-                    <input type="number" step="0.01" class="form-control" id="tipo_cambio_bcr" name="tipo_cambio_bcr" placeholder="Ej: 515.50">
+                    {# --- INICIO MODIFICACIÓN: Deshabilitar campo --- #}
+                    <input type="number" step="0.01" class="form-control" id="tipo_cambio_bcr" name="tipo_cambio_bcr" placeholder="Ej: 515.50" {% if caminata.moneda == 'CRC' %}disabled{% endif %}>
+                    {# --- FIN MODIFICACIÓN --- #}
                 </div>
                 <div class="col-md-4">
                     <label for="monto_abono_crc" class="form-label">Monto Abonado CRC:</label>
                     <div class="input-group">
                         <span class="input-group-text">¢</span>
-                        <input type="number" step="1" class="form-control" id="monto_abono_crc" name="monto_abono_crc" min="0" value="0">
+                        {# --- INICIO MODIFICACIÓN: Deshabilitar campo --- #}
+                        <input type="number" step="1" class="form-control" id="monto_abono_crc" name="monto_abono_crc" min="0" value="0" {% if caminata.moneda == 'USD' %}disabled{% endif %}>
+                        {# --- FIN MODIFICACIÓN --- #}
                     </div>
                 </div>
                 <div class="col-md-4">
                     <label for="monto_abono_usd" class="form-label">Monto Abonado USD:</label>
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="number" step="1" class="form-control" id="monto_abono_usd" name="monto_abono_usd" min="0" value="0">
+                        {# --- INICIO MODIFICACIÓN: Deshabilitar campo --- #}
+                        <input type="number" step="1" class="form-control" id="monto_abono_usd" name="monto_abono_usd" min="0" value="0" {% if caminata.moneda == 'CRC' %}disabled{% endif %}>
+                        {# --- FIN MODIFICACIÓN --- #}
                     </div>
                 </div>
             </div>
@@ -171,6 +203,9 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {# --- INICIO MODIFICACIÓN: Variable para sumar totales del historial --- #}
+                    {% set totals = namespace(crc=0) %}
+                    {# --- FIN MODIFICACIÓN --- #}
                     {% for abono in abonos %}
                     <tr>
                         <td>{{ abono.fecha_abono.strftime('%d/%m/%Y %H:%M') }}</td>
@@ -180,7 +215,16 @@
                             {% set nombres_acom = abono.nombres_acompanantes|from_json %}
                             {{ nombres_acom|join(', ') if nombres_acom else 'N/A' }}
                         </td>
-                        <td>¢{{ abono.monto_abono_crc | default(0) | int }}</td>
+                        {# --- INICIO MODIFICACIÓN: Cálculo en historial --- #}
+                        {% set crc_val = abono.monto_abono_crc | default(0) | float %}
+                        {% set usd_val = abono.monto_abono_usd | default(0) | float %}
+                        {% set tc_val = abono.tipo_cambio_bcr | float if abono.tipo_cambio_bcr else 0 %}
+                        {% set display_crc = crc_val + (usd_val * tc_val) %}
+                        {# --- INICIO MODIFICACIÓN: Acumular total --- #}
+                        {% set totals.crc = totals.crc + display_crc %}
+                        {# --- FIN MODIFICACIÓN --- #}
+                        <td>¢{{ display_crc | int }}</td>
+                        {# --- FIN MODIFICACIÓN --- #}
                         <td>${{ abono.monto_abono_usd | default(0) | int }}</td>
                         <td>{{ abono.tipo_cambio_bcr or 'N/A' }}</td>
                         <td>
@@ -193,6 +237,16 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+                {# --- INICIO MODIFICACIÓN: Fila de totales en el footer de la tabla --- #}
+                <tfoot>
+                    <tr class="table-light">
+                        <td colspan="4" class="text-end"><strong>Totales del Historial:</strong></td>
+                        <td><strong>¢{{ totals.crc | int }}</strong></td>
+                        <td><strong>${{ paid_usd_from_db | int }}</strong></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+                {# --- FIN MODIFICACIÓN --- #}
             </table>
         </div>
         {% else %}
@@ -275,11 +329,26 @@
 
                 // Actualizar el DOM
                 totalCrcElement.textContent = '¢' + Math.round(totalPaidInCrc);
-                remainingCrcElement.textContent = '¢' + Math.round(remainingCrc);
+                
+                // --- MODIFICACIÓN JS: Mostrar CANCELADO ---
+                if (remainingCrc <= 0) {
+                    remainingCrcElement.textContent = 'CANCELADO';
+                    remainingCrcElement.classList.add('text-success');
+                    // También actualizamos el de USD
+                    const remainingUsdElement = document.getElementById('display_remaining_usd');
+                    if(remainingUsdElement) {
+                        remainingUsdElement.textContent = 'CANCELADO';
+                        remainingUsdElement.classList.add('text-success');
+                    }
+                } else {
+                    remainingCrcElement.textContent = '¢' + Math.round(remainingCrc);
+                    remainingCrcElement.classList.remove('text-success');
+                }
             } else {
                 // Si el tipo de cambio no es válido, restaurar los valores iniciales
                 totalCrcElement.textContent = initialTotalCrc;
                 remainingCrcElement.textContent = initialRemainingCrc;
+                remainingCrcElement.classList.remove('text-success');
             }
         }
 
