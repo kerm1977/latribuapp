@@ -52,35 +52,45 @@
                 <p><strong>Participante:</strong> {{ participante.nombre }} {{ participante.primer_apellido }}</p>
                 <p><strong>Precio por Persona:</strong> {% if caminata.moneda == 'USD' %}${% else %}¢{% endif %}{{ caminata.precio | int }}</p>
                 
-                <!-- === INICIO MODIFICACIÓN: TOTALES DOBLE MONEDA === -->
+                <!-- === INICIO MODIFICACIÓN: TOTALES DOBLE MONEDA (CORREGIDO) === -->
                 {# Se definen variables para hacer el código más claro y robusto #}
                 {% set price = caminata.precio | float %}
-                {% set paid_crc = total_abonado_crc | default(0) | float %}
-                {% set paid_usd = total_abonado_usd | default(0) | float %}
+                {% set paid_crc_from_db = total_abonado_crc | default(0) | float %}
+                {% set paid_usd_from_db = total_abonado_usd | default(0) | float %}
+
+                {# Usar el tipo de cambio del último abono para el cálculo inicial. Si no hay, no se convierte. #}
+                {% set exchange_rate = abonos[0].tipo_cambio_bcr | float if abonos and abonos[0].tipo_cambio_bcr else 0 %}
 
                 {# Lógica de cálculo de saldos restantes #}
                 {% if caminata.moneda == 'USD' %}
-                    {# La moneda principal es USD #}
-                    {% set remaining_usd = price - paid_usd %}
-                    {% set remaining_crc = 0 - paid_crc %}
+                    {# Moneda principal es USD #}
+                    {% set price_in_crc = price * exchange_rate if exchange_rate > 0 else 0 %}
+                    {% set remaining_usd = price - paid_usd_from_db %}
                 {% else %}
-                    {# La moneda principal es CRC #}
-                    {% set remaining_crc = price - paid_crc %}
-                    {% set remaining_usd = 0 - paid_usd %}
+                    {# Moneda principal es CRC #}
+                    {% set price_in_crc = price %}
+                    {# Si la moneda es CRC, el restante en USD es conceptual. Se resta lo pagado en USD de un total de 0. #}
+                    {% set remaining_usd = 0 - paid_usd_from_db %}
                 {% endif %}
+
+                {# El total abonado en CRC es la suma de los abonos en CRC más los abonos en USD convertidos #}
+                {% set total_paid_in_crc = paid_crc_from_db + (paid_usd_from_db * exchange_rate) %}
+
+                {# El monto restante en CRC es el precio en CRC menos todo lo que se ha pagado en CRC (original + convertido) #}
+                {% set remaining_crc = price_in_crc - total_paid_in_crc %}
 
                 <div class="totals-grid mt-3">
                     <div>
                         <h5 class="text-success">Total Abonado CRC:</h5>
-                        <h4><strong>¢{{ paid_crc | int }}</strong></h4>
+                        <h4><strong id="display_total_crc">¢{{ total_paid_in_crc | int }}</strong></h4>
                     </div>
                     <div>
                         <h5 class="text-success">Total Abonado USD:</h5>
-                        <h4><strong>${{ paid_usd | int }}</strong></h4>
+                        <h4><strong>${{ paid_usd_from_db | int }}</strong></h4>
                     </div>
                     <div>
                         <h5 class="text-danger">Monto Restante CRC:</h5>
-                        <h4><strong>¢{{ remaining_crc | int }}</strong></h4>
+                        <h4><strong id="display_remaining_crc">¢{{ remaining_crc | int }}</strong></h4>
                     </div>
                     <div>
                         <h5 class="text-danger">Monto Restante USD:</h5>
@@ -207,38 +217,83 @@
     </div>
 </div>
 
+{# Se pasa el último tipo de cambio y los valores base a JS #}
+{% set latest_exchange_rate = abonos[0].tipo_cambio_bcr if abonos and abonos[0].tipo_cambio_bcr else None %}
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Bloque para mantener los valores del formulario entre recargas (sin cambios)
         const nombresAcompanantesInput = document.getElementById('nombres_acompanantes_raw');
         const cantidadAcompanantesSelect = document.getElementById('cantidad_acompanantes');
         const abonoForm = document.getElementById('abonoForm');
-        
         const nombresStorageKey = 'lastNombresAcompanantes_' + window.location.pathname;
         const cantidadStorageKey = 'lastCantidadAcompanantes_' + window.location.pathname;
-
         if (nombresAcompanantesInput) {
             const savedNombres = sessionStorage.getItem(nombresStorageKey);
-            if (savedNombres) {
-                nombresAcompanantesInput.value = savedNombres;
-            }
+            if (savedNombres) { nombresAcompanantesInput.value = savedNombres; }
         }
-
         if (cantidadAcompanantesSelect) {
             const savedCantidad = sessionStorage.getItem(cantidadStorageKey);
-            if (savedCantidad) {
-                cantidadAcompanantesSelect.value = savedCantidad;
+            if (savedCantidad) { cantidadAcompanantesSelect.value = savedCantidad; }
+        }
+        if (abonoForm) {
+            abonoForm.addEventListener('submit', function() {
+                if (nombresAcompanantesInput) { sessionStorage.setItem(nombresStorageKey, nombresAcompanantesInput.value); }
+                if (cantidadAcompanantesSelect) { sessionStorage.setItem(cantidadStorageKey, cantidadAcompanantesSelect.value); }
+            });
+        }
+
+        // --- NUEVA Lógica de conversión de moneda ---
+        const exchangeRateInput = document.getElementById('tipo_cambio_bcr');
+        const totalCrcElement = document.getElementById('display_total_crc');
+        const remainingCrcElement = document.getElementById('display_remaining_crc');
+
+        // Guardar los valores iniciales calculados por el servidor
+        const initialTotalCrc = totalCrcElement.textContent;
+        const initialRemainingCrc = remainingCrcElement.textContent;
+
+        // Obtener valores base de la base de datos (pasados por Jinja)
+        const paid_crc_from_db = {{ total_abonado_crc | default(0) | tojson }};
+        const paid_usd_from_db = {{ total_abonado_usd | default(0) | tojson }};
+        const price = {{ caminata.precio | float | tojson }};
+        const isUsdCurrency = {{ caminata.moneda == 'USD' | tojson }};
+
+        function updateCrcValues(rate) {
+            const exchangeRate = parseFloat(rate);
+
+            if (!isNaN(exchangeRate) && exchangeRate > 0) {
+                // La misma lógica de cálculo que en Jinja
+                const totalPaidInCrc = paid_crc_from_db + (paid_usd_from_db * exchangeRate);
+
+                let priceInCrc = 0;
+                if (isUsdCurrency) {
+                    priceInCrc = price * exchangeRate;
+                } else {
+                    priceInCrc = price;
+                }
+                const remainingCrc = priceInCrc - totalPaidInCrc;
+
+                // Actualizar el DOM
+                totalCrcElement.textContent = '¢' + Math.round(totalPaidInCrc);
+                remainingCrcElement.textContent = '¢' + Math.round(remainingCrc);
+            } else {
+                // Si el tipo de cambio no es válido, restaurar los valores iniciales
+                totalCrcElement.textContent = initialTotalCrc;
+                remainingCrcElement.textContent = initialRemainingCrc;
             }
         }
 
-        if (abonoForm) {
-            abonoForm.addEventListener('submit', function() {
-                if (nombresAcompanantesInput) {
-                    sessionStorage.setItem(nombresStorageKey, nombresAcompanantesInput.value);
-                }
-                if (cantidadAcompanantesSelect) {
-                    sessionStorage.setItem(cantidadStorageKey, cantidadAcompanantesSelect.value);
-                }
-            });
+        // Event listener para la entrada en tiempo real
+        exchangeRateInput.addEventListener('input', function() {
+            updateCrcValues(this.value);
+        });
+
+        // Poner el último tipo de cambio en el campo de texto al cargar la página
+        const latestExchangeRate = {{ latest_exchange_rate | tojson }};
+        if (latestExchangeRate) {
+            exchangeRateInput.value = latestExchangeRate;
+            // No es necesario llamar a updateCrcValues aquí porque los valores
+            // ya fueron calculados correctamente por Jinja en el servidor.
         }
     });
 </script>
