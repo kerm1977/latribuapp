@@ -33,8 +33,23 @@
 
     /* Puedes necesitar un padding-top en el body de base.html si el navbar superpone el contenido */
 
+    /* --- INICIO MODIFICACIÓN: Scroll para el dropdown (VISTA DESKTOP) --- */
+    .navbar .dropdown-menu {
+        max-height: 70vh; /* Altura máxima del 70% de la ventana */
+        overflow-y: auto; /* Scroll vertical automático */
+    }
+    /* --- FIN MODIFICACIÓN --- */
+
+
     /* Mostrar icono y texto en móviles para ciertos enlaces */
     @media (max-width: 991.98px) { /* Bootstrap's lg breakpoint para móvil */
+        /* --- INICIO CORRECCIÓN: Scroll para el menú colapsado (VISTA MÓVIL) --- */
+        .navbar-collapse {
+            max-height: 80vh; /* Altura máxima para todo el menú colapsado */
+            overflow-y: auto; /* Habilitar scroll si el contenido excede la altura */
+        }
+        /* --- FIN CORRECCIÓN --- */
+
         .nav-item .nav-link .icon-only-mobile {
             display: inline-block; /* Muestra el icono */
             margin-right: 5px; /* Espacio entre icono y texto */

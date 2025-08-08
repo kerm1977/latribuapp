@@ -341,6 +341,7 @@ class AbonoCaminata(db.Model):
     monto_abono_usd = db.Column(db.Float, default=0)
     tipo_cambio_bcr = db.Column(db.Float, nullable=True)
     fecha_abono = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    periodo_cancela = db.Column(db.Date, nullable=True)
 
     def __repr__(self):
         # Se actualiza la representación para reflejar los nuevos campos si existen

@@ -779,27 +779,18 @@ def abono_caminata(caminata_id, user_id):
     
     # Convertir las fechas de los abonos a la zona horaria de Costa Rica para mostrar
     for abono in abonos:
-        if abono.fecha_abono.tzinfo is None:
-            abono.fecha_abono = UTC_TZ.localize(abono.fecha_abono)
-        abono.fecha_abono = abono.fecha_abono.astimezone(COSTA_RICA_TZ)
+        # Solo se convierten las fechas que son objetos datetime. Los objetos date no tienen tzinfo.
+        if isinstance(abono.fecha_abono, datetime):
+            if abono.fecha_abono.tzinfo is None:
+                abono.fecha_abono = UTC_TZ.localize(abono.fecha_abono)
+            abono.fecha_abono = abono.fecha_abono.astimezone(COSTA_RICA_TZ)
 
     # --- Cálculos de totales para doble moneda ---
     total_abonado_crc = sum(abono.monto_abono_crc for abono in abonos if abono.monto_abono_crc)
     total_abonado_usd = sum(abono.monto_abono_usd for abono in abonos if abono.monto_abono_usd)
     
-    ultima_cantidad_acompanantes = abonos[0].cantidad_acompanantes if abonos else 0
-    total_personas = 1 + ultima_cantidad_acompanantes
-    total_a_pagar_crc = (caminata.precio or 0) * total_personas
-    
-    total_abonado_consolidado_crc = total_abonado_crc
-    for abono in abonos:
-        if abono.monto_abono_usd and abono.tipo_cambio_bcr:
-            total_abonado_consolidado_crc += abono.monto_abono_usd * abono.tipo_cambio_bcr
-
-    monto_restante_crc = total_a_pagar_crc - total_abonado_consolidado_crc
-    
-    ultimo_tipo_cambio = next((abono.tipo_cambio_bcr for abono in reversed(abonos) if abono.tipo_cambio_bcr), None)
-    monto_restante_usd = (monto_restante_crc / ultimo_tipo_cambio) if ultimo_tipo_cambio else 0
+    # --- Lógica de cálculo de totales mejorada ---
+    ultimo_tipo_cambio = next((abono.tipo_cambio_bcr for abono in abonos if abono.tipo_cambio_bcr), None)
 
     if request.method == 'POST':
         if 'add_abono' in request.form:
@@ -819,6 +810,22 @@ def abono_caminata(caminata_id, user_id):
                 nombres_acompanantes_list = [name.strip() for name in nombres_acompanantes_raw.split(',') if name.strip()]
                 nombres_acompanantes_json = json.dumps(nombres_acompanantes_list, ensure_ascii=False)
 
+                # --- INICIO DE LA MODIFICACIÓN ---
+                
+                # 1. Obtener las fechas del formulario como texto
+                fecha_abono_str = request.form.get('fecha_abono')
+                periodo_cancela_str = request.form.get('periodo_cancela')
+
+                # 2. Convertir la fecha de abono (obligatoria) a objeto date
+                fecha_abono_obj = datetime.strptime(fecha_abono_str, '%Y-%m-%d').date() if fecha_abono_str else date.today()
+
+                # 3. Convertir el periodo que cancela (opcional) a objeto date
+                periodo_cancela_obj = None
+                if periodo_cancela_str:
+                    periodo_cancela_obj = datetime.strptime(periodo_cancela_str, '%Y-%m-%d').date()
+
+                # --- FIN DE LA MODIFICACIÓN ---
+
                 if not opcion:
                     flash('Por favor, selecciona una opción (Abono, Reserva, Cancelación).', 'danger')
                     return redirect(url_for('caminatas.abono_caminata', caminata_id=caminata.id, user_id=participante.id))
@@ -831,7 +838,8 @@ def abono_caminata(caminata_id, user_id):
                     monto_abono_crc=monto_abono_crc,
                     monto_abono_usd=monto_abono_usd,
                     tipo_cambio_bcr=tipo_cambio_bcr,
-                    fecha_abono=datetime.utcnow(),
+                    fecha_abono=fecha_abono_obj, # Usar la fecha del formulario
+                    periodo_cancela=periodo_cancela_obj, # Guardar la nueva fecha
                     nombres_acompanantes=nombres_acompanantes_json
                 )
                 db.session.add(nuevo_abono)
@@ -864,11 +872,8 @@ def abono_caminata(caminata_id, user_id):
         participante=participante, 
         abonos=abonos, 
         total_abonado_crc=total_abonado_crc,
-        total_abonado_usd=total_abonado_usd,
-        monto_restante_crc=monto_restante_crc,
-        monto_restante_usd=monto_restante_usd
+        total_abonado_usd=total_abonado_usd
     )
-# --- FIN DE LA MODIFICACIÓN ---
 
 
 # --- INICIO NUEVA SECCIÓN: LÓGICA DE EXPORTACIÓN DE FACTURAS ---
