@@ -871,114 +871,150 @@ def abono_caminata(caminata_id, user_id):
 # --- FIN DE LA MODIFICACIÓN ---
 
 
-# --- Funciones de Exportación de Abonos (ya existentes en tu archivo) ---
+# --- INICIO NUEVA SECCIÓN: LÓGICA DE EXPORTACIÓN DE FACTURAS ---
+
+def _get_invoice_data_as_text(caminata, participante, abonos):
+    """
+    Genera una cadena de texto con los detalles de la factura,
+    replicando la lógica de la plantilla y omitiendo valores vacíos.
+    """
+    lines = []
+
+    def should_display(value):
+        """Función auxiliar para determinar si un valor debe mostrarse."""
+        if value is None:
+            return False
+        if isinstance(value, str) and (value.strip() == '' or value.strip().upper() == 'N/A'):
+            return False
+        if isinstance(value, (int, float)) and value == 0:
+            return False
+        return True
+
+    # --- Cálculos de la factura (replicando la lógica de la plantilla) ---
+    price = float(caminata.precio or 0)
+    paid_crc_from_db = sum(a.monto_abono_crc for a in abonos if a.monto_abono_crc)
+    paid_usd_from_db = sum(a.monto_abono_usd for a in abonos if a.monto_abono_usd)
+    exchange_rate = 0
+    if abonos and abonos[0].tipo_cambio_bcr:
+        exchange_rate = float(abonos[0].tipo_cambio_bcr)
+
+    price_in_crc = 0
+    remaining_usd = 0
+    if caminata.moneda == 'USD':
+        if exchange_rate > 0:
+            price_in_crc = price * exchange_rate
+        remaining_usd = price - paid_usd_from_db
+    else: # Moneda es CRC
+        price_in_crc = price
+        remaining_usd = 0 - paid_usd_from_db
+
+    total_paid_in_crc = paid_crc_from_db
+    if exchange_rate > 0:
+         total_paid_in_crc += (paid_usd_from_db * exchange_rate)
+
+    remaining_crc = price_in_crc - total_paid_in_crc
+
+    is_cancelled = False
+    if caminata.moneda == 'USD':
+        if price_in_crc > 0 and total_paid_in_crc >= price_in_crc:
+            is_cancelled = True
+        elif paid_usd_from_db >= price:
+            is_cancelled = True
+    else: # Moneda es CRC
+        if total_paid_in_crc >= price:
+            is_cancelled = True
+    
+    # --- Construcción del texto de la factura ---
+    lines.append("FACTURA DE CAMINATA")
+    lines.append("="*30)
+    
+    # Datos de la Caminata
+    if should_display(caminata.nombre): lines.append(f"Caminata: {caminata.nombre}")
+    if caminata.fecha: lines.append(f"Fecha: {caminata.fecha.strftime('%d-%m-%Y')}")
+    if should_display(caminata.actividad): lines.append(f"Actividad: {caminata.actividad}")
+    if should_display(caminata.dificultad): lines.append(f"Dificultad: {caminata.dificultad}")
+    if should_display(caminata.distancia): lines.append(f"Distancia: {caminata.distancia} km")
+    lines.append("")
+
+    # Datos del Participante
+    lines.append(f"Participante: {participante.nombre} {participante.primer_apellido}")
+    lines.append("")
+    lines.append("--- Resumen Financiero ---")
+    
+    # Resumen Financiero
+    if should_display(price): lines.append(f"Precio por Persona: {'$' if caminata.moneda == 'USD' else '¢'}{price:,.0f}")
+    if should_display(total_paid_in_crc): lines.append(f"Total Abonado CRC: ¢{total_paid_in_crc:,.0f}")
+    if should_display(paid_usd_from_db): lines.append(f"Total Abonado USD: ${paid_usd_from_db:,.0f}")
+
+    if is_cancelled:
+        lines.append("Monto Restante: CANCELADO")
+    else:
+        if should_display(remaining_crc): lines.append(f"Monto Restante CRC: ¢{remaining_crc:,.0f}")
+        if should_display(remaining_usd): lines.append(f"Monto Restante USD: ${remaining_usd:,.0f}")
+    
+    lines.append("")
+    lines.append("--- Historial de Abonos ---")
+
+    if abonos:
+        total_historial_crc = 0
+        for abono in abonos:
+            # Convertir fecha a zona horaria de Costa Rica
+            fecha_abono_cr = abono.fecha_abono
+            if fecha_abono_cr.tzinfo is None:
+                fecha_abono_cr = UTC_TZ.localize(fecha_abono_cr)
+            fecha_abono_cr = fecha_abono_cr.astimezone(COSTA_RICA_TZ)
+
+            lines.append(f"Fecha: {fecha_abono_cr.strftime('%d/%m/%Y %H:%M')}")
+            
+            crc_val = float(abono.monto_abono_crc or 0)
+            usd_val = float(abono.monto_abono_usd or 0)
+            tc_val = float(abono.tipo_cambio_bcr or 0)
+            display_crc = crc_val + (usd_val * tc_val)
+            total_historial_crc += display_crc
+
+            if should_display(abono.opcion): lines.append(f"  Opción: {abono.opcion}")
+            if should_display(abono.cantidad_acompanantes): lines.append(f"  Acompañantes: {abono.cantidad_acompanantes}")
+            
+            if abono.nombres_acompanantes:
+                nombres_acom = json.loads(abono.nombres_acompanantes)
+                if nombres_acom:
+                    lines.append(f"  Detalles: {', '.join(nombres_acom)}")
+            
+            lines.append(f"  Monto Abonado CRC (calculado): ¢{display_crc:,.0f}")
+            if should_display(usd_val): lines.append(f"  Monto Abonado USD (original): ${usd_val:,.0f}")
+            if should_display(tc_val): lines.append(f"  T.C. usado: {tc_val}")
+            lines.append("-" * 20)
+
+        lines.append("")
+        lines.append("--- Totales del Historial ---")
+        lines.append(f"Total Historial CRC (calculado): ¢{total_historial_crc:,.0f}")
+        lines.append(f"Total Historial USD (original): ${paid_usd_from_db:,.0f}")
+    else:
+        lines.append("No hay abonos registrados.")
+
+    return "\n".join(lines)
+
+
 @caminatas_bp.route('/caminatas/<int:caminata_id>/abono/<int:user_id>/export_pdf')
 @login_required
 def exportar_abono_pdf(caminata_id, user_id):
     caminata = Caminata.query.get_or_404(caminata_id)
     participante = User.query.get_or_404(user_id)
-    abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(desc(AbonoCaminata.fecha_abono)).all()
+    abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(AbonoCaminata.fecha_abono.asc()).all()
 
-    currency_symbol = '¢' if caminata.moneda == 'CRC' else '$'
-    currency_code = 'CRC' if caminata.moneda == 'CRC' else 'USD'
-
-    # Convertir las fechas de los abonos a la zona horaria de Costa Rica para exportar
-    for abono in abonos:
-        if abono.fecha_abono.tzinfo is None:
-            abono.fecha_abono = UTC_TZ.localize(abono.fecha_abono)
-        abono.fecha_abono = abono.fecha_abono.astimezone(COSTA_RICA_TZ)
-
-    # --- INICIO DE LA CORRECCIÓN ---
-    # Calcular el total abonado consolidado en la moneda de la caminata
-    total_abonado_crc_val = sum(a.monto_abono_crc for a in abonos if a.monto_abono_crc)
-    total_abonado_usd_val = sum(a.monto_abono_usd for a in abonos if a.monto_abono_usd)
-    
-    total_abonado = 0
-    ultimo_tipo_cambio = next((a.tipo_cambio_bcr for a in reversed(abonos) if a.tipo_cambio_bcr), None)
-
-    if caminata.moneda == 'CRC':
-        total_abonado = total_abonado_crc_val
-        if ultimo_tipo_cambio:
-            total_abonado += total_abonado_usd_val * ultimo_tipo_cambio
-    else:  # Moneda es USD
-        total_abonado = total_abonado_usd_val
-        if ultimo_tipo_cambio and ultimo_tipo_cambio > 0:
-            total_abonado += total_abonado_crc_val / ultimo_tipo_cambio
-    # --- FIN DE LA CORRECCIÓN ---
-
-    ultimo_abono = AbonoCaminata.query.filter_by(
-        caminata_id=caminata.id,
-        user_id=participante.id
-    ).order_by(desc(AbonoCaminata.fecha_abono)).first()
-    
-    estado_general_participante = ultimo_abono.opcion if ultimo_abono else "Sin Abono/Reserva"
-
-    ultima_cantidad_acompanantes = abonos[0].cantidad_acompanantes if abonos else 0
-    total_personas = 1 + ultima_cantidad_acompanantes
-    total_a_pagar_por_participante = (caminata.precio or 0) * total_personas
-    monto_restante = total_a_pagar_por_participante - total_abonado
+    invoice_text = _get_invoice_data_as_text(caminata, participante, abonos)
 
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font('Arial', 'B', 16)
-    pdf.cell(0, 10, 'Detalle de Abonos para Caminata', 0, 1, 'C')
-    pdf.ln(10)
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, f'Caminata: {caminata.nombre}', 0, 1)
-    pdf.cell(0, 10, f'Fecha de Caminata: {caminata.fecha.strftime("%d de %B de %Y")}', 0, 1)
-    pdf.cell(0, 10, f'Participante: {participante.nombre} {participante.primer_apellido}', 0, 1)
-    
-    pdf.cell(0, 10, f'Precio por Persona: {currency_symbol}{caminata.precio:,.0f} {currency_code}', 0, 1)
-    pdf.cell(0, 10, f'Total a Pagar (incl. acompañantes): {currency_symbol}{total_a_pagar_por_participante:,.0f} {currency_code}', 0, 1)
-    pdf.set_text_color(0, 128, 0) # Green for total_abonado
-    pdf.cell(0, 10, f'Total Abonado: {currency_symbol}{total_abonado:,.0f} {currency_code}', 0, 1)
-    
-    if estado_general_participante == "Cancelación":
-        pdf.set_text_color(255, 165, 0) # Naranja
-        pdf.cell(0, 10, f'Estado del Participante: {estado_general_participante}', 0, 1)
-    elif estado_general_participante == "Reserva":
-        pdf.set_text_color(0, 0, 255) # Azul
-        pdf.cell(0, 10, f'Estado del Participante: {estado_general_participante}', 0, 1)
-    elif estado_general_participante == "Abono":
-        pdf.set_text_color(0, 128, 0) # Verde
-        pdf.cell(0, 10, f'Estado del Participante: {estado_general_participante}', 0, 1)
-    else: # Por si no hay abonos o el estado no es claro
-        pdf.set_text_color(0, 0, 0) # Negro
-        pdf.cell(0, 10, f'Estado del Participante: {estado_general_participante}', 0, 1)
-        
-    if monto_restante > 0 and estado_general_participante != "Cancelación": # Solo mostrar monto restante si no está cancelado
-        pdf.set_text_color(255, 0, 0) # Rojo para Monto Restante
-        pdf.cell(0, 10, f'Monto Restante: {currency_symbol}{monto_restante:,.0f} {currency_code}', 0, 1)
-        
-    pdf.set_text_color(0, 0, 0) # Volver a negro para el texto normal
-    pdf.ln(10)
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, 'Historial de Abonos:', 0, 1)
     pdf.set_font('Arial', '', 10)
-    if abonos:
-        for abono in abonos:
-            nombres_acom = json.loads(abono.nombres_acompanantes) if abono.nombres_acompanantes else []
-            nombres_str = ", ".join(nombres_acom) if nombres_acom else "N/A"
-            pdf.cell(0, 7, f'  Fecha: {abono.fecha_abono.strftime("%d/%m/%Y %H:%M")}', 0, 1)
-            pdf.cell(0, 7, f'  Opción: {abono.opcion}', 0, 1) 
-            pdf.cell(0, 7, f'  Acompañantes: {abono.cantidad_acompanantes}', 0, 1)
-            pdf.cell(0, 7, f'  Nombres: {nombres_str}', 0, 1)
-            # --- INICIO DE LA CORRECCIÓN ---
-            monto_str_list = []
-            if abono.monto_abono_crc and abono.monto_abono_crc > 0:
-                monto_str_list.append(f"CRC {abono.monto_abono_crc:,.0f}")
-            if abono.monto_abono_usd and abono.monto_abono_usd > 0:
-                monto_str_list.append(f"USD {abono.monto_abono_usd:,.0f}")
-            monto_display = " / ".join(monto_str_list) if monto_str_list else "N/A"
-            pdf.cell(0, 7, f'  Monto: {monto_display}', 0, 1)
-            # --- FIN DE LA CORRECCIÓN ---
-            pdf.ln(2)
-    else:
-        pdf.cell(0, 10, 'No hay abonos registrados.', 0, 1)
-    pdf_output = pdf.output(dest='S').encode('latin1')
+    
+    # Usar multi_cell para manejar saltos de línea y texto largo
+    pdf.multi_cell(0, 5, invoice_text.encode('latin-1', 'replace').decode('latin-1'))
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
     response = current_app.make_response(pdf_output)
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename=abono_caminata_{caminata.id}_{participante.id}.pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=factura_{caminata.nombre}_{participante.username}.pdf'
     return response
 
 @caminatas_bp.route('/caminatas/<int:caminata_id>/abono/<int:user_id>/export_jpg')
@@ -986,138 +1022,44 @@ def exportar_abono_pdf(caminata_id, user_id):
 def exportar_abono_jpg(caminata_id, user_id):
     caminata = Caminata.query.get_or_404(caminata_id)
     participante = User.query.get_or_404(user_id)
-    abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(desc(AbonoCaminata.fecha_abono)).all()
+    abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(AbonoCaminata.fecha_abono.asc()).all()
 
-    currency_symbol = '¢' if caminata.moneda == 'CRC' else '$'
-    currency_code = 'CRC' if caminata.moneda == 'CRC' else 'USD'
-
-    for abono in abonos:
-        if abono.fecha_abono.tzinfo is None:
-            abono.fecha_abono = UTC_TZ.localize(abono.fecha_abono)
-        abono.fecha_abono = abono.fecha_abono.astimezone(COSTA_RICA_TZ)
-
-    # --- INICIO DE LA CORRECCIÓN ---
-    total_abonado_crc_val = sum(a.monto_abono_crc for a in abonos if a.monto_abono_crc)
-    total_abonado_usd_val = sum(a.monto_abono_usd for a in abonos if a.monto_abono_usd)
+    invoice_text = _get_invoice_data_as_text(caminata, participante, abonos)
     
-    total_abonado = 0
-    ultimo_tipo_cambio = next((a.tipo_cambio_bcr for a in reversed(abonos) if a.tipo_cambio_bcr), None)
-
-    if caminata.moneda == 'CRC':
-        total_abonado = total_abonado_crc_val
-        if ultimo_tipo_cambio:
-            total_abonado += total_abonado_usd_val * ultimo_tipo_cambio
-    else:
-        total_abonado = total_abonado_usd_val
-        if ultimo_tipo_cambio and ultimo_tipo_cambio > 0:
-            total_abonado += total_abonado_crc_val / ultimo_tipo_cambio
-    # --- FIN DE LA CORRECCIÓN ---
-
-    ultimo_abono = AbonoCaminata.query.filter_by(
-        caminata_id=caminata.id,
-        user_id=participante.id
-    ).order_by(desc(AbonoCaminata.fecha_abono)).first()
-    
-    estado_general_participante = ultimo_abono.opcion if ultimo_abono else "Sin Abono/Reserva"
-
-    ultima_cantidad_acompanantes = abonos[0].cantidad_acompanantes if abonos else 0
-    total_personas = 1 + ultima_cantidad_acompanantes
-    total_a_pagar_por_participante = (caminata.precio or 0) * total_personas
-    monto_restante = total_a_pagar_por_participante - total_abonado
-
-    # Preparar el texto para la imagen
-    text_lines = []
-    text_lines.append("--- Detalle de Abonos para Caminata ---")
-    text_lines.append(f"Caminata: {caminata.nombre}")
-    text_lines.append(f"Fecha de Caminata: {caminata.fecha.strftime('%d de %B de %Y')}")
-    text_lines.append(f"Participante: {participante.nombre} {participante.primer_apellido}")
-    
-    text_lines.append(f"Precio por Persona: {currency_symbol}{caminata.precio:,.0f} {currency_code}")
-    text_lines.append(f"Total a Pagar (incl. acompañantes): {currency_symbol}{total_a_pagar_por_participante:,.0f} {currency_code}")
-    text_lines.append(f"Total Abonado: {currency_symbol}{total_abonado:,.0f} {currency_code}")
-    text_lines.append(f"Estado del Participante: {estado_general_participante}") 
-
-    if monto_restante > 0 and estado_general_participante != "Cancelación":
-        text_lines.append(f"Monto Restante: {currency_symbol}{monto_restante:,.0f} {currency_code}")
-    
-    text_lines.append("")
-    text_lines.append("--- Historial de Abonos ---")
-
-    if abonos:
-        for i, abono in enumerate(abonos):
-            nombres_acom = json.loads(abono.nombres_acompanantes) if abono.nombres_acompanantes else []
-            nombres_str = ", ".join(nombres_acom) if nombres_acom else "N/A"
-            text_lines.append(f"  {i+1}. Fecha: {abono.fecha_abono.strftime('%d/%m/%Y %H:%M')}")
-            text_lines.append(f"     Opción: {abono.opcion}")
-            text_lines.append(f"     Acompañantes: {abono.cantidad_acompanantes}")
-            text_lines.append(f"     Nombres: {nombres_str}")
-            # --- INICIO DE LA CORRECCIÓN ---
-            monto_str_list = []
-            if abono.monto_abono_crc and abono.monto_abono_crc > 0:
-                monto_str_list.append(f"CRC {abono.monto_abono_crc:,.0f}")
-            if abono.monto_abono_usd and abono.monto_abono_usd > 0:
-                monto_str_list.append(f"USD {abono.monto_abono_usd:,.0f}")
-            monto_display = " / ".join(monto_str_list) if monto_str_list else "N/A"
-            text_lines.append(f"     Monto: {monto_display}")
-            # --- FIN DE LA CORRECCIÓN ---
-            text_lines.append("")
-    else:
-        text_lines.append("No hay abonos registrados.")
-
-    full_text = "\n".join(text_lines)
-
     font_size = 20
     font_path = os.path.join(current_app.root_path, 'static', 'fonts', 'arial.ttf')
     try:
         font = ImageFont.truetype(font_path, font_size)
-        font_bold = ImageFont.truetype(font_path.replace('.ttf', 'bd.ttf'), font_size)
-        font_small = ImageFont.truetype(font_path, int(font_size * 0.8))
-        font_italic = ImageFont.truetype(font_path.replace('.ttf', 'i.ttf'), font_size)
     except IOError:
-        print("Advertencia: No se encontraron las fuentes Arial. Usando la fuente por defecto.")
         font = ImageFont.load_default()
-        font_bold = ImageFont.load_default()
-        font_small = ImageFont.load_default()
-        font_italic = ImageFont.load_default()
 
+    # Calcular dimensiones de la imagen
     dummy_img = Image.new('RGB', (1, 1))
     dummy_draw = ImageDraw.Draw(dummy_img)
-
-    lines = full_text.split('\n')
+    
+    lines = invoice_text.split('\n')
     max_line_width = 0
     total_text_height = 0
     
     for line in lines:
-        current_font = font
-        if line.startswith("---"):
-            current_font = font_bold
-        elif line.strip().startswith(("Fecha:", "Opción:", "Acompañantes:", "Nombres:", "Monto:")):
-            current_font = font_small
-        
-        bbox = dummy_draw.textbbox((0, 0), line, font=current_font)
+        bbox = dummy_draw.textbbox((0, 0), line, font=font)
         line_width = bbox[2] - bbox[0]
-        line_height = bbox[3] - bbox[1] + 5
-
+        line_height = bbox[3] - bbox[1] + 5 # Espacio entre líneas
         max_line_width = max(max_line_width, line_width)
         total_text_height += line_height
 
-    padding = 20
+    padding = 40
     img_width = int(max_line_width + (2 * padding))
     img_height = int(total_text_height + (2 * padding))
     
     img = Image.new('RGB', (img_width, img_height), color='white')
     d = ImageDraw.Draw(img)
 
+    # Dibujar el texto
     y_offset = padding
     for line in lines:
-        current_font = font
-        if line.startswith("---"):
-            current_font = font_bold
-        elif line.strip().startswith(("Fecha:", "Opción:", "Acompañantes:", "Nombres:", "Monto:")):
-            current_font = font_small
-
-        d.text((padding, y_offset), line, fill=(0, 0, 0), font=current_font) 
-        bbox = d.textbbox((0,0), line, font=current_font)
+        d.text((padding, y_offset), line, fill=(0, 0, 0), font=font)
+        bbox = d.textbbox((0,0), line, font=font)
         line_height_actual = bbox[3] - bbox[1] + 5
         y_offset += line_height_actual
 
@@ -1125,7 +1067,7 @@ def exportar_abono_jpg(caminata_id, user_id):
     img.save(img_byte_arr, format='JPEG')
     img_byte_arr.seek(0)
 
-    return send_file(img_byte_arr, mimetype='image/jpeg', as_attachment=True, download_name=f'abono_caminata_{caminata.id}_{participante.id}.jpg')
+    return send_file(img_byte_arr, mimetype='image/jpeg', as_attachment=True, download_name=f'factura_{caminata.nombre}_{participante.username}.jpg')
 
 
 @caminatas_bp.route('/caminatas/<int:caminata_id>/abono/<int:user_id>/export_txt')
@@ -1133,88 +1075,16 @@ def exportar_abono_jpg(caminata_id, user_id):
 def exportar_abono_txt(caminata_id, user_id):
     caminata = Caminata.query.get_or_404(caminata_id)
     participante = User.query.get_or_404(user_id)
-    abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(desc(AbonoCaminata.fecha_abono)).all()
+    abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(AbonoCaminata.fecha_abono.asc()).all()
 
-    currency_symbol = '¢' if caminata.moneda == 'CRC' else '$'
-
-    for abono in abonos:
-        if abono.fecha_abono.tzinfo is None:
-            abono.fecha_abono = UTC_TZ.localize(abono.fecha_abono)
-        abono.fecha_abono = abono.fecha_abono.astimezone(COSTA_RICA_TZ)
-
-    # --- INICIO DE LA CORRECCIÓN ---
-    total_abonado_crc_val = sum(a.monto_abono_crc for a in abonos if a.monto_abono_crc)
-    total_abonado_usd_val = sum(a.monto_abono_usd for a in abonos if a.monto_abono_usd)
+    invoice_text = _get_invoice_data_as_text(caminata, participante, abonos)
     
-    total_abonado = 0
-    ultimo_tipo_cambio = next((a.tipo_cambio_bcr for a in reversed(abonos) if a.tipo_cambio_bcr), None)
-
-    if caminata.moneda == 'CRC':
-        total_abonado = total_abonado_crc_val
-        if ultimo_tipo_cambio:
-            total_abonado += total_abonado_usd_val * ultimo_tipo_cambio
-    else:
-        total_abonado = total_abonado_usd_val
-        if ultimo_tipo_cambio and ultimo_tipo_cambio > 0:
-            total_abonado += total_abonado_crc_val / ultimo_tipo_cambio
-    # --- FIN DE LA CORRECCIÓN ---
-    
-    ultimo_abono = AbonoCaminata.query.filter_by(
-        caminata_id=caminata.id,
-        user_id=participante.id
-    ).order_by(desc(AbonoCaminata.fecha_abono)).first()
-    
-    estado_general_participante = ultimo_abono.opcion if ultimo_abono else "Sin Abono/Reserva"
-
-    ultima_cantidad_acompanantes = abonos[0].cantidad_acompanantes if abonos else 0
-    total_personas = 1 + ultima_cantidad_acompanantes
-    total_a_pagar_por_participante = (caminata.precio or 0) * total_personas
-    monto_restante = total_a_pagar_por_participante - total_abonado
-
-    content = []
-    content.append("--- Detalle de Abonos para Caminata ---\n\n")
-    content.append(f"Caminata: {caminata.nombre}\n")
-    content.append(f"Fecha de Caminata: {caminata.fecha.strftime('%d de %B de %Y')}\n") 
-    content.append(f"Actividad: {caminata.actividad}\n")
-    content.append(f"Dificultad: {caminata.dificultad if caminata.dificultad else 'N/A'}\n")
-    content.append(f"Distancia: {caminata.distancia:.1f} km\n" if caminata.distancia is not None else "Distancia: N/A\n")
-    content.append(f"\nParticipante: {participante.nombre} {participante.primer_apellido} ({participante.username})\n")
-    
-    content.append(f"Total a Pagar (incl. acompañantes): {currency_symbol}{total_a_pagar_por_participante:,.0f}\n")
-    content.append(f"Total Abonado: {currency_symbol}{total_abonado:,.0f}\n")
-    content.append(f"Estado del Participante: {estado_general_participante}\n")
-
-    if monto_restante > 0 and estado_general_participante != "Cancelación":
-        content.append(f"Monto Restante: {currency_symbol}{monto_restante:,.0f}\n")
-    
-    content.append("\n--- Historial de Abonos ---\n")
-
-    if abonos:
-        for abono in abonos:
-            nombres_acom = json.loads(abono.nombres_acompanantes) if abono.nombres_acompanantes else []
-            nombres_str = ", ".join(nombres_acom) if nombres_acom else "N/A"
-            content.append(f"Fecha: {abono.fecha_abono.strftime('%d/%m/%Y %H:%M')}\n") 
-            content.append(f"  Opción: {abono.opcion}\n") 
-            content.append(f"  Cantidad de Acompañantes: {abono.cantidad_acompanantes}\n")
-            content.append(f"  Nombres de Acompañantes: {nombres_str}\n")
-            # --- INICIO DE LA CORRECCIÓN ---
-            monto_str_list = []
-            if abono.monto_abono_crc and abono.monto_abono_crc > 0:
-                monto_str_list.append(f"CRC {abono.monto_abono_crc:,.0f}")
-            if abono.monto_abono_usd and abono.monto_abono_usd > 0:
-                monto_str_list.append(f"USD {abono.monto_abono_usd:,.0f}")
-            monto_display = " / ".join(monto_str_list) if monto_str_list else "N/A"
-            content.append(f"  Monto Abonado: {monto_display}\n")
-            # --- FIN DE LA CORRECCIÓN ---
-    else:
-        content.append("No hay abonos registrados para este participante en esta caminata aún.\n")
-
-    txt_output = "".join(content)
-    
-    response = current_app.make_response(txt_output)
-    response.headers['Content-Type'] = 'text/plain'
-    response.headers['Content-Disposition'] = f'attachment; filename=abono_caminata_{caminata.id}_{participante.id}.txt'
+    response = current_app.make_response(invoice_text)
+    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    response.headers['Content-Disposition'] = f'attachment; filename=factura_{caminata.nombre}_{participante.username}.txt'
     return response
+
+# --- FIN NUEVA SECCIÓN ---
 
 
 # --- RUTAS DE EXPORTACIÓN DE DETALLE DE CAMINATA ---
@@ -1605,3 +1475,209 @@ def toggle_finalizada(caminata_id):
         flash(f'Error al actualizar el estado de la caminata: {e}', 'danger')
     
     return redirect(url_for('caminatas.detalle_caminata', caminata_id=caminata.id))
+
+# --- INICIO DEL CÓDIGO RESTAURADO ---
+
+# Ruta para gestionar el itinerario de una caminata
+@caminatas_bp.route('/caminata/<int:caminata_id>/itinerario', methods=['GET', 'POST'])
+@login_required
+def itinerario_caminata(caminata_id):
+    caminata = Caminata.query.get_or_404(caminata_id)
+    if request.method == 'POST':
+        # Detectar si se está agregando o eliminando
+        if 'add_itinerario' in request.form:
+            hora_inicio_str = request.form.get('hora_inicio')
+            hora_fin_str = request.form.get('hora_fin')
+            actividad = request.form.get('actividad_itinerario') # Cambiado para evitar conflicto
+            detalles = request.form.get('detalles')
+
+            # Validación de campos
+            if not hora_inicio_str or not actividad:
+                flash('La hora de inicio y la actividad son obligatorias.', 'danger')
+                return redirect(url_for('caminatas.itinerario_caminata', caminata_id=caminata.id))
+
+            # Conversión de hora
+            try:
+                hora_inicio = datetime.strptime(hora_inicio_str, '%H:%M').time()
+                hora_fin = datetime.strptime(hora_fin_str, '%H:%M').time() if hora_fin_str else None
+            except ValueError:
+                flash('Formato de hora inválido. Use HH:MM.', 'danger')
+                return redirect(url_for('caminatas.itinerario_caminata', caminata_id=caminata.id))
+
+            nuevo_item = Itinerario(
+                caminata_id=caminata.id,
+                hora_inicio=hora_inicio,
+                hora_fin=hora_fin,
+                actividad=actividad,
+                detalles=detalles
+            )
+            db.session.add(nuevo_item)
+            db.session.commit()
+            flash('Ítem de itinerario agregado exitosamente.', 'success')
+
+        elif 'delete_itinerario' in request.form:
+            itinerario_id = request.form.get('itinerario_id')
+            item_a_eliminar = Itinerario.query.get(itinerario_id)
+            if item_a_eliminar and item_a_eliminar.caminata_id == caminata.id:
+                db.session.delete(item_a_eliminar)
+                db.session.commit()
+                flash('Ítem de itinerario eliminado.', 'success')
+            else:
+                flash('Error al eliminar el ítem del itinerario.', 'danger')
+
+        return redirect(url_for('caminatas.itinerario_caminata', caminata_id=caminata.id))
+
+    itinerarios = Itinerario.query.filter_by(caminata_id=caminata.id).order_by(Itinerario.hora_inicio).all()
+    return render_template('itinerario_caminata.html', caminata=caminata, itinerarios=itinerarios)
+
+# Ruta para gestionar las instrucciones de una caminata
+@caminatas_bp.route('/caminata/<int:caminata_id>/instrucciones', methods=['GET', 'POST'])
+@login_required
+def instrucciones_caminata(caminata_id):
+    caminata = Caminata.query.get_or_404(caminata_id)
+    if request.method == 'POST':
+        if 'add_instruction' in request.form:
+            instruccion_texto = request.form.get('instruccion_texto')
+            if instruccion_texto:
+                nueva_instruccion = Instruction(caminata_id=caminata.id, texto=instruccion_texto)
+                db.session.add(nueva_instruccion)
+                db.session.commit()
+                flash('Instrucción agregada exitosamente.', 'success')
+            else:
+                flash('El texto de la instrucción no puede estar vacío.', 'danger')
+        
+        elif 'delete_instruction' in request.form:
+            instruccion_id = request.form.get('instruccion_id')
+            instruccion_a_eliminar = Instruction.query.get(instruccion_id)
+            if instruccion_a_eliminar and instruccion_a_eliminar.caminata_id == caminata.id:
+                db.session.delete(instruccion_a_eliminar)
+                db.session.commit()
+                flash('Instrucción eliminada.', 'success')
+            else:
+                flash('Error al eliminar la instrucción.', 'danger')
+        
+        return redirect(url_for('caminatas.instrucciones_caminata', caminata_id=caminata.id))
+
+    instrucciones = Instruction.query.filter_by(caminata_id=caminata.id).all()
+    return render_template('instrucciones_caminata.html', caminata=caminata, instrucciones=instrucciones)
+
+# --- Rutas de Exportación para Instrucciones ---
+@caminatas_bp.route('/caminatas/exportar_instrucciones/pdf/<int:caminata_id>', methods=['GET'])
+@login_required
+def exportar_instrucciones_pdf(caminata_id):
+    caminata = Caminata.query.get_or_404(caminata_id)
+    instrucciones = Instruction.query.filter_by(caminata_id=caminata.id).all()
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, f'Instrucciones para: {caminata.nombre}', 0, 1, 'C')
+    pdf.ln(10)
+    pdf.set_font("Arial", size=12)
+    for i, instruccion in enumerate(instrucciones, 1):
+        pdf.multi_cell(0, 10, f'{i}. {instruccion.texto}'.encode('latin-1', 'replace').decode('latin-1'))
+    
+    response = current_app.response_class(pdf.output(dest='S').encode('latin1'), mimetype='application/pdf')
+    response.headers.set('Content-Disposition', 'attachment', filename=f'instrucciones_{caminata.nombre}.pdf')
+    return response
+
+@caminatas_bp.route('/caminatas/exportar_instrucciones/jpg/<int:caminata_id>', methods=['GET'])
+@login_required
+def exportar_instrucciones_jpg(caminata_id):
+    caminata = Caminata.query.get_or_404(caminata_id)
+    instrucciones = Instruction.query.filter_by(caminata_id=caminata.id).all()
+
+    text = f"Instrucciones para: {caminata.nombre}\n\n" + "\n".join([f"{i}. {inst.texto}" for i, inst in enumerate(instrucciones, 1)])
+    
+    font_path = os.path.join(current_app.root_path, 'static', 'fonts', 'arial.ttf')
+    try:
+        font_title = ImageFont.truetype(font_path.replace('.ttf', 'bd.ttf'), 24)
+        font_body = ImageFont.truetype(font_path, 18)
+    except IOError:
+        font_title = ImageFont.load_default()
+        font_body = ImageFont.load_default()
+
+    dummy_img = Image.new('RGB', (1, 1))
+    d_temp = ImageDraw.Draw(dummy_img)
+    
+    lines = text.split('\n')
+    max_width = 0
+    total_height = 0
+    for i, line in enumerate(lines):
+        font = font_title if i == 0 else font_body
+        bbox = d_temp.textbbox((0,0), line, font=font)
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1] + 5
+        if width > max_width:
+            max_width = width
+        total_height += height
+
+    padding = 20
+    img_width = max_width + 2 * padding
+    img_height = total_height + 2 * padding
+    
+    img = Image.new('RGB', (img_width, img_height), color='white')
+    d = ImageDraw.Draw(img)
+
+    y_offset = padding
+    for i, line in enumerate(lines):
+        font = font_title if i == 0 else font_body
+        d.text((padding, y_offset), line, fill=(0, 0, 0), font=font)
+        bbox = d.textbbox((0,0), line, font=font)
+        y_offset += (bbox[3] - bbox[1] + 5)
+
+    buffer = io.BytesIO()
+    img.save(buffer, format='JPEG')
+    buffer.seek(0)
+
+    response = current_app.response_class(buffer.getvalue(), mimetype='image/jpeg')
+    response.headers.set('Content-Disposition', 'attachment', filename=f'instrucciones_{caminata.nombre}.jpg')
+    return response
+
+@caminatas_bp.route('/caminatas/exportar_instrucciones/txt/<int:caminata_id>', methods=['GET'])
+@login_required
+def exportar_instrucciones_txt(caminata_id):
+    caminata = Caminata.query.get_or_404(caminata_id)
+    instrucciones = Instruction.query.filter_by(caminata_id=caminata.id).all()
+
+    text = f"Instrucciones para: {caminata.nombre}\n\n" + "\n".join([f"{i}. {inst.texto}" for i, inst in enumerate(instrucciones, 1)])
+    
+    buffer = io.BytesIO()
+    buffer.write(text.encode('utf-8'))
+    buffer.seek(0)
+
+    response = current_app.response_class(buffer.getvalue(), mimetype='text/plain')
+    response.headers.set('Content-Disposition', 'attachment', filename=f'instrucciones_{caminata.nombre}.txt')
+    return response
+
+# --- Rutas para Botones Dinámicos ---
+
+@caminatas_bp.route('/load_buttons')
+@login_required
+def load_buttons():
+    buttons = load_button_config()
+    return render_template('load_buttons.html', buttons=buttons)
+
+@caminatas_bp.route('/procesar_botones', methods=['GET', 'POST'])
+@login_required
+def procesar_botones():
+    if request.method == 'POST':
+        return procesar_botones_post()
+    return procesar_botones_get()
+
+def procesar_botones_post():
+    buttons = load_button_config()
+    selected_buttons = request.form.getlist('botones')
+    
+    # Almacenar los botones seleccionados en la sesión
+    session['selected_buttons'] = selected_buttons
+    
+    # Renderizar la plantilla que muestra los formularios
+    return render_template('procesar_botones.html', buttons=buttons, selected_buttons=selected_buttons)
+
+def procesar_botones_get():
+    # Si se accede por GET, simplemente mostrar la página de selección
+    buttons = load_button_config()
+    return render_template('load_buttons.html', buttons=buttons)
+
+# --- FIN DEL CÓDIGO RESTAURADO ---
