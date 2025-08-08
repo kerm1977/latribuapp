@@ -104,17 +104,8 @@
             margin-bottom: 3px; /* Espacio entre icono y texto */
         }
 
-        /* --- INICIO: ESTILOS PARA BOTÓN FLOTANTE DINÁMICO --- */
-        .dynamic-fab-container {
-            position: fixed;
-            top: 100px; 
-            left: 20px;
-            /* ¡CAMBIO CLAVE! z-index menor que el navbar (1020) */
-            z-index: 1019; 
-        }
-
+        /* --- INICIO: ESTILOS PARA BOTONES FLOTANTES DINÁMICOS --- */
         .dynamic-fab-button {
-            background-color: #6f42c1; /* Púrpura */
             color: white;
             width: 60px;
             height: 60px;
@@ -131,6 +122,26 @@
             transform: scale(1.05);
             color: white;
         }
+
+        /* Contenedor para el botón izquierdo */
+        .dynamic-fab-container-left {
+            position: fixed;
+            top: 100px; 
+            left: 20px;
+            z-index: 1019; 
+        }
+        
+        /* Contenedor para el botón derecho */
+        .dynamic-fab-container-right {
+            position: fixed;
+            top: 100px; 
+            right: 20px;
+            z-index: 1019; 
+        }
+
+        /* Colores específicos para cada botón */
+        .fab-button-one { background-color: #6f42c1; } /* Púrpura */
+        .fab-button-two { background-color: #17a2b8; } /* Cian */
         /* --- FIN: ESTILOS --- */
 
     </style>
@@ -163,10 +174,10 @@
             <span class="text-muted">Hecho con ❤️ Por La Tribu de Los Libres - 2025</span> - <a href="{{ url_for('version.ver_versiones') }}" class="text-muted">Versión {{ latest_version_number }}</a>
         </div>
     </footer>
-    {# FIN: FOOTER #}
 
-    <!-- Contenedor donde se insertará el botón flotante dinámico -->
-    <div id="dynamic-fab-placeholder"></div>
+    <!-- Contenedores para los botones flotantes -->
+    <div id="dynamic-fab-placeholder-left"></div>
+    <div id="dynamic-fab-placeholder-right"></div>
 
     <div id="installBanner">
         <button class="close-button text-center" id="closeInstallBanner">&times;</button>
@@ -354,22 +365,16 @@
         }
     </script>
     
-    <!-- === INICIO: LÓGICA DEL BOTÓN FLOTANTE DINÁMICO === -->
+    <!-- === INICIO: LÓGICA DE LOS BOTONES FLOTANTES DINÁMICOS === -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // URLs de los endpoints en tu blueprint 'btns'
         const configUrl = "{{ url_for('btns.get_btn_config') }}";
         const sessionUrl = "{{ url_for('btns.get_session_status') }}";
 
-        // Realizar ambas peticiones al mismo tiempo
-        Promise.all([
-            fetch(configUrl).then(response => response.json()),
-            fetch(sessionUrl).then(response => response.json())
-        ])
-        .then(([config, sessionStatus]) => {
-            // Lógica para determinar si el botón debe mostrarse
+        // Función para crear un botón individual
+        function createFab(buttonConfig, sessionStatus, placeholderId, extraClass) {
             let showButton = false;
-            const visibility = config.visibility_state;
+            const visibility = buttonConfig.visibility_state;
 
             if (visibility === 'all') {
                 showButton = true;
@@ -379,36 +384,56 @@
                 showButton = true;
             }
 
-            // Si el botón debe mostrarse y no está deshabilitado
-            if (config.is_visible && showButton) {
-                const placeholder = document.getElementById('dynamic-fab-placeholder');
-                
-                // Crear el contenedor del botón
-                const container = document.createElement('div');
-                container.className = 'dynamic-fab-container';
+            if (buttonConfig.is_visible && showButton) {
+                const placeholder = document.getElementById(placeholderId);
+                if (!placeholder) return;
 
-                // Crear el enlace (botón)
+                const container = document.createElement('div');
+                container.className = (placeholderId.includes('left')) ? 'dynamic-fab-container-left' : 'dynamic-fab-container-right';
+
                 const buttonLink = document.createElement('a');
-                buttonLink.href = config.link;
-                buttonLink.target = '_blank';
-                buttonLink.className = 'dynamic-fab-button';
+                buttonLink.href = buttonConfig.link;
+                
+                // Abrir en nueva pestaña si es un enlace externo, o si es un archivo
+                const isExternal = buttonConfig.link.startsWith('http');
+                const isFile = ['.pdf', '.jpg', '.png', '.mp3', '.mp4', '.txt', '.gpx', '.kml', '.kmz'].some(ext => buttonConfig.link.toLowerCase().endsWith(ext));
+                if (isExternal || isFile) {
+                    buttonLink.target = '_blank';
+                }
+
+                buttonLink.className = 'dynamic-fab-button ' + extraClass;
                 buttonLink.title = 'Enlace Personalizado';
 
-                // Crear el icono
                 const icon = document.createElement('i');
-                icon.className = 'fas fa-link';
+                icon.className = 'fas ' + buttonConfig.icon; // Añadir 'fas' para Font Awesome
 
-                // Ensamblar todo
                 buttonLink.appendChild(icon);
                 container.appendChild(buttonLink);
                 placeholder.appendChild(container);
             }
+        }
+
+        // Realizar peticiones y crear ambos botones
+        Promise.all([
+            fetch(configUrl).then(response => response.json()),
+            fetch(sessionUrl).then(response => response.json())
+        ])
+        .then(([config, sessionStatus]) => {
+            // Crear Botón 1 (Izquierdo)
+            if (config.button_one) {
+                createFab(config.button_one, sessionStatus, 'dynamic-fab-placeholder-left', 'fab-button-one');
+            }
+            // Crear Botón 2 (Derecho)
+            if (config.button_two) {
+                createFab(config.button_two, sessionStatus, 'dynamic-fab-placeholder-right', 'fab-button-two');
+            }
         })
         .catch(error => {
-            console.error('Error al cargar la configuración del botón dinámico:', error);
+            console.error('Error al cargar la configuración de los botones dinámicos:', error);
         });
     });
     </script>
-    <!-- === FIN: LÓGICA DEL BOTÓN FLOTANTE DINÁMICO === -->
+    <!-- === FIN: LÓGICA === -->
 </body>
 </html>
+    
