@@ -114,10 +114,6 @@ def generate_unique_filename(original_filename, upload_folder):
 
 @caminatas_bp.route('/ver_caminatas')
 def ver_caminatas():
-    # --- ¡CAMBIO 1: Cargar la configuración! ---
-    button_config = load_button_config()
-
-    # (Tu código original para buscar caminatas se mantiene igual)
     all_caminatas = Caminata.query.order_by(Caminata.fecha.desc()).all()
     search_actividad = request.args.get('actividad')
 
@@ -126,12 +122,10 @@ def ver_caminatas():
     else:
         caminatas = Caminata.query.all()
 
-    # --- ¡CAMBIO 2: Pasar la configuración a la plantilla! ---
     return render_template(
         'ver_caminatas.html', 
         caminatas=caminatas, 
-        search_actividad=search_actividad,
-        config=button_config  # <-- Esta es la línea clave que se añade
+        search_actividad=search_actividad
     )
   
 # Ruta para crear una nueva caminata

@@ -4,36 +4,6 @@
 
 {% block head_content %}
 <style>
-    /* --- INICIO: ESTILOS CORREGIDOS PARA BOTÓN FLOTANTE --- */
-    .dynamic-fab-container {
-        position: fixed;
-        /* ¡CAMBIO CLAVE! Se ajusta la posición a la esquina superior izquierda */
-        top: 100px; 
-        left: 20px;
-        z-index: 9999; /* z-index alto para máxima visibilidad */
-    }
-
-    .dynamic-fab-button {
-        background-color: #6f42c1; /* Púrpura */
-        color: white;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-    }
-    .dynamic-fab-button:hover {
-        transform: scale(1.05);
-        color: white;
-    }
-    /* --- FIN: ESTILOS CORREGIDOS --- */
-
-
     /* Estilos generales para los botones flotantes y notificaciones */
     .fab-container {
         position: fixed;
@@ -406,28 +376,6 @@
 </div>
 
 <div id="toast-notification">¡Enlace copiado al portapapeles!</div>
-
-<!-- --- INICIO: Lógica CORREGIDA para el Botón Flotante Dinámico --- -->
-{% if config and config.visibility_state != 'disabled' %}
-    {% set show_button = false %}
-    {% if config.visibility_state == 'all' %}
-        {% set show_button = true %}
-    {% elif config.visibility_state == 'regular' and session.logged_in %}
-        {% set show_button = true %}
-    {% elif config.visibility_state == 'superuser' and session.is_superuser %}
-        {% set show_button = true %}
-    {% endif %}
-
-    {% if show_button %}
-    <div class="dynamic-fab-container">
-        <a href="{{ config.link }}" target="_blank" class="dynamic-fab-button" title="Enlace Personalizado">
-            <i class="fas fa-link"></i>
-        </a>
-    </div>
-    {% endif %}
-{% endif %}
-<!-- --- FIN: Lógica para el Botón Flotante Dinámico --- -->
-
 
 <div class="fab-container-share">
     <a href="#" id="copyLinkButton" class="fab-button-share copy-link" title="Compartir Enlace">
