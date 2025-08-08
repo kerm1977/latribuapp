@@ -876,129 +876,117 @@ def abono_caminata(caminata_id, user_id):
     )
 
 
-# --- INICIO NUEVA SECCIÓN: LÓGICA DE EXPORTACIÓN DE FACTURAS ---
+# --- INICIO DE LA SECCIÓN MODIFICADA: LÓGICA DE EXPORTACIÓN DE FACTURAS ---
 
-def _get_invoice_data_as_text(caminata, participante, abonos):
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 15)
+        # Usamos encode para manejar tildes
+        self.cell(0, 10, 'Recibo de Pago'.encode('latin-1', 'replace').decode('latin-1'), 0, 1, 'C')
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+
+    def chapter_title(self, title):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 6, title.encode('latin-1', 'replace').decode('latin-1'), 0, 1, 'L')
+        self.ln(4)
+
+    def chapter_body(self, data):
+        self.set_font('Arial', '', 11)
+        for key, value in data.items():
+            self.set_font('Arial', 'B', 11)
+            self.cell(50, 6, f"{key}:".encode('latin-1', 'replace').decode('latin-1'), 0, 0)
+            self.set_font('Arial', '', 11)
+            self.multi_cell(0, 6, str(value).encode('latin-1', 'replace').decode('latin-1'), 0, 1)
+        self.ln()
+
+    def abono_entry(self, abono_data):
+        self.set_font('Arial', 'B', 11)
+        self.cell(0, 6, f"Registro de Abono - {abono_data.get('Fecha', '')}".encode('latin-1', 'replace').decode('latin-1'), 0, 1)
+        self.set_font('Arial', '', 10)
+        for key, value in abono_data.items():
+            if key != 'Fecha':
+                self.cell(5)
+                self.cell(50, 5, f"{key}:".encode('latin-1', 'replace').decode('latin-1'), 0, 0)
+                self.multi_cell(0, 5, str(value).encode('latin-1', 'replace').decode('latin-1'), 0, 1)
+        self.line(self.get_x(), self.get_y(), self.get_x() + 190, self.get_y())
+        self.ln(3)
+
+def _get_invoice_data(caminata, participante, abonos):
     """
-    Genera una cadena de texto con los detalles de la factura,
-    replicando la lógica de la plantilla y omitiendo valores vacíos.
+    Prepara todos los datos para la factura en un diccionario estructurado.
     """
-    lines = []
+    # Símbolo de colón de una sola barra (ALT+162)
+    colon_symbol = chr(162)
 
-    def should_display(value):
-        """Función auxiliar para determinar si un valor debe mostrarse."""
-        if value is None:
-            return False
-        if isinstance(value, str) and (value.strip() == '' or value.strip().upper() == 'N/A'):
-            return False
-        if isinstance(value, (int, float)) and value == 0:
-            return False
-        return True
-
-    # --- Cálculos de la factura (replicando la lógica de la plantilla) ---
+    # --- Cálculos ---
     price = float(caminata.precio or 0)
     paid_crc_from_db = sum(a.monto_abono_crc for a in abonos if a.monto_abono_crc)
     paid_usd_from_db = sum(a.monto_abono_usd for a in abonos if a.monto_abono_usd)
-    exchange_rate = 0
-    if abonos and abonos[0].tipo_cambio_bcr:
-        exchange_rate = float(abonos[0].tipo_cambio_bcr)
+    exchange_rate = next((a.tipo_cambio_bcr for a in reversed(abonos) if a.tipo_cambio_bcr), 0)
 
-    price_in_crc = 0
-    remaining_usd = 0
-    if caminata.moneda == 'USD':
-        if exchange_rate > 0:
-            price_in_crc = price * exchange_rate
-        remaining_usd = price - paid_usd_from_db
-    else: # Moneda es CRC
-        price_in_crc = price
-        remaining_usd = 0 - paid_usd_from_db
-
-    total_paid_in_crc = paid_crc_from_db
-    if exchange_rate > 0:
-         total_paid_in_crc += (paid_usd_from_db * exchange_rate)
-
-    remaining_crc = price_in_crc - total_paid_in_crc
-
-    is_cancelled = False
-    if caminata.moneda == 'USD':
-        if price_in_crc > 0 and total_paid_in_crc >= price_in_crc:
-            is_cancelled = True
-        elif paid_usd_from_db >= price:
-            is_cancelled = True
-    else: # Moneda es CRC
-        if total_paid_in_crc >= price:
-            is_cancelled = True
+    price_in_crc = price * exchange_rate if caminata.moneda == 'USD' and exchange_rate > 0 else price
+    remaining_usd = price - paid_usd_from_db if caminata.moneda == 'USD' else 0 - paid_usd_from_db
     
-    # --- Construcción del texto de la factura ---
-    lines.append("FACTURA DE CAMINATA")
-    lines.append("="*30)
-    
-    # Datos de la Caminata
-    if should_display(caminata.nombre): lines.append(f"Caminata: {caminata.nombre}")
-    if caminata.fecha: lines.append(f"Fecha: {caminata.fecha.strftime('%d-%m-%Y')}")
-    if should_display(caminata.actividad): lines.append(f"Actividad: {caminata.actividad}")
-    if should_display(caminata.dificultad): lines.append(f"Dificultad: {caminata.dificultad}")
-    if should_display(caminata.distancia): lines.append(f"Distancia: {caminata.distancia} km")
-    lines.append("")
+    total_paid_in_crc = paid_crc_from_db + (paid_usd_from_db * exchange_rate if exchange_rate > 0 else 0)
+    remaining_crc = price_in_crc - total_paid_in_crc if price_in_crc > 0 else 0 - total_paid_in_crc
 
-    # Datos del Participante
-    lines.append(f"Participante: {participante.nombre} {participante.primer_apellido}")
-    lines.append("")
-    lines.append("--- Resumen Financiero ---")
-    
-    # Resumen Financiero
-    if should_display(price): lines.append(f"Precio por Persona: {'$' if caminata.moneda == 'USD' else '¢'}{price:,.0f}")
-    if should_display(total_paid_in_crc): lines.append(f"Total Abonado CRC: ¢{total_paid_in_crc:,.0f}")
-    if should_display(paid_usd_from_db): lines.append(f"Total Abonado USD: ${paid_usd_from_db:,.0f}")
+    is_cancelled = (caminata.moneda == 'USD' and (total_paid_in_crc >= price_in_crc > 0 or paid_usd_from_db >= price)) or \
+                   (caminata.moneda == 'CRC' and total_paid_in_crc >= price)
 
-    if is_cancelled:
-        lines.append("Monto Restante: CANCELADO")
-    else:
-        if should_display(remaining_crc): lines.append(f"Monto Restante CRC: ¢{remaining_crc:,.0f}")
-        if should_display(remaining_usd): lines.append(f"Monto Restante USD: ${remaining_usd:,.0f}")
-    
-    lines.append("")
-    lines.append("--- Historial de Abonos ---")
+    # --- Estructura de Datos ---
+    data = {
+        "caminata_details": {
+            "Caminata": caminata.nombre,
+            "Fecha": caminata.fecha.strftime('%d de %B de %Y'),
+            "Actividad": caminata.actividad,
+            "Precio": f"{'$' if caminata.moneda == 'USD' else colon_symbol}{price:,.2f}"
+        },
+        "participante_details": {
+            "Participante": f"{participante.nombre} {participante.primer_apellido}",
+            "Teléfono": participante.telefono,
+            "Email": participante.email
+        },
+        "financial_summary": {
+            "Total Abonado (CRC)": f"{colon_symbol}{total_paid_in_crc:,.2f}",
+            "Total Abonado (USD)": f"${paid_usd_from_db:,.2f}",
+            "Monto Restante": "CANCELADO" if is_cancelled else f"{colon_symbol}{remaining_crc:,.2f} / ${remaining_usd:,.2f}"
+        },
+        "abonos_history": []
+    }
 
-    if abonos:
-        total_historial_crc = 0
-        for abono in abonos:
-            # Convertir fecha a zona horaria de Costa Rica
-            fecha_abono_cr = abono.fecha_abono
-            if fecha_abono_cr.tzinfo is None:
-                fecha_abono_cr = UTC_TZ.localize(fecha_abono_cr)
-            fecha_abono_cr = fecha_abono_cr.astimezone(COSTA_RICA_TZ)
+    for abono in abonos:
+        display_crc = (abono.monto_abono_crc or 0) + ((abono.monto_abono_usd or 0) * (abono.tipo_cambio_bcr or 0))
+        
+        # Manejo robusto de 'Detalles'
+        detalles_str = "N/A"
+        if abono.nombres_acompanantes and abono.nombres_acompanantes.strip():
+            try:
+                detalles_list = json.loads(abono.nombres_acompanantes)
+                if isinstance(detalles_list, list) and detalles_list:
+                    detalles_str = ', '.join(map(str, detalles_list))
+            except (json.JSONDecodeError, TypeError):
+                detalles_str = abono.nombres_acompanantes
 
-            lines.append(f"Fecha: {fecha_abono_cr.strftime('%d/%m/%Y %H:%M')}")
-            
-            crc_val = float(abono.monto_abono_crc or 0)
-            usd_val = float(abono.monto_abono_usd or 0)
-            tc_val = float(abono.tipo_cambio_bcr or 0)
-            display_crc = crc_val + (usd_val * tc_val)
-            total_historial_crc += display_crc
-
-            if should_display(abono.opcion): lines.append(f"  Opción: {abono.opcion}")
-            if should_display(abono.cantidad_acompanantes): lines.append(f"  Acompañantes: {abono.cantidad_acompanantes}")
-            
-            if abono.nombres_acompanantes:
-                nombres_acom = json.loads(abono.nombres_acompanantes)
-                if nombres_acom:
-                    lines.append(f"  Detalles: {', '.join(nombres_acom)}")
-            
-            lines.append(f"  Monto Abonado CRC (calculado): ¢{display_crc:,.0f}")
-            if should_display(usd_val): lines.append(f"  Monto Abonado USD (original): ${usd_val:,.0f}")
-            if should_display(tc_val): lines.append(f"  T.C. usado: {tc_val}")
-            lines.append("-" * 20)
-
-        lines.append("")
-        lines.append("--- Totales del Historial ---")
-        lines.append(f"Total Historial CRC (calculado): ¢{total_historial_crc:,.0f}")
-        lines.append(f"Total Historial USD (original): ${paid_usd_from_db:,.0f}")
-    else:
-        lines.append("No hay abonos registrados.")
-
-    return "\n".join(lines)
-
+        abono_data = {
+            "Fecha": abono.fecha_abono.strftime('%d-%m-%Y') if isinstance(abono.fecha_abono, (date, datetime)) else 'N/A',
+            "Opción": abono.opcion,
+            "Monto Calculado": f"{colon_symbol}{display_crc:,.2f}",
+            "Acompañantes": abono.cantidad_acompanantes,
+            "Detalles": detalles_str
+        }
+        
+        # Añadir "Periodo que Cancela" solo si existe
+        if abono.periodo_cancela:
+            abono_data["Periodo que Cancela"] = abono.periodo_cancela.strftime('%d-%m-%Y')
+        
+        data["abonos_history"].append(abono_data)
+        
+    return data
 
 @caminatas_bp.route('/caminatas/<int:caminata_id>/abono/<int:user_id>/export_pdf')
 @login_required
@@ -1006,21 +994,28 @@ def exportar_abono_pdf(caminata_id, user_id):
     caminata = Caminata.query.get_or_404(caminata_id)
     participante = User.query.get_or_404(user_id)
     abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(AbonoCaminata.fecha_abono.asc()).all()
-
-    invoice_text = _get_invoice_data_as_text(caminata, participante, abonos)
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font('Arial', '', 10)
     
-    # Usar multi_cell para manejar saltos de línea y texto largo
-    pdf.multi_cell(0, 5, invoice_text.encode('latin-1', 'replace').decode('latin-1'))
+    data = _get_invoice_data(caminata, participante, abonos)
+    
+    pdf = PDF()
+    pdf.add_page()
+    
+    pdf.chapter_title('Detalles de la Caminata')
+    pdf.chapter_body(data['caminata_details'])
+    
+    pdf.chapter_title('Datos del Participante')
+    pdf.chapter_body(data['participante_details'])
+    
+    pdf.chapter_title('Resumen Financiero')
+    pdf.chapter_body(data['financial_summary'])
+    
+    if data['abonos_history']:
+        pdf.chapter_title('Historial de Abonos')
+        for abono_data in data['abonos_history']:
+            pdf.abono_entry(abono_data)
 
     pdf_output = pdf.output(dest='S').encode('latin-1')
-    response = current_app.make_response(pdf_output)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename=factura_{caminata.nombre}_{participante.username}.pdf'
-    return response
+    return send_file(io.BytesIO(pdf_output), mimetype='application/pdf', as_attachment=True, download_name=f'recibo_{participante.username}.pdf')
 
 @caminatas_bp.route('/caminatas/<int:caminata_id>/abono/<int:user_id>/export_jpg')
 @login_required
@@ -1029,51 +1024,71 @@ def exportar_abono_jpg(caminata_id, user_id):
     participante = User.query.get_or_404(user_id)
     abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(AbonoCaminata.fecha_abono.asc()).all()
 
-    invoice_text = _get_invoice_data_as_text(caminata, participante, abonos)
-    
-    font_size = 20
+    data = _get_invoice_data(caminata, participante, abonos)
+
+    # --- Configuración de la imagen ---
+    width, padding = 800, 40
     font_path = os.path.join(current_app.root_path, 'static', 'fonts', 'arial.ttf')
     try:
-        font = ImageFont.truetype(font_path, font_size)
+        font_h1 = ImageFont.truetype(font_path.replace('.ttf', 'bd.ttf'), 28)
+        font_h2 = ImageFont.truetype(font_path.replace('.ttf', 'bd.ttf'), 18)
+        font_body = ImageFont.truetype(font_path, 16)
+        font_bold = ImageFont.truetype(font_path.replace('.ttf', 'bd.ttf'), 16)
     except IOError:
-        font = ImageFont.load_default()
+        font_h1 = font_h2 = font_body = font_bold = ImageFont.load_default()
 
-    # Calcular dimensiones de la imagen
-    dummy_img = Image.new('RGB', (1, 1))
-    dummy_draw = ImageDraw.Draw(dummy_img)
-    
-    lines = invoice_text.split('\n')
-    max_line_width = 0
-    total_text_height = 0
-    
+    # --- Función para dibujar texto y calcular altura ---
+    lines = []
+    def add_line(text, font, indent=0):
+        lines.append({'text': str(text), 'font': font, 'indent': indent})
+
+    add_line('Recibo de Pago', font_h1, 'center')
+    add_line('', font_body)
+
+    # Secciones
+    sections = {
+        "Detalles de la Caminata": data['caminata_details'],
+        "Datos del Participante": data['participante_details'],
+        "Resumen Financiero": data['financial_summary']
+    }
+    for title, content in sections.items():
+        add_line(title, font_h2)
+        for key, value in content.items():
+            add_line(f"{key}: {value}", font_body, 10)
+        add_line('', font_body)
+
+    if data['abonos_history']:
+        add_line('Historial de Abonos', font_h2)
+        for abono_data in data['abonos_history']:
+            add_line(f"Registro - {abono_data.get('Fecha', '')}", font_bold, 10)
+            for key, value in abono_data.items():
+                if key != 'Fecha':
+                    add_line(f"  {key}: {value}", font_body, 20)
+            add_line('', font_body)
+
+    # --- Calcular altura total y crear imagen ---
+    height = padding * 2
+    dummy_draw = ImageDraw.Draw(Image.new('RGB', (1,1)))
     for line in lines:
-        bbox = dummy_draw.textbbox((0, 0), line, font=font)
-        line_width = bbox[2] - bbox[0]
-        line_height = bbox[3] - bbox[1] + 5 # Espacio entre líneas
-        max_line_width = max(max_line_width, line_width)
-        total_text_height += line_height
+        bbox = dummy_draw.textbbox((0, 0), line['text'], font=line['font'])
+        height += (bbox[3] - bbox[1]) + 5
 
-    padding = 40
-    img_width = int(max_line_width + (2 * padding))
-    img_height = int(total_text_height + (2 * padding))
-    
-    img = Image.new('RGB', (img_width, img_height), color='white')
-    d = ImageDraw.Draw(img)
-
-    # Dibujar el texto
-    y_offset = padding
+    img = Image.new('RGB', (width, height), 'white')
+    draw = ImageDraw.Draw(img)
+    y = padding
     for line in lines:
-        d.text((padding, y_offset), line, fill=(0, 0, 0), font=font)
-        bbox = d.textbbox((0,0), line, font=font)
-        line_height_actual = bbox[3] - bbox[1] + 5
-        y_offset += line_height_actual
+        bbox = draw.textbbox((0, 0), line['text'], font=line['font'])
+        text_width = bbox[2] - bbox[0]
+        x = (width - text_width) / 2 if line.get('indent') == 'center' else padding + line.get('indent', 0)
+        draw.text((x, y), line['text'], fill='black', font=line['font'])
+        y += (bbox[3] - bbox[1]) + 5
 
+    # Guardar en memoria
     img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format='JPEG')
+    img.save(img_byte_arr, format='JPEG', quality=95)
     img_byte_arr.seek(0)
-
-    return send_file(img_byte_arr, mimetype='image/jpeg', as_attachment=True, download_name=f'factura_{caminata.nombre}_{participante.username}.jpg')
-
+    
+    return send_file(img_byte_arr, mimetype='image/jpeg', as_attachment=True, download_name=f'recibo_{participante.username}.jpg')
 
 @caminatas_bp.route('/caminatas/<int:caminata_id>/abono/<int:user_id>/export_txt')
 @login_required
@@ -1082,14 +1097,28 @@ def exportar_abono_txt(caminata_id, user_id):
     participante = User.query.get_or_404(user_id)
     abonos = AbonoCaminata.query.filter_by(caminata_id=caminata.id, user_id=participante.id).order_by(AbonoCaminata.fecha_abono.asc()).all()
 
-    invoice_text = _get_invoice_data_as_text(caminata, participante, abonos)
+    data = _get_invoice_data(caminata, participante, abonos)
     
-    response = current_app.make_response(invoice_text)
-    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
-    response.headers['Content-Disposition'] = f'attachment; filename=factura_{caminata.nombre}_{participante.username}.txt'
-    return response
+    lines = []
+    lines.append("--- RECIBO DE PAGO ---")
+    for section_title, section_data in data.items():
+        if section_title != 'abonos_history':
+            lines.append(f"\n--- {section_title.replace('_', ' ').upper()} ---")
+            for key, value in section_data.items():
+                lines.append(f"{key}: {value}")
+    
+    if data['abonos_history']:
+        lines.append("\n--- HISTORIAL DE ABONOS ---")
+        for abono_data in data['abonos_history']:
+            lines.append("-" * 20)
+            for key, value in abono_data.items():
+                lines.append(f"  {key}: {value}")
 
-# --- FIN NUEVA SECCIÓN ---
+    txt_output = "\n".join(lines)
+    
+    return send_file(io.BytesIO(txt_output.encode('utf-8')), mimetype='text/plain', as_attachment=True, download_name=f'recibo_{participante.username}.txt')
+
+# --- FIN DE LA SECCIÓN MODIFICADA ---
 
 
 # --- RUTAS DE EXPORTACIÓN DE DETALLE DE CAMINATA ---
@@ -1685,4 +1714,4 @@ def procesar_botones_get():
     buttons = load_button_config()
     return render_template('load_buttons.html', buttons=buttons)
 
-# --- FIN DEL CÓDIGO RESTAURADO ---
+# --- FIN DEL CÓDIGO RESTAURADO 
