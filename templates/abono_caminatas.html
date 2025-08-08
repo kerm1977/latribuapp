@@ -53,32 +53,38 @@
                 <p><strong>Precio por Persona:</strong> {% if caminata.moneda == 'USD' %}${% else %}¢{% endif %}{{ caminata.precio | int }}</p>
                 
                 <!-- === INICIO MODIFICACIÓN: TOTALES DOBLE MONEDA === -->
+                {# Se definen variables para hacer el código más claro y robusto #}
+                {% set price = caminata.precio | float %}
+                {% set paid_crc = total_abonado_crc | default(0) | float %}
+                {% set paid_usd = total_abonado_usd | default(0) | float %}
+
+                {# Lógica de cálculo de saldos restantes #}
+                {% if caminata.moneda == 'USD' %}
+                    {# La moneda principal es USD #}
+                    {% set remaining_usd = price - paid_usd %}
+                    {% set remaining_crc = 0 - paid_crc %}
+                {% else %}
+                    {# La moneda principal es CRC #}
+                    {% set remaining_crc = price - paid_crc %}
+                    {% set remaining_usd = 0 - paid_usd %}
+                {% endif %}
+
                 <div class="totals-grid mt-3">
                     <div>
                         <h5 class="text-success">Total Abonado CRC:</h5>
-                        <h4><strong>¢{{ total_abonado_crc | default(0) | int }}</strong></h4>
+                        <h4><strong>¢{{ paid_crc | int }}</strong></h4>
                     </div>
                     <div>
                         <h5 class="text-success">Total Abonado USD:</h5>
-                        <h4><strong>${{ total_abonado_usd | default(0) | int }}</strong></h4>
+                        <h4><strong>${{ paid_usd | int }}</strong></h4>
                     </div>
                     <div>
                         <h5 class="text-danger">Monto Restante CRC:</h5>
-                        {# CAMBIO: Lógica de cálculo directo en la plantilla #}
-                        {% if caminata.moneda == 'USD' %}
-                            <h4><strong>¢{{ (0 - (total_abonado_crc | default(0))) | int }}</strong></h4>
-                        {% else %}
-                            <h4><strong>¢{{ (caminata.precio - (total_abonado_crc | default(0))) | int }}</strong></h4>
-                        {% endif %}
+                        <h4><strong>¢{{ remaining_crc | int }}</strong></h4>
                     </div>
                     <div>
                         <h5 class="text-danger">Monto Restante USD:</h5>
-                        {# CAMBIO: Lógica de cálculo directo en la plantilla #}
-                        {% if caminata.moneda == 'USD' %}
-                            <h4><strong>${{ (caminata.precio - (total_abonado_usd | default(0))) | int }}</strong></h4>
-                        {% else %}
-                            <h4><strong>${{ (0 - (total_abonado_usd | default(0))) | int }}</strong></h4>
-                        {% endif %}
+                        <h4><strong>${{ remaining_usd | int }}</strong></h4>
                     </div>
                 </div>
                  <!-- === FIN MODIFICACIÓN === -->
@@ -108,7 +114,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                <!-- === INICIO MODIFICACIÓN: CAMPOS DOBLE MONEDA === -->
                 <div class="col-md-4">
                     <label for="tipo_cambio_bcr" class="form-label">Tipo de Cambio USD-BCCR:</label>
                     <input type="number" step="0.01" class="form-control" id="tipo_cambio_bcr" name="tipo_cambio_bcr" placeholder="Ej: 515.50">
@@ -127,7 +132,6 @@
                         <input type="number" step="1" class="form-control" id="monto_abono_usd" name="monto_abono_usd" min="0" value="0">
                     </div>
                 </div>
-                 <!-- === FIN MODIFICACIÓN === -->
             </div>
             <div class="mb-3">
                 <label for="nombres_acompanantes_raw" class="form-label">Nombres de Acompañantes o Detalles (separados por comas):</label>
