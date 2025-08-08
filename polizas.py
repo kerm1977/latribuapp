@@ -343,15 +343,17 @@ def _generar_contenido_texto(poliza):
     
     contenido.append("\nDATOS DE PAGO Y VIGENCIA\n")
     contenido.append(f"  Fecha de Vencimiento: {poliza.fecha_vencimiento.strftime('%d/%m/%Y') if poliza.fecha_vencimiento else 'N/A'}\n")
-    contenido.append(f"  Precio de la Póliza: ¢{poliza.precio_poliza:,.0f}\n")
-    contenido.append(f"  Monto Cancelado: ¢{poliza.monto_cancelacion:,.0f}\n")
+    # ¡CORRECCIÓN! Verificar si el valor es None antes de formatear
+    contenido.append(f"  Precio de la Póliza: {f'¢{poliza.precio_poliza:,.0f}' if poliza.precio_poliza is not None else 'N/A'}\n")
+    contenido.append(f"  Monto Cancelado: {f'¢{poliza.monto_cancelacion:,.0f}' if poliza.monto_cancelacion is not None else 'N/A'}\n")
     contenido.append(f"  Banco: {poliza.banco or 'N/A'}\n")
     contenido.append(f"  Cuenta de Depósito: {poliza.cuenta_deposito or 'N/A'}\n")
     contenido.append(f"  SINPE Móvil: {poliza.sinpe_deposito or 'N/A'}\n")
 
     contenido.append("\nDETALLES ADICIONALES\n")
     if session.get('role') == 'Superuser':
-        contenido.append(f"  Costo del Trámite: ¢{poliza.costo_tramite:,.0f}\n")
+        # ¡CORRECCIÓN! Verificar si el valor es None antes de formatear
+        contenido.append(f"  Costo del Trámite: {f'¢{poliza.costo_tramite:,.0f}' if poliza.costo_tramite is not None else 'N/A'}\n")
     contenido.append(f"  Fecha de Registro: {poliza.fecha_registro.strftime('%d/%m/%Y %I:%M %p')}\n")
     if poliza.otros_detalles:
         contenido.append(f"\nNotas:\n{poliza.otros_detalles}\n")
@@ -401,8 +403,9 @@ def _generar_pdf_factura(poliza):
     story.append(Paragraph("Datos de Pago y Vigencia", styles['SectionTitle']))
     pago_data = [
         ['Fecha de Vencimiento:', poliza.fecha_vencimiento.strftime('%d/%m/%Y') if poliza.fecha_vencimiento else 'N/A'],
-        ['Precio de la Póliza:', f"¢{poliza.precio_poliza:,.0f}"],
-        ['Monto Cancelado:', f"¢{poliza.monto_cancelacion:,.0f}"],
+        # ¡CORRECCIÓN! Verificar si el valor es None antes de formatear
+        ['Precio de la Póliza:', f"¢{poliza.precio_poliza:,.0f}" if poliza.precio_poliza is not None else 'N/A'],
+        ['Monto Cancelado:', f"¢{poliza.monto_cancelacion:,.0f}" if poliza.monto_cancelacion is not None else 'N/A'],
         ['Banco:', poliza.banco or 'N/A'],
         ['Cuenta de Depósito:', poliza.cuenta_deposito or 'N/A'],
         ['SINPE Móvil:', poliza.sinpe_deposito or 'N/A'],
@@ -516,3 +519,4 @@ def get_user_data(user_id):
         }
         return jsonify(user_data)
     return jsonify({'error': 'Usuario no encontrado'}), 404
+    
