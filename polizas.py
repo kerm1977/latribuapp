@@ -1,21 +1,21 @@
 # polizas.py
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify, send_file, Response
 from models import db, User, Poliza, Beneficiario
 from functools import wraps
 from datetime import datetime
 import pytz # Para manejar zonas horarias
 import io
+import csv
 
 # --- LIBRERÍAS PARA EXPORTACIÓN ---
-# (Asegúrate de instalarlas: pip install reportlab openpyxl)
-import openpyxl
+import openpyxl # Usaremos esta para generar archivos Excel reales
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
 
-# --- DECORADOR DE ROLES (para mantener el archivo autocontenido) ---
+# --- DECORADOR DE ROLES ---
 def role_required(roles):
     if not isinstance(roles, list):
         roles = [roles]
@@ -304,7 +304,7 @@ def eliminar_poliza(poliza_id):
     
     return redirect(url_for('polizas.ver_polizas'))
 
-# --- LÓGICA DE EXPORTACIÓN ---
+# --- LÓGICA DE EXPORTACIÓN CORREGIDA ---
 
 def _generar_contenido_texto(poliza):
     """Función auxiliar para generar el contenido de texto para TXT."""
@@ -364,7 +364,6 @@ def _generar_pdf_factura(poliza):
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
     styles = getSampleStyleSheet()
     
-    # --- CORRECCIÓN: Usar nombres únicos para los estilos personalizados ---
     styles.add(ParagraphStyle(name='CustomTitle', fontSize=22, alignment=TA_CENTER, spaceAfter=20))
     styles.add(ParagraphStyle(name='HeaderInfo', fontSize=10, alignment=TA_RIGHT))
     styles.add(ParagraphStyle(name='SectionTitle', fontSize=14, spaceBefore=10, spaceAfter=6, fontName='Helvetica-Bold'))
@@ -372,11 +371,9 @@ def _generar_pdf_factura(poliza):
     
     story = []
 
-    # --- Título ---
     story.append(Paragraph("Detalle de Póliza", styles['CustomTitle']))
     story.append(Spacer(1, 12))
     
-    # --- Encabezado con info de la póliza ---
     asegurado_nombre = f"{poliza.asegurado_registrado.nombre} {poliza.asegurado_registrado.primer_apellido}" if poliza.asegurado_registrado else f"{poliza.asegurado_nombre_manual} {poliza.asegurado_primer_apellido}"
     header_data = [
         [Paragraph('<b>Póliza No:</b>', styles['Normal']), Paragraph(f'{poliza.id}', styles['Normal'])],
@@ -388,7 +385,6 @@ def _generar_pdf_factura(poliza):
     story.append(header_table)
     story.append(Spacer(1, 24))
 
-    # --- Secciones ---
     if session.get('role') == 'Superuser':
         story.append(Paragraph("Datos de la Aseguradora", styles['SectionTitle']))
         aseguradora_data = [
@@ -454,42 +450,54 @@ def exportar_poliza(poliza_id, format):
     
     if format == 'txt':
         contenido = _generar_contenido_texto(poliza)
-        buffer = io.BytesIO(contenido.encode('utf-8'))
-        buffer.seek(0)
-        return send_file(buffer, as_attachment=True, download_name=filename, mimetype='text/plain; charset=utf-8')
+        return Response(
+            contenido,
+            mimetype="text/plain",
+            headers={"Content-Disposition": f"attachment;filename={filename}"}
+        )
 
     elif format == 'xls':
+        # ¡CAMBIO! Se usa openpyxl para crear un archivo Excel nativo.
         workbook = openpyxl.Workbook()
         sheet = workbook.active
         sheet.title = "Detalle de Póliza"
         
-        # Escribir datos
+        # Escribir datos de la póliza
         sheet.append(["Campo", "Valor"])
-        sheet.append(["Asegurado", f"{poliza.asegurado_registrado.nombre if poliza.asegurado_registrado else poliza.asegurado_nombre_manual}"])
+        asegurado_nombre = f"{poliza.asegurado_registrado.nombre if poliza.asegurado_registrado else poliza.asegurado_nombre_manual} {poliza.asegurado_primer_apellido}"
+        sheet.append(["Asegurado", asegurado_nombre])
         sheet.append(["Fecha de Vencimiento", poliza.fecha_vencimiento.strftime('%d/%m/%Y') if poliza.fecha_vencimiento else 'N/A'])
-        sheet.append(["Precio de la Póliza", f"¢{poliza.precio_poliza:,.0f}"])
-        sheet.append(["Monto Cancelado", f"¢{poliza.monto_cancelacion:,.0f}"])
+        sheet.append(["Precio de la Póliza", poliza.precio_poliza])
+        sheet.append(["Monto Cancelado", poliza.monto_cancelacion])
         sheet.append(["Banco", poliza.banco])
         sheet.append(["Cuenta de Depósito", poliza.cuenta_deposito])
         sheet.append(["SINPE Móvil", poliza.sinpe_deposito])
-        sheet.append([])
+        
+        sheet.append([]) # Fila vacía como separador
+        
+        # Escribir beneficiarios
         sheet.append(["Beneficiarios"])
-        sheet.append(["Nombre", "Cédula", "Parentesco", "Porcentaje"])
+        sheet.append(["Nombre Completo", "Cédula", "Parentesco", "Porcentaje"])
         for b in poliza.beneficiarios:
-            sheet.append([f"{b.nombre} {b.primer_apellido}", b.cedula, b.parentesco, b.porcentaje])
+            beneficiario_nombre = f"{b.nombre} {b.primer_apellido} {b.segundo_apellido or ''}".strip()
+            sheet.append([beneficiario_nombre, b.cedula, b.parentesco, b.porcentaje])
 
+        # Guardar en un buffer de memoria
         buffer = io.BytesIO()
         workbook.save(buffer)
         buffer.seek(0)
-        return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/vnd.ms-excel')
+        
+        # Crear la respuesta con el mimetype correcto para .xls
+        return send_file(
+            buffer, 
+            as_attachment=True, 
+            download_name=filename,
+            mimetype='application/vnd.ms-excel'
+        )
 
     elif format == 'pdf':
         buffer = _generar_pdf_factura(poliza)
         return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
-
-    elif format == 'jpg':
-        flash('La exportación a JPG se realiza directamente desde el navegador. Usa el botón correspondiente en la página de detalles.', 'info')
-        return redirect(url_for('polizas.detalle_poliza', poliza_id=poliza_id))
 
     return "Formato no válido", 400
 
