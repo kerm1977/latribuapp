@@ -29,12 +29,16 @@
         transform: scale(1.05); /* Pequeño efecto al pasar el ratón */
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
     }
+    .totals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
 </style>
 
-<div class="container"> {# Se eliminó 'mt-4' para alinear con ver_caminatas #}
-    {# MODIFICACIÓN: Eliminadas las clases "card shadow-lg p-4 mb-5 bg-white rounded" #}
-    <div class="p-4 mb-5"> {# Mantener padding y margin-bottom para espaciado interno #}
-        <h2 class="card-title text-center mb-4 text-warning mt-4">Recibo para Caminante</h2> {# Añadido mt-4 para espacio superior del título #}
+<div class="container">
+    <div class="p-4 mb-5">
+        <h2 class="card-title text-center mb-4 text-warning mt-4">Recibo para Caminante</h2>
 
         <div class="row mb-4">
             <div class="col-md-6">
@@ -47,14 +51,27 @@
             <div class="col-md-6 text-md-end">
                 <p><strong>Participante:</strong> {{ participante.nombre }} {{ participante.primer_apellido }}</p>
                 <p><strong>Precio por Persona:</strong> ¢{{ caminata.precio | int }}</p>
-                <h4 class="text-success"><strong>Total Abonado:</strong> ¢{{ total_abonado | int }}</h4>
-                {# MODIFICACIÓN: Condicional para Monto Restante #}
-                {% if monto_restante | int == 0 %}
-                <h4 class="text-success"><strong>Estado:</strong> Cancelado</h4> {# Cambiado a text-success para 'Cancelado' #}
-                {% else %}
-                <h4 class="text-danger"><strong>Monto Restante:</strong> ¢{{ monto_restante | int }}</h4>
-                {% endif %}
-                <p><small class="text-muted">Total a Pagar (incluyendo acompañantes): ¢{{ total_a_pagar_por_participante | int }}</small></p>
+                
+                <!-- === INICIO MODIFICACIÓN: TOTALES DOBLE MONEDA === -->
+                <div class="totals-grid mt-3">
+                    <div>
+                        <h5 class="text-success">Total Abonado CRC:</h5>
+                        <h4><strong>¢{{ total_abonado_crc | default(0) | int }}</strong></h4>
+                    </div>
+                    <div>
+                        <h5 class="text-success">Total Abonado USD:</h5>
+                        <h4><strong>${{ total_abonado_usd | default(0) | int }}</strong></h4>
+                    </div>
+                    <div>
+                        <h5 class="text-danger">Monto Restante CRC:</h5>
+                        <h4><strong>¢{{ monto_restante_crc | default(caminata.precio) | int }}</strong></h4>
+                    </div>
+                    <div>
+                        <h5 class="text-danger">Monto Restante USD:</h5>
+                        <h4><strong>${{ monto_restante_usd | default(0) | int }}</strong></h4>
+                    </div>
+                </div>
+                 <!-- === FIN MODIFICACIÓN === -->
             </div>
         </div>
 
@@ -63,9 +80,8 @@
         <h4 class="mb-3 text-warning">Registrar Nuevo Abono</h4>
         <form id="abonoForm" method="POST" action="{{ url_for('caminatas.abono_caminata', caminata_id=caminata.id, user_id=participante.id) }}">
             <input type="hidden" name="add_abono" value="true">
-            <div class="row mb-3">
-                {# REINTRODUCIR EL SELECTOR DE OPCIÓN AQUÍ #}
-                <div class="col-md-4">
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
                     <label for="opcion" class="form-label">Opción <span class="text-danger">*</span>:</label>
                     <select class="form-select" id="opcion" name="opcion" required>
                         <option value="">Seleccionar Opción</option>
@@ -74,7 +90,7 @@
                         <option value="Cancelación">Cancelación</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label for="cantidad_acompanantes" class="form-label">Cantidad Acompañantes:</label>
                     <select class="form-select" id="cantidad_acompanantes" name="cantidad_acompanantes" required>
                         {% for i in range(10) %}
@@ -82,13 +98,26 @@
                         {% endfor %}
                     </select>
                 </div>
+                <!-- === INICIO MODIFICACIÓN: CAMPOS DOBLE MONEDA === -->
                 <div class="col-md-4">
-                    <label for="monto_abono" class="form-label">Monto de Abono <span class="text-danger">*</span>:</label>
+                    <label for="tipo_cambio_bcr" class="form-label">Tipo de Cambio USD-BCCR:</label>
+                    <input type="number" step="0.01" class="form-control" id="tipo_cambio_bcr" name="tipo_cambio_bcr" placeholder="Ej: 515.50">
+                </div>
+                <div class="col-md-4">
+                    <label for="monto_abono_crc" class="form-label">Monto Abonado CRC:</label>
                     <div class="input-group">
                         <span class="input-group-text">¢</span>
-                        <input type="number" step="1" class="form-control" id="monto_abono" name="monto_abono" required min="0">
+                        <input type="number" step="1" class="form-control" id="monto_abono_crc" name="monto_abono_crc" min="0" value="0">
                     </div>
                 </div>
+                <div class="col-md-4">
+                    <label for="monto_abono_usd" class="form-label">Monto Abonado USD:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" step="1" class="form-control" id="monto_abono_usd" name="monto_abono_usd" min="0" value="0">
+                    </div>
+                </div>
+                 <!-- === FIN MODIFICACIÓN === -->
             </div>
             <div class="mb-3">
                 <label for="nombres_acompanantes_raw" class="form-label">Nombres de Acompañantes o Detalles (separados por comas):</label>
@@ -108,10 +137,12 @@
                 <thead class="table-light">
                     <tr>
                         <th>Fecha Abono</th>
-                        <th>Opción</th> {# COLUMNA OPCION VUELVE AQUÍ #}
+                        <th>Opción</th>
                         <th>Acompañantes</th>
-                        <th>Nombres de Acompañantes o Detalles</th>
-                        <th>Monto Abonado</th>
+                        <th>Detalles</th>
+                        <th>Monto Abonado CRC</th>
+                        <th>Monto Abonado USD</th>
+                        <th>T.C.</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -119,17 +150,15 @@
                     {% for abono in abonos %}
                     <tr>
                         <td>{{ abono.fecha_abono.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>{{ abono.opcion }}</td> {# Mostrar la opción #}
+                        <td>{{ abono.opcion }}</td>
                         <td>{{ abono.cantidad_acompanantes }}</td>
                         <td>
                             {% set nombres_acom = abono.nombres_acompanantes|from_json %}
-                            {% if nombres_acom %}
-                                {{ nombres_acom|join(', ') }}
-                            {% else %}
-                                N/A
-                            {% endif %}
+                            {{ nombres_acom|join(', ') if nombres_acom else 'N/A' }}
                         </td>
-                        <td>¢{{ abono.monto_abono | int }}</td>
+                        <td>¢{{ abono.monto_abono_crc | default(0) | int }}</td>
+                        <td>${{ abono.monto_abono_usd | default(0) | int }}</td>
+                        <td>{{ abono.tipo_cambio_bcr or 'N/A' }}</td>
                         <td>
                             <form action="{{ url_for('caminatas.abono_caminata', caminata_id=caminata.id, user_id=participante.id) }}" method="POST" class="d-inline">
                                 <input type="hidden" name="delete_abono" value="true">
@@ -150,11 +179,7 @@
 
         <hr>
 
-        {# MODIFICACIÓN: Contenedor de botones responsivo con sistema de cuadrícula de Bootstrap #}
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-2 mt-4">
-            <div class="col">
-                <a href="{{ url_for('caminatas.abono_caminata', caminata_id=caminata.id, user_id=participante.id) }}" class="btn btn-warning w-100" style="color: black;">Gestionar Abono</a>
-            </div>
             <div class="col">
                 <a href="{{ url_for('caminatas.exportar_abono_pdf', caminata_id=caminata.id, user_id=participante.id) }}" class="btn btn-warning w-100" style="color: black;">Exportar PDF</a>
             </div>
@@ -164,7 +189,6 @@
             <div class="col">
                 <a href="{{ url_for('caminatas.exportar_abono_txt', caminata_id=caminata.id, user_id=participante.id) }}" class="btn btn-warning w-100" style="color: black;">Exportar TXT</a>
             </div>
-            {# Se eliminó el botón "Volver Atrás" cuadrado #}
         </div>
     </div>
 </div>
@@ -172,14 +196,12 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const nombresAcompanantesInput = document.getElementById('nombres_acompanantes_raw');
-        const cantidadAcompanantesSelect = document.getElementById('cantidad_acompanantes'); // Nuevo: Referencia al select
+        const cantidadAcompanantesSelect = document.getElementById('cantidad_acompanantes');
         const abonoForm = document.getElementById('abonoForm');
         
-        // Claves únicas por URL para cada campo
         const nombresStorageKey = 'lastNombresAcompanantes_' + window.location.pathname;
-        const cantidadStorageKey = 'lastCantidadAcompanantes_' + window.location.pathname; // Nueva clave
+        const cantidadStorageKey = 'lastCantidadAcompanantes_' + window.location.pathname;
 
-        // 1. Cargar los valores guardados al cargar la página
         if (nombresAcompanantesInput) {
             const savedNombres = sessionStorage.getItem(nombresStorageKey);
             if (savedNombres) {
@@ -194,7 +216,6 @@
             }
         }
 
-        // 2. Guardar los valores al enviar el formulario
         if (abonoForm) {
             abonoForm.addEventListener('submit', function() {
                 if (nombresAcompanantesInput) {
@@ -208,7 +229,6 @@
     });
 </script>
 
-{# Nuevo botón flotante para volver atrás a la izquierda #}
 <div class="fab-container left">
     <a href="{{ url_for('caminatas.detalle_caminata', caminata_id=caminata.id) }}" class="btn btn-primary fab-button" title="Volver al Detalle de la Caminata">
         <i class="fas fa-arrow-left"></i>

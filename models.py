@@ -337,11 +337,15 @@ class AbonoCaminata(db.Model):
     opcion = db.Column(db.String(50), nullable=False)
     cantidad_acompanantes = db.Column(db.Integer, default=0, nullable=False)
     nombres_acompanantes = db.Column(db.Text, nullable=True)
-    monto_abono = db.Column(db.Float, nullable=False)
+    monto_abono_crc = db.Column(db.Float, default=0)
+    monto_abono_usd = db.Column(db.Float, default=0)
+    tipo_cambio_bcr = db.Column(db.Float, nullable=True)
     fecha_abono = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def __repr__(self):
-        return f"AbonoCaminata(Caminata: {self.caminata_id}, User: {self.user_id}, Monto: {self.monto_abono})"
+        # Se actualiza la representación para reflejar los nuevos campos si existen
+        return f"AbonoCaminata(Caminata: {self.caminata_id}, User: {self.user_id}, CRC: {self.monto_abono_crc}, USD: {self.monto_abono_usd})"
+
 
 class Pagos(db.Model):
     id = db.Column(db.Integer, primary_key=True)
