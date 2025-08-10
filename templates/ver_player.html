@@ -711,6 +711,8 @@
             </div>
         </div>
     </div>
+    
+    <!-- MODAL CORREGIDO: Aplicar Carátula a Todas -->
     <div class="modal fade" id="applyCoverToAllModal" tabindex="-1" aria-labelledby="applyCoverToAllModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content rounded-4">
@@ -718,27 +720,41 @@
                     <h5 class="modal-title" id="applyCoverToAllModalLabel">Aplicar Carátula a Todas las Canciones</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <form id="apply-cover-to-all-form" method="POST" action="/player/apply_cover_to_all">
+                <!-- FORMA ACTUALIZADA: Añadido enctype y action con url_for -->
+                <form id="apply-cover-to-all-form" method="POST" action="{{ url_for('player.apply_cover_to_all') }}" enctype="multipart/form-data">
                     <div class="modal-body">
                         <div id="noAvailableCoversMessage" class="alert alert-warning" style="display: none;">
-                            No hay carátulas disponibles en la carpeta de subidas. Por favor, sube una carátula primero.
+                            No hay carátulas existentes. Puedes subir una nueva directamente.
                         </div>
+                        
                         <p id="selectCoverInstruction">Selecciona una carátula existente para aplicar a TODAS las canciones:</p>
                         <select class="form-select rounded-pill mb-3" id="selectAvailableCover" name="cover_path">
                             <option value="">Selecciona una carátula</option>
                         </select>
-                        <p class="text-muted">Esta acción sobrescribirá la carátula de todas las canciones con la carátula seleccionada.</p>
+                        
+                        <!-- NUEVA SECCIÓN PARA SUBIR ARCHIVO -->
+                        <div class="text-center my-3">
+                            <span class="text-muted">O</span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newCoverToApplyAll" class="form-label">Sube una nueva carátula desde tu equipo:</label>
+                            <input type="file" class="form-control-file rounded-pill" id="newCoverToApplyAll" name="new_cover_file" accept="image/*">
+                            <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo: # &lt; &gt; ! $ % &amp; / = ? ¡ ' " ¿ ° |</small>
+                        </div>
+                        <!-- FIN DE LA NUEVA SECCIÓN -->
+
+                        <p class="text-muted">Esta acción sobrescribirá la carátula de todas las canciones con la opción seleccionada.</p>
                         <div id="loadingSpinnerApplyCover" class="text-center mt-3" style="display: none;">
                             <div class="spinner-border text-info spinner-border-sm" role="status">
                                 <span class="visually-hidden">Cargando...</span>
                             </div>
-                            <span class="ms-2 text-info">Aplicando carátula...</span>
+                            <span class="ms-2 text-info">Cargando carátulas...</span>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-info rounded-pill" id="submitApplyCover">Aplicar Carátula</button>
-                    </div >
+                    </div>
                 </form>
             </div>
         </div>
@@ -1391,17 +1407,19 @@
             updateFormActionAndButton();
         });
 
+        // CÓDIGO JAVASCRIPT CORREGIDO para el modal "applyCoverToAllModal"
         const applyCoverToAllModal = document.getElementById('applyCoverToAllModal');
         applyCoverToAllModal.addEventListener('show.bs.modal', async function (event) {
-            const applyCoverForm = applyCoverToAllModal.querySelector('#apply-cover-to-all-form');
             const selectAvailableCover = applyCoverToAllModal.querySelector('#selectAvailableCover');
+            const newCoverInput = applyCoverToAllModal.querySelector('#newCoverToApplyAll'); // Input de archivo nuevo
             const submitButton = applyCoverToAllModal.querySelector('#submitApplyCover');
             const loadingSpinner = applyCoverToAllModal.querySelector('#loadingSpinnerApplyCover');
             const noAvailableCoversMessage = applyCoverToAllModal.querySelector('#noAvailableCoversMessage');
             const selectCoverInstruction = applyCoverToAllModal.querySelector('#selectCoverInstruction');
 
+            // Resetear campos cada vez que se abre el modal
             selectAvailableCover.innerHTML = '';
-            
+            newCoverInput.value = '';
             submitButton.disabled = true;
 
             loadingSpinner.style.display = 'block';
@@ -1413,13 +1431,12 @@
                 const response = await fetch('/player/get_available_covers');
                 const data = await response.json();
                 const availableCovers = data.covers;
-                console.log('Available covers fetched:', availableCovers);
 
                 if (availableCovers.length === 0) {
+                    noAvailableCoversMessage.textContent = 'No hay carátulas existentes. Puedes subir una nueva directamente.';
                     noAvailableCoversMessage.style.display = 'block';
                     selectCoverInstruction.style.display = 'none';
                     selectAvailableCover.style.display = 'none';
-                    submitButton.disabled = true;
                 } else {
                     noAvailableCoversMessage.style.display = 'none';
                     selectCoverInstruction.style.display = 'block';
@@ -1443,19 +1460,34 @@
                 flashMessage('Error al cargar las carátulas disponibles.', 'danger');
                 noAvailableCoversMessage.textContent = 'Error al cargar las carátulas. Inténtalo de nuevo.';
                 noAvailableCoversMessage.style.display = 'block';
-                selectCoverInstruction.style.display = 'none';
-                selectAvailableCover.style.display = 'none';
-                submitButton.disabled = true;
             } finally {
                 loadingSpinner.style.display = 'none';
             }
             
+            // Función para habilitar/deshabilitar el botón de envío
             const updateSubmitButtonState = () => {
-                submitButton.disabled = !selectAvailableCover.value;
+                const isDropdownSelected = selectAvailableCover.value !== '';
+                const isFileSelected = newCoverInput.files.length > 0;
+                submitButton.disabled = !isDropdownSelected && !isFileSelected;
             };
 
-            selectAvailableCover.addEventListener('change', updateSubmitButtonState);
-            updateSubmitButtonState();
+            // Si se elige del desplegable, limpiar el input de archivo
+            selectAvailableCover.addEventListener('change', () => {
+                if (selectAvailableCover.value) {
+                    newCoverInput.value = '';
+                }
+                updateSubmitButtonState();
+            });
+
+            // Si se elige un archivo, limpiar el desplegable
+            newCoverInput.addEventListener('change', () => {
+                if (newCoverInput.files.length > 0) {
+                    selectAvailableCover.value = '';
+                }
+                updateSubmitButtonState();
+            });
+            
+            updateSubmitButtonState(); // Comprobación inicial
         });
 
 

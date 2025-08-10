@@ -5,6 +5,7 @@ import os
 from functools import wraps
 import re
 from werkzeug.utils import secure_filename
+from urllib.parse import urlparse # IMPORTACIÓN AÑADIDA
 
 # --- INICIO DE LA CORRECCIÓN: DECORADOR DE ROL DEFINIDO LOCALMENTE ---
 
@@ -334,34 +335,73 @@ def get_available_covers():
     return jsonify({'covers': available_covers})
 
 
+# RUTA CORREGIDA Y MEJORADA PARA APLICAR CARÁTULA A TODAS
 @player_bp.route('/player/apply_cover_to_all', methods=['POST'])
 @role_required('Superuser')
 def apply_cover_to_all():
     """
-    Aplica una carátula seleccionada a todas las demás canciones.
+    Aplica una carátula a todas las canciones.
+    Permite seleccionar una carátula existente o subir una nueva.
     Solo accesible por Superusuarios.
     """
     from models import db, Song
 
-    cover_path_to_apply = request.form.get('cover_path')
-    
-    if not cover_path_to_apply:
-        flash('Por favor, selecciona una carátula para aplicar.', 'danger')
+    existing_cover_url = request.form.get('cover_path')
+    new_cover_file = request.files.get('new_cover_file')
+    db_relative_path = None
+
+    # Opción 1: Se ha subido un nuevo archivo de carátula.
+    if new_cover_file and new_cover_file.filename != '':
+        if not is_valid_filename(new_cover_file.filename):
+            flash('El nombre del nuevo archivo de carátula contiene caracteres no permitidos.', 'danger')
+            return redirect(url_for('player.show_player'))
+        
+        if not allowed_image_file(new_cover_file.filename):
+            flash('Formato del nuevo archivo de carátula no permitido.', 'danger')
+            return redirect(url_for('player.show_player'))
+
+        # Guardar el nuevo archivo
+        cover_filename = generate_unique_filename(secure_filename(new_cover_file.filename), current_app.config['COVERS_UPLOAD_FOLDER'])
+        cover_save_path = os.path.join(current_app.config['COVERS_UPLOAD_FOLDER'], cover_filename)
+        os.makedirs(current_app.config['COVERS_UPLOAD_FOLDER'], exist_ok=True)
+        new_cover_file.save(cover_save_path)
+        db_relative_path = os.path.join('uploads', 'covers', cover_filename).replace(os.sep, '/')
+
+    # Opción 2: Se ha seleccionado una carátula existente del menú desplegable.
+    elif existing_cover_url:
+        try:
+            parsed_url = urlparse(existing_cover_url)
+            path = parsed_url.path  # Extrae la ruta, ej: /static/uploads/covers/cover.jpg
+            static_url_path = url_for('static', filename='')  # Esto devuelve '/static/'
+            
+            # Convierte la URL absoluta a la ruta relativa que se guarda en la BD
+            if path and path.startswith(static_url_path):
+                db_relative_path = path[len(static_url_path):]
+            else:
+                flash('La ruta de la carátula seleccionada no es válida.', 'danger')
+                return redirect(url_for('player.show_player'))
+        except Exception as e:
+            current_app.logger.error(f"Error al procesar la URL de la carátula: {e}")
+            flash('Error al procesar la URL de la carátula seleccionada.', 'danger')
+            return redirect(url_for('player.show_player'))
+
+    # Si no se eligió ninguna opción
+    else:
+        flash('Por favor, selecciona una carátula existente o sube una nueva para aplicar.', 'danger')
         return redirect(url_for('player.show_player'))
 
-    if cover_path_to_apply.startswith(url_for('static', filename='')):
-        cover_path_to_apply = cover_path_to_apply[len(url_for('static', filename='')):]
-
-    try:
-        all_songs = Song.query.all()
-        for song in all_songs:
-            song.cover_image_path = cover_path_to_apply
-        db.session.commit()
-        flash('La carátula seleccionada ha sido aplicada a todas las canciones con éxito.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error al aplicar la carátula a todas las canciones: {e}', 'danger')
-        current_app.logger.error(f"Error al aplicar carátula a todas las canciones: {e}")
+    # Si se obtuvo una ruta válida, aplicarla a todas las canciones
+    if db_relative_path:
+        try:
+            all_songs = Song.query.all()
+            for song in all_songs:
+                song.cover_image_path = db_relative_path
+            db.session.commit()
+            flash('La carátula ha sido aplicada a todas las canciones con éxito.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al aplicar la carátula a todas las canciones: {e}', 'danger')
+            current_app.logger.error(f"Error al aplicar carátula a todas las canciones: {e}")
     
     return redirect(url_for('player.show_player'))
 
