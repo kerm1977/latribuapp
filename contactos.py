@@ -55,16 +55,16 @@ def role_required(roles):
 @role_required(['Superuser', 'Administrador', 'Usuario Regular']) # Todos pueden ver contactos
 def ver_contactos():
     """
-    Muestra una lista de todos los usuarios registrados, con funcionalidad de búsqueda.
+    Muestra una lista de todos los usuarios registrados, con funcionalidad de búsqueda y vistas.
     Requiere que el usuario esté logueado.
     """
-    search_query = request.args.get('search_query', '').strip() # Obtener el término de búsqueda
+    search_query = request.args.get('search_query', '').strip()
+    view_mode = request.args.get('view', 'list') # Mantener 'list' como predeterminada
 
     try:
         query = User.query
         
         if search_query:
-            # Construir la condición de búsqueda para cada campo relevante
             search_pattern = f"%{search_query}%"
             query = query.filter(
                 or_(
@@ -74,25 +74,20 @@ def ver_contactos():
                     User.segundo_apellido.ilike(search_pattern),
                     User.telefono.ilike(search_pattern),
                     User.email.ilike(search_pattern),
-                    User.telefono_emergencia.ilike(search_pattern),
-                    User.nombre_emergencia.ilike(search_pattern),
-                    User.empresa.ilike(search_pattern),
-                    User.cedula.ilike(search_pattern),
-                    User.direccion.ilike(search_pattern),
-                    User.actividad.ilike(search_pattern),
-                    User.capacidad.ilike(search_pattern),
-                    User.participacion.ilike(search_pattern),
-                    # NUEVOS CAMPOS EN BÚSQUEDA
-                    User.tipo_sangre.ilike(search_pattern),
-                    User.poliza.ilike(search_pattern),
-                    User.aseguradora.ilike(search_pattern),
-                    User.alergias.ilike(search_pattern),
-                    User.enfermedades_cronicas.ilike(search_pattern)
+                    User.cedula.ilike(search_pattern)
+                    # Se pueden añadir más campos a la búsqueda si es necesario
                 )
             )
         
-        all_users = query.all() # Ejecutar la consulta (con o sin filtro)
-        return render_template('ver_contactos.html', users=all_users, search_query=search_query, current_role=session.get('role'))
+        all_users = query.order_by(User.nombre).all()
+        user_count = len(all_users) # Contar los usuarios
+
+        return render_template('ver_contactos.html', 
+                               users=all_users, 
+                               search_query=search_query, 
+                               current_role=session.get('role'),
+                               view_mode=view_mode,
+                               user_count=user_count) # Pasar el contador al template
     except Exception as e:
         flash(f'Error al cargar los contactos: {e}', 'danger')
         return redirect(url_for('home'))
@@ -506,6 +501,7 @@ def exportar_excel(user_id):
         as_attachment=True,
         download_name=f'{user.username}_contacto.xlsx'
     )
+    
 @contactos_bp.route('/exportar_todos_excel')
 @role_required(['Superuser', 'Administrador']) # Solo Superusers y Administradores pueden exportar todos a Excel
 def exportar_todos_excel():
@@ -519,35 +515,21 @@ def exportar_todos_excel():
         sheet = workbook.active
         sheet.title = "Todos los Contactos"
 
-        # Encabezados de las columnas para el formato de lista
+        # Encabezados de las columnas para el formato de lista, según lo solicitado.
         headers = [
-            "Nombre de Usuario", "Nombre", "Primer Apellido", "Segundo Apellido",
-            "Teléfono", "Email", "Teléfono Emergencia", "Nombre Contacto Emergencia",
-            "Empresa", "Cédula", "Dirección", "Actividad", "Capacidad", "Participación",
-            "Fecha de Registro", "Rol" # CORRECCIÓN: Se elimina "Última Actualización"
+            "Nombre", "Primer Apellido", "Segundo Apellido", "Cédula", "Email"
         ]
         sheet.append(headers)
 
         # Iterar sobre cada usuario y añadir sus datos como una fila
         for user in all_users:
+            # Se ajustan los datos para que coincidan con los nuevos encabezados.
             row_data = [
-                str(user.username),
                 str(user.nombre),
                 str(user.primer_apellido),
                 str(user.segundo_apellido) if user.segundo_apellido else "",
-                str(user.telefono),
-                str(user.email) if user.email else "",
-                str(user.telefono_emergencia) if user.telefono_emergencia else "",
-                str(user.nombre_emergencia) if user.nombre_emergencia else "",
-                str(user.empresa) if user.empresa else "",
                 str(user.cedula) if user.cedula else "",
-                str(user.direccion) if user.direccion else "",
-                str(user.actividad) if user.actividad else "",
-                str(user.capacidad) if user.capacidad else "",
-                str(user.participacion) if user.participacion else "",
-                user.fecha_registro.strftime('%d/%m/%Y %H:%M'),
-                # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
-                str(user.role) # Añadir el rol
+                str(user.email) if user.email else ""
             ]
             sheet.append(row_data)
 
@@ -564,6 +546,7 @@ def exportar_todos_excel():
     except Exception as e:
         flash(f'Error al exportar todos los contactos a Excel: {e}', 'danger')
         return redirect(url_for('contactos.ver_contactos'))
+
 
 # Ruta: Exportar TODOS los contactos a VCard
 @contactos_bp.route('/exportar_todos_vcard')
