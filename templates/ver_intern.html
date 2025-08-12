@@ -1,92 +1,97 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planes de Viajes Internacionales</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .card {
-            box-shadow: none !important;
-            border: 1px solid #dee2e6;
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .card-img-top {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background-color: #e9ecef;
-        }
-        .card-title {
-            font-weight: bold;
-        }
-        .card-text {
-            color: #6c757d;
-        }
-        .btn-warning {
-            color: #000;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-5 mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0">Planes de Viajes Internacionales</h1>
-            <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning">
-                <i class="fas fa-plus"></i> Crear Nuevo Plan
-            </a>
-        </div>
+{% extends 'base.html' %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block title %}Planes de Viajes Internacionales{% endblock %}
 
-        <div class="row">
-            {% if viajes %}
-                {% for viaje in viajes %}
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <img src="{{ viaje.flyer if viaje.flyer else 'https://placehold.co/600x400/E9ECEF/495057?text=Sin+Flyer' }}" 
-                             class="card-img-top" 
+{% block head_content %}
+<style>
+    /* Agrega un padding al contenedor principal para que no quede debajo del navbar fijo */
+    .main-container {
+        padding-top: 80px; /* Ajusta este valor según la altura de tu navbar */
+        padding-bottom: 40px;
+    }
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .card-img-top {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+    .card-title {
+        font-weight: bold;
+    }
+    .card-text {
+        color: #6c757d;
+    }
+    .btn-warning, .title-warning {
+        color: #000;
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+    .title-warning {
+        padding: 0.5rem 1rem;
+        border-radius: .375rem;
+        font-size: 1.5rem;
+    }
+    .btn-outline-warning {
+        color: #000;
+        border-color: #ffc107;
+    }
+    .btn-outline-warning:hover {
+        color: #000;
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container main-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h1 class="mb-0 title-warning">Planes de Viajes Internacionales</h1>
+        <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning">
+            <i class="fas fa-plus"></i> Crear Nuevo Plan
+        </a>
+    </div>
+
+    <div class="row">
+        {% if viajes %}
+            {% for viaje in viajes %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    {% if viaje.flyer %}
+                        <img src="{{ url_for('static', filename=viaje.flyer) }}"
+                             class="card-img-top"
                              alt="Flyer de {{ viaje.nombre_viaje }}"
-                             onerror="this.onerror=null;this.src='https://placehold.co/600x400/E9ECEF/495057?text=Error';">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
-                            <p class="card-text"><i class="fas fa-map-marker-alt me-2"></i>{{ viaje.pais }}</p>
-                            {% if viaje.precio_paquete and viaje.precio_paquete > 0 %}
-                                <p class="card-text fw-bold fs-5">{{ "%.2f"|format(viaje.precio_paquete) }} {{ viaje.tipo_moneda }}</p>
-                            {% endif %}
-                            <div class="mt-auto">
-                                <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-outline-primary w-100">Ver Detalles</a>
-                            </div>
+                             onerror="this.src='https://placehold.co/600x400/E9ECEF/495057?text=Flyer+no+encontrado';">
+                    {% else %}
+                        <img src="https://placehold.co/600x400/E9ECEF/495057?text=Sin+Flyer" class="card-img-top" alt="Sin Flyer">
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
+                        <p class="card-text"><i class="fas fa-map-marker-alt me-2"></i>{{ viaje.pais }}</p>
+                        {% if viaje.precio_paquete and viaje.precio_paquete > 0 %}
+                            <p class="card-text fw-bold fs-5">{{ "%.2f"|format(viaje.precio_paquete) }} {{ viaje.tipo_moneda }}</p>
+                        {% endif %}
+                        <div class="mt-auto pt-3">
+                            <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-outline-warning w-100">Ver Detalles</a>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-12">
-                    <div class="alert alert-info text-center">
-                        No hay planes de viaje creados todavía. ¡Crea el primero!
-                    </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    No hay planes de viaje creados todavía. ¡Crea el primero!
                 </div>
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}

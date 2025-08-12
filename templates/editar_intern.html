@@ -1,278 +1,250 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Plan de Viaje Internacional</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .card {
-            box-shadow: none !important;
-            border: 1px solid #dee2e6;
-            margin-bottom: 1.5rem;
-        }
-        .card-header {
-            background-color: #e9ecef;
-            font-weight: bold;
-        }
-        .btn-warning {
-            color: #000;
-        }
-        .section-separator {
-            border-top: 2px solid #ffc107;
-            margin-top: 2rem;
-            margin-bottom: 2rem;
-        }
-        .total-field {
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .dynamic-item {
-            border: 1px dashed #ccc;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: #fff;
-            position: relative;
-        }
-        .item-counter {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            background-color: #ffc107;
-            color: black;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        .btn-remove-item {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-5 mb-5">
-        <h1 class="mb-4 text-center">Editar Plan de Viaje: {{ viaje.nombre_viaje }}</h1>
+{% extends 'base.html' %}
+
+{% block title %}Editar Plan de Viaje Internacional{% endblock %}
+
+{% block head_content %}
+<style>
+    .main-container {
+        padding-top: 80px; /* Ajusta este valor según la altura de tu navbar */
+        padding-bottom: 40px;
+    }
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6;
+        margin-bottom: 1.5rem;
+    }
+    .card-header {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    .btn-warning {
+        color: #000;
+    }
+    .section-separator {
+        border-top: 2px solid #ffc107;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+    .total-field {
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    .dynamic-item {
+        border: 1px dashed #ccc;
+        padding: 1.5rem;
+        padding-top: 2rem;
+        margin-bottom: 1rem;
+        background-color: #fff;
+        position: relative;
+        border-radius: .375rem;
+    }
+    .item-counter {
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        background-color: #ffc107;
+        color: black;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 2px solid white;
+    }
+    .btn-remove-item {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    .current-flyer {
+        max-width: 150px;
+        height: auto;
+        border-radius: 5px;
+        margin-top: 10px;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5 main-container">
+    <h1 class="mb-4 text-center">Editar Plan de Viaje: {{ viaje.nombre_viaje }}</h1>
+    
+    <form action="{{ url_for('intern.editar_intern', id=viaje.id) }}" method="POST" enctype="multipart/form-data">
         
-        <form action="{{ url_for('intern.editar_intern', id=viaje.id) }}" method="POST" enctype="multipart/form-data">
-            
-            <!-- SECCIÓN DESTINO -->
-            <div class="card">
-                <div class="card-header">
-                    DESTINO
+        <!-- SECCIÓN DESTINO -->
+        <div class="card">
+            <div class="card-header">
+                DESTINO
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
+                        <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" value="{{ viaje.nombre_viaje }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="flyer_file" class="form-label">Cambiar Flyer (Imagen)</label>
+                        <input type="file" class="form-control" id="flyer_file" name="flyer_file" accept="image/png, image/jpeg, image/gif">
+                        {% if viaje.flyer %}
+                            <div class="mt-2">
+                                <p class="mb-1 small text-muted">Flyer actual:</p>
+                                <img src="{{ url_for('static', filename=viaje.flyer) }}" alt="Flyer actual" class="current-flyer">
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="precio_paquete" class="form-label">Precio del Paquete</label>
+                        <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="capacidad" class="form-label">Capacidad</label>
+                        <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 0 }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
+                        <select class="form-select" id="tipo_moneda" name="tipo_moneda">
+                            <option value="CRC" {% if viaje.tipo_moneda == 'CRC' %}selected{% endif %}>Colones (CRC)</option>
+                            <option value="USD" {% if viaje.tipo_moneda == 'USD' %}selected{% endif %}>Dólares (USD)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
+                        <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="{{ viaje.tipo_cambio or 500 }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="pais" class="form-label">País</label>
+                        <select class="form-select" id="pais" name="pais" required>
+                            <option value="" disabled>Seleccione un destino</option>
+                            {% for p in paises %}
+                            <option value="{{ p }}" {% if viaje.pais == p %}selected{% endif %}>{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEPARADOR ADMINISTRACIÓN -->
+        <div class="section-separator"></div>
+        <h2 class="text-center mb-3">ADMINISTRACIÓN DE VIAJE</h2>
+
+        <!-- SECCIÓN PRE-ALERTAS -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                LLAMADO PRE-ALERTA
+                <button type="button" class="btn btn-sm btn-success" onclick="addPreAlerta()"><i class="fas fa-plus"></i> Agregar Pre-Alerta</button>
+            </div>
+            <div class="card-body" id="prealertas-container">
+                {% for prealerta in viaje.prealertas %}
+                <div class="dynamic-item" id="prealerta-{{ loop.index }}">
+                    <span class="item-counter">{{ loop.index }}</span>
+                    <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('prealerta-{{ loop.index }}')"></button>
+                    <input type="hidden" name="prealerta_id[]" value="{{ prealerta.id }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
-                            <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" value="{{ viaje.nombre_viaje }}" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="flyer" class="form-label">Flyer (URL de la imagen)</label>
-                            <input type="text" class="form-control" id="flyer" name="flyer" value="{{ viaje.flyer or '' }}">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="precio_paquete" class="form-label">Precio del Paquete</label>
-                            <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="capacidad" class="form-label">Capacidad</label>
-                            <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 0 }}">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
-                            <select class="form-select" id="tipo_moneda" name="tipo_moneda">
-                                <option value="CRC" {% if viaje.tipo_moneda == 'CRC' %}selected{% endif %}>Colones (CRC)</option>
-                                <option value="USD" {% if viaje.tipo_moneda == 'USD' %}selected{% endif %}>Dólares (USD)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
-                            <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="{{ viaje.tipo_cambio or 500 }}">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="pais" class="form-label">País</label>
-                            <select class="form-select" id="pais" name="pais" required>
-                                <option value="" disabled>Seleccione un destino</option>
-                                {% for p in paises %}
-                                <option value="{{ p }}" {% if viaje.pais == p %}selected{% endif %}>{{ p }}</option>
+                            <label class="form-label">Banco</label>
+                            <select name="prealerta_banco[]" class="form-select">
+                                {% for banco in bancos %}
+                                <option value="{{ banco }}" {% if prealerta.banco == banco %}selected{% endif %}>{{ banco }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SEPARADOR ADMINISTRACIÓN -->
-            <div class="section-separator"></div>
-            <h2 class="text-center mb-3">ADMINISTRACIÓN DE VIAJE</h2>
-
-            <!-- SECCIÓN PRE-ALERTAS -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    LLAMADO PRE-ALERTA
-                    <button type="button" class="btn btn-sm btn-success" onclick="addPreAlerta()"><i class="fas fa-plus"></i> Agregar Pre-Alerta</button>
-                </div>
-                <div class="card-body" id="prealertas-container">
-                    {% for prealerta in viaje.prealertas %}
-                    <div class="dynamic-item" id="prealerta-{{ loop.index }}">
-                        <span class="item-counter">{{ loop.index }}</span>
-                        <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('prealerta-{{ loop.index }}')"></button>
-                        <input type="hidden" name="prealerta_id[]" value="{{ prealerta.id }}">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Banco</label>
-                                <select name="prealerta_banco[]" class="form-select">
-                                    {% for banco in bancos %}
-                                    <option value="{{ banco }}" {% if prealerta.banco == banco %}selected{% endif %}>{{ banco }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Teléfono Entidad Financiera</label>
-                                <input type="text" name="prealerta_telefono[]" class="form-control" value="{{ prealerta.telefono_entidad or '' }}">
-                            </div>
-                        </div>
-                        <!-- ... otros campos de prealerta pre-poblados ... -->
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- SEPARADOR LUGARES A VISITAR -->
-            <div class="section-separator"></div>
-            <h2 class="text-center mb-3">LUGARES A VISITAR</h2>
-            
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    Atracciones
-                     <button type="button" class="btn btn-sm btn-success" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar Lugar</button>
-                </div>
-                <div class="card-body" id="lugares-container">
-                    {% for lugar in viaje.lugares %}
-                    <div class="dynamic-item" id="lugar-{{ loop.index }}">
-                        <span class="item-counter">{{ loop.index }}</span>
-                        <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('lugar-{{ loop.index }}', updateTotalAtracciones)"></button>
-                        <input type="hidden" name="lugar_id[]" value="{{ lugar.id }}">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Tipo de Lugar</label>
-                                <select name="lugar_tipo[]" class="form-select">
-                                    <option {% if lugar.tipo_lugar == 'Volcán' %}selected{% endif %}>Volcán</option>
-                                    <option {% if lugar.tipo_lugar == 'Montaña' %}selected{% endif %}>Montaña</option>
-                                    <option {% if lugar.tipo_lugar == 'Playa' %}selected{% endif %}>Playa</option>
-                                    <option {% if lugar.tipo_lugar == 'Ciudad' %}selected{% endif %}>Ciudad</option>
-                                    <option {% if lugar.tipo_lugar == 'Parque Nacional' %}selected{% endif %}>Parque Nacional</option>
-                                    <option {% if lugar.tipo_lugar == 'Camino' %}selected{% endif %}>Camino</option>
-                                    <option {% if lugar.tipo_lugar == 'Otros' %}selected{% endif %}>Otros</option>
-                                </select>
-                            </div>
-                            <div class="col-md-5 mb-3">
-                                <label class="form-label">Nombre de Sitio</label>
-                                <input type="text" name="lugar_nombre[]" class="form-control" value="{{ lugar.nombre_sitio or '' }}">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Precio de Entrada (CRC)</label>
-                                <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" value="{{ lugar.precio_entrada or 0 }}" oninput="updateTotalAtracciones()">
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono Entidad Financiera</label>
+                            <input type="text" name="prealerta_telefono[]" class="form-control" value="{{ prealerta.telefono_entidad or '' }}">
                         </div>
                     </div>
-                    {% endfor %}
+                    <!-- ... otros campos de prealerta pre-poblados ... -->
                 </div>
-                <div class="card-footer text-end">
-                    <span class="total-field">TOTAL DE ATRACCIONES: CRC <span id="total-atracciones">0.00</span></span>
-                </div>
+                {% endfor %}
             </div>
+        </div>
 
-            <!-- ... Repetir la misma lógica para TRANSPORTES, GUÍAS, ESTADÍAS, AEROLÍNEAS ... -->
-            <!-- Cada sección debe tener un bucle for para los items existentes y los campos pre-poblados con `value` -->
-
-            <!-- SECCIÓN DE TOTALES GENERALES -->
-            <div class="card mt-4">
-                <div class="card-header">TOTALES GENERALES</div>
-                <div class="card-body text-center">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p class="total-field">TOTAL INDIVIDUAL (CRC): <span id="total-crc">0.00</span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="total-field">TOTAL INDIVIDUAL (USD): <span id="total-usd">0.00</span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-warning btn-lg">Guardar Cambios</button>
-                <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-secondary btn-lg">Cancelar</a>
-            </div>
-        </form>
+        <!-- SEPARADOR LUGARES A VISITAR -->
+        <div class="section-separator"></div>
+        <h2 class="text-center mb-3">LUGARES A VISITAR</h2>
         
-        <!-- ... Calculadora (igual que en crear_intern.html) ... -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                Atracciones
+                 <button type="button" class="btn btn-sm btn-success" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar Lugar</button>
+            </div>
+            <div class="card-body" id="lugares-container">
+                {% for lugar in viaje.lugares %}
+                <div class="dynamic-item" id="lugar-{{ loop.index }}">
+                    <span class="item-counter">{{ loop.index }}</span>
+                    <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('lugar-{{ loop.index }}', updateTotalAtracciones)"></button>
+                    <input type="hidden" name="lugar_id[]" value="{{ lugar.id }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de Lugar</label>
+                            <select name="lugar_tipo[]" class="form-select">
+                                <option {% if lugar.tipo_lugar == 'Volcán' %}selected{% endif %}>Volcán</option>
+                                <option {% if lugar.tipo_lugar == 'Montaña' %}selected{% endif %}>Montaña</option>
+                                <option {% if lugar.tipo_lugar == 'Playa' %}selected{% endif %}>Playa</option>
+                                <option {% if lugar.tipo_lugar == 'Ciudad' %}selected{% endif %}>Ciudad</option>
+                                <option {% if lugar.tipo_lugar == 'Parque Nacional' %}selected{% endif %}>Parque Nacional</option>
+                                <option {% if lugar.tipo_lugar == 'Camino' %}selected{% endif %}>Camino</option>
+                                <option {% if lugar.tipo_lugar == 'Otros' %}selected{% endif %}>Otros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label class="form-label">Nombre de Sitio</label>
+                            <input type="text" name="lugar_nombre[]" class="form-control" value="{{ lugar.nombre_sitio or '' }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Precio de Entrada (CRC)</label>
+                            <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" value="{{ lugar.precio_entrada or 0 }}" oninput="updateTotalAtracciones()">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer text-end">
+                <span class="total-field">TOTAL DE ATRACCIONES: CRC <span id="total-atracciones">0.00</span></span>
+            </div>
+        </div>
 
-    </div>
+        <!-- ... (resto de las secciones con los bucles for para rellenar los datos existentes) ... -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // --- Contadores inicializados para evitar colisiones de ID ---
-        let preAlertaCount = {{ viaje.prealertas|length }};
-        let lugarCount = {{ viaje.lugares|length }};
-        let transporteCount = {{ viaje.transportes|length }};
-        let guiaCount = {{ viaje.guias|length }};
-        let estadiaCount = {{ viaje.estadias|length }};
-        let aerolineaCount = {{ viaje.aerolineas|length }};
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-warning btn-lg">Guardar Cambios</button>
+            <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-secondary btn-lg">Cancelar</a>
+        </div>
+    </form>
+    
+    <!-- ... Calculadora (igual que en crear_intern.html) ... -->
 
-        // --- Las funciones para añadir/remover elementos son idénticas a crear_intern.html ---
-        // (Copiar y pegar aquí las funciones: addPreAlerta, addLugar, addTransporte, etc.)
-        // ...
+</div>
+{% endblock %}
 
-        // --- FUNCIONES PARA ACTUALIZAR TOTALES ---
-        // (Idénticas a crear_intern.html)
-        function updateTotalAtracciones() {
-            let total = 0;
-            document.querySelectorAll('.price-atraccion').forEach(input => {
-                total += parseFloat(input.value) || 0;
-            });
-            document.getElementById('total-atracciones').textContent = total.toFixed(2);
-            updateGrandTotals();
-        }
-        // ... (resto de funciones de actualización) ...
+{% block scripts %}
+{{ super() }}
+<script>
+    // --- Contadores inicializados para evitar colisiones de ID ---
+    let preAlertaCount = {{ viaje.prealertas|length }};
+    let lugarCount = {{ viaje.lugares|length }};
+    let transporteCount = {{ viaje.transportes|length }};
+    let guiaCount = {{ viaje.guias|length }};
+    let estadiaCount = {{ viaje.estadias|length }};
+    let aerolineaCount = {{ viaje.aerolineas|length }};
 
-        function updateGrandTotals() {
-            const totalAtracciones = parseFloat(document.getElementById('total-atracciones').textContent) || 0;
-            // ... (resto de la lógica de updateGrandTotals) ...
-            const totalCRC = totalAtracciones // + otros totales;
-            const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
-            const totalUSD = totalCRC / tipoCambio;
-
-            document.getElementById('total-crc').textContent = totalCRC.toFixed(2);
-            document.getElementById('total-usd').textContent = totalUSD.toFixed(2);
-        }
-
-        // --- LÓGICA DE LA CALCULADORA (Idéntica a crear_intern.html) ---
-        // ...
-
-        // --- INICIALIZAR TOTALES AL CARGAR LA PÁGINA ---
-        document.addEventListener('DOMContentLoaded', function() {
-            updateTotalAtracciones();
-            // updateTotalTransporte();
-            // updateTotalGuias();
-            // updateTotalEstadia();
-            // updateTotalAerolinea();
-        });
-    </script>
-</body>
-</html>
+    // --- (El resto de tu JavaScript para añadir/quitar elementos y calcular totales) ---
+    
+    // --- INICIALIZAR TOTALES AL CARGAR LA PÁGINA ---
+    document.addEventListener('DOMContentLoaded', function() {
+        updateTotalAtracciones();
+        // updateTotalTransporte();
+        // updateTotalGuias();
+        // updateTotalEstadia();
+        // updateTotalAerolinea();
+    });
+</script>
+{% endblock %}
