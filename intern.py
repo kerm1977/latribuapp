@@ -251,13 +251,32 @@ def crear_intern():
             nombres_sitio = request.form.getlist('lugar_nombre[]')
             tipos_lugar = request.form.getlist('lugar_tipo[]')
             precios_entrada = request.form.getlist('lugar_precio[]')
+            fechas_reserva = request.form.getlist('lugar_fecha_reserva[]')
+            guias_locales = request.form.getlist('lugar_guia_local[]')
+            nombres_guia_local = request.form.getlist('lugar_nombre_guia[]')
+            telefonos_lugar = request.form.getlist('lugar_telefono_lugar[]')
+            telefonos_contacto = request.form.getlist('lugar_telefono_contacto[]')
+            whatsapps_contacto = request.form.getlist('lugar_whatsapp_contacto[]')
+            emails = request.form.getlist('lugar_email[]')
+            enlaces = request.form.getlist('lugar_enlaces[]')
+            notas = request.form.getlist('lugar_nota[]')
+
             for i in range(len(nombres_sitio)):
                 if nombres_sitio[i]:
                     lugar = LugarVisitar(
                         intern_id=nuevo_viaje.id,
                         tipo_lugar=tipos_lugar[i],
                         nombre_sitio=nombres_sitio[i],
-                        precio_entrada=safe_float(precios_entrada[i])
+                        precio_entrada=safe_float(precios_entrada[i]),
+                        fecha_reserva=to_date(fechas_reserva[i]),
+                        guia_local=(f'lugar-{i+1}' in guias_locales), # Check if checkbox was sent
+                        nombre_guia=nombres_guia_local[i],
+                        telefono_lugar=telefonos_lugar[i],
+                        telefono_contacto=telefonos_contacto[i],
+                        whatsapp_contacto=whatsapps_contacto[i],
+                        email=emails[i],
+                        enlaces=enlaces[i],
+                        nota=notas[i]
                     )
                     db.session.add(lugar)
             
@@ -425,12 +444,34 @@ def editar_intern(id):
             nombres_sitio = request.form.getlist('lugar_nombre[]')
             tipos_lugar = request.form.getlist('lugar_tipo[]')
             precios_entrada = request.form.getlist('lugar_precio[]')
+            fechas_reserva = request.form.getlist('lugar_fecha_reserva[]')
+            guias_locales_checked = request.form.getlist('lugar_guia_local_checkbox')
+            nombres_guia_local = request.form.getlist('lugar_nombre_guia[]')
+            telefonos_lugar = request.form.getlist('lugar_telefono_lugar[]')
+            telefonos_contacto = request.form.getlist('lugar_telefono_contacto[]')
+            whatsapps_contacto = request.form.getlist('lugar_whatsapp_contacto[]')
+            emails = request.form.getlist('lugar_email[]')
+            enlaces = request.form.getlist('lugar_enlaces[]')
+            notas = request.form.getlist('lugar_nota[]')
+
             for i in range(len(nombres_sitio)):
                 if nombres_sitio[i]:
+                    checkbox_value = f'lugar-{i+1}-guia-local' 
+                    is_guia_local_checked = checkbox_value in guias_locales_checked
+
                     lugar_data.append({
                         'id': lugar_ids[i], 'intern_id': viaje.id,
                         'nombre_sitio': nombres_sitio[i], 'tipo_lugar': tipos_lugar[i],
-                        'precio_entrada': safe_float(precios_entrada[i])
+                        'precio_entrada': safe_float(precios_entrada[i]),
+                        'fecha_reserva': to_date(fechas_reserva[i]),
+                        'guia_local': is_guia_local_checked,
+                        'nombre_guia': nombres_guia_local[i],
+                        'telefono_lugar': telefonos_lugar[i],
+                        'telefono_contacto': telefonos_contacto[i],
+                        'whatsapp_contacto': whatsapps_contacto[i],
+                        'email': emails[i],
+                        'enlaces': enlaces[i],
+                        'nota': notas[i]
                     })
             update_dynamic_items(LugarVisitar, viaje.lugares, lugar_data)
 
@@ -525,24 +566,22 @@ def editar_intern(id):
 @intern_bp.route('/ver/<int:id>')
 def detalle_intern(id):
     viaje = Intern.query.get_or_404(id)
-    capacidad = viaje.capacidad if viaje.capacidad and viaje.capacidad > 0 else 1
     
-    # --- MODIFICADO: Todos los costos se calculan por persona (pp) ---
-    total_atracciones_pp = sum(lugar.precio_entrada for lugar in viaje.lugares if lugar.precio_entrada) / capacidad
-    total_transporte_pp = sum(transporte.precio for transporte in viaje.transportes if transporte.precio) / capacidad
+    # --- CORREGIDO: Los costos de atracciones y transportes ahora son por persona ---
+    total_atracciones_pp = sum(lugar.precio_entrada for lugar in viaje.lugares if lugar.precio_entrada)
+    total_transporte_pp = sum(transporte.precio for transporte in viaje.transportes if transporte.precio)
+    
     total_guias_pp = sum((guia.precio_guia_pp or 0) + (guia.precio_acarreo or 0) for guia in viaje.guias)
     total_estadia_pp = sum((estadia.precio_pp or 0) * (estadia.cantidad_noches or 1) for estadia in viaje.estadias)
     
     total_aerolinea_pp = 0
+    capacidad = viaje.capacidad if viaje.capacidad and viaje.capacidad > 0 else 1
     for aero in viaje.aerolineas:
-        # Si es Avión, los precios ya son por persona
         if aero.tipo_transporte == 'Avión':
             total_aerolinea_pp += (aero.precio_asientos or 0) + (aero.precio_maletas_documentado or 0) + (aero.equipaje_mano or 0) + (aero.precio_impuestos or 0)
-        # Si es otro transporte, el precio guardado es el total y se divide entre la capacidad
         else:
             total_aerolinea_pp += (aero.precio_asientos or 0) / capacidad
 
-    # El precio del paquete se asume que ya es por persona
     total_individual_crc = (viaje.precio_paquete or 0) + total_atracciones_pp + total_transporte_pp + total_guias_pp + total_estadia_pp + total_aerolinea_pp
     total_individual_usd = total_individual_crc / viaje.tipo_cambio if viaje.tipo_cambio and viaje.tipo_cambio > 0 else 0
 
@@ -579,15 +618,16 @@ def eliminar_intern(id):
 def get_trip_data(id):
     """Función auxiliar para obtener todos los datos de un viaje y sus totales."""
     viaje = Intern.query.get_or_404(id)
-    capacidad = viaje.capacidad if viaje.capacidad and viaje.capacidad > 0 else 1
     
-    # --- MODIFICADO: Todos los costos se calculan por persona (pp) ---
-    total_atracciones_pp = sum(l.precio_entrada for l in viaje.lugares if l.precio_entrada) / capacidad
-    total_transporte_pp = sum(t.precio for t in viaje.transportes if t.precio) / capacidad
+    # --- CORREGIDO: Los costos de atracciones y transportes ahora son por persona ---
+    total_atracciones_pp = sum(l.precio_entrada for l in viaje.lugares if l.precio_entrada)
+    total_transporte_pp = sum(t.precio for t in viaje.transportes if t.precio)
+    
     total_guias_pp = sum((g.precio_guia_pp or 0) + (g.precio_acarreo or 0) for g in viaje.guias)
     total_estadia_pp = sum((e.precio_pp or 0) * (e.cantidad_noches or 1) for e in viaje.estadias)
     
     total_aerolinea_pp = 0
+    capacidad = viaje.capacidad if viaje.capacidad and viaje.capacidad > 0 else 1
     for aero in viaje.aerolineas:
         if aero.tipo_transporte == 'Avión':
             total_aerolinea_pp += (aero.precio_asientos or 0) + (aero.precio_maletas_documentado or 0) + (aero.equipaje_mano or 0) + (aero.precio_impuestos or 0)
@@ -634,21 +674,22 @@ def exportar_txt(id):
     content += write_section_txt("Pre-Alertas", viaje.prealertas, 
         lambda p: f"Banco: {p.banco}, Tel: {p.telefono_entidad or 'N/A'}, Fecha: {p.fecha_prealerta or 'N/A'}, Asesor: {p.asesor or 'N/A'}")
     content += write_section_txt("Lugares a Visitar", viaje.lugares, 
-        lambda l: f"{l.nombre_sitio} ({l.tipo_lugar}): {l.precio_entrada or 0:.2f} CRC (Total)")
+        lambda l: f"{l.nombre_sitio} ({l.tipo_lugar}): {l.precio_entrada or 0:.2f} {viaje.tipo_moneda} (pp). Contacto: {l.telefono_contacto or 'N/A'}")
     content += write_section_txt("Transportes", viaje.transportes, 
-        lambda t: f"{t.nombre_transporte} ({t.tipo_transporte}): {t.precio or 0:.2f} CRC (Total)")
+        lambda t: f"{t.nombre_transporte} ({t.tipo_transporte}): {t.precio or 0:.2f} {viaje.tipo_moneda} (pp)")
     content += write_section_txt("Guías", viaje.guias, 
-        lambda g: f"{g.nombre} (Operador: {g.operador or 'N/A'}): {((g.precio_guia_pp or 0) + (g.precio_acarreo or 0)):.2f} CRC (pp)")
+        lambda g: f"{g.nombre} (Operador: {g.operador or 'N/A'}): {((g.precio_guia_pp or 0) + (g.precio_acarreo or 0)):.2f} {viaje.tipo_moneda} (pp)")
     content += write_section_txt("Estadías", viaje.estadias, 
-        lambda e: f"{e.nombre} ({e.cantidad_noches} noches): {(e.precio_pp or 0) * (e.cantidad_noches or 1):.2f} CRC (pp)")
+        lambda e: f"{e.nombre} ({e.cantidad_noches} noches): {(e.precio_pp or 0) * (e.cantidad_noches or 1):.2f} {viaje.tipo_moneda} (pp)")
     content += write_section_txt("Aerolíneas", viaje.aerolineas, 
-        lambda a: f"{a.nombre_aerolinea}: Costo (pp) {((a.precio_asientos or 0) + (a.precio_maletas_documentado or 0) + (a.equipaje_mano or 0) + (a.precio_impuestos or 0)):.2f} CRC")
+        lambda a: f"{a.nombre_aerolinea}: Costo (pp) {((a.precio_asientos or 0) + (a.precio_maletas_documentado or 0) + (a.equipaje_mano or 0) + (a.precio_impuestos or 0)):.2f} {viaje.tipo_moneda}")
 
     content += "="*40 + "\n"
     content += "TOTALES GENERALES POR PERSONA\n"
     content += "="*40 + "\n"
-    content += f"Total Individual (CRC): {totals['total_crc']:.2f}\n"
-    content += f"Total Individual (USD): {totals['total_usd']:.2f}\n"
+    content += f"Total Individual ({viaje.tipo_moneda}): {totals['total_crc']:.2f}\n"
+    if viaje.tipo_moneda == 'CRC':
+        content += f"Total Individual (USD): {totals['total_usd']:.2f}\n"
 
     response = make_response(content)
     response.headers["Content-Disposition"] = f"attachment; filename=viaje_{viaje.id}_{viaje.nombre_viaje}.txt"
@@ -707,14 +748,15 @@ def exportar_pdf(id):
         pdf.chapter_title('LUGARES A VISITAR')
         body = ""
         for lugar in viaje.lugares:
-            body += f"- {lugar.nombre_sitio} ({lugar.tipo_lugar}): {lugar.precio_entrada or 0:.2f} CRC (Total)\n"
+            body += f"- {lugar.nombre_sitio} ({lugar.tipo_lugar}): {lugar.precio_entrada or 0:.2f} {viaje.tipo_moneda} (pp)\n"
+            body += f"  Contacto: {lugar.telefono_contacto or 'N/A'}, Email: {lugar.email or 'N/A'}\n"
         pdf.chapter_body(body)
 
     if viaje.transportes:
         pdf.chapter_title('TRANSPORTES')
         body = ""
         for t in viaje.transportes:
-            body += f"- {t.nombre_transporte} ({t.tipo_transporte}): {t.precio or 0:.2f} CRC (Total)\n"
+            body += f"- {t.nombre_transporte} ({t.tipo_transporte}): {t.precio or 0:.2f} {viaje.tipo_moneda} (pp)\n"
         pdf.chapter_body(body)
 
     if viaje.guias:
@@ -722,7 +764,7 @@ def exportar_pdf(id):
         body = ""
         for g in viaje.guias:
             costo_guia = (g.precio_guia_pp or 0) + (g.precio_acarreo or 0)
-            body += f"- {g.nombre} (Operador: {g.operador or 'N/A'}): {costo_guia:.2f} CRC (pp)\n"
+            body += f"- {g.nombre} (Operador: {g.operador or 'N/A'}): {costo_guia:.2f} {viaje.tipo_moneda} (pp)\n"
         pdf.chapter_body(body)
 
     if viaje.estadias:
@@ -730,7 +772,7 @@ def exportar_pdf(id):
         body = ""
         for e in viaje.estadias:
             costo_estadia = (e.precio_pp or 0) * (e.cantidad_noches or 1)
-            body += f"- {e.nombre} ({e.cantidad_noches} noches): {costo_estadia:.2f} CRC (pp)\n"
+            body += f"- {e.nombre} ({e.cantidad_noches} noches): {costo_estadia:.2f} {viaje.tipo_moneda} (pp)\n"
         pdf.chapter_body(body)
 
     if viaje.aerolineas:
@@ -738,14 +780,15 @@ def exportar_pdf(id):
         body = ""
         for a in viaje.aerolineas:
             costo_aerolinea_pp = totals['aerolinea_pp']
-            body += f"- {a.nombre_aerolinea}: {costo_aerolinea_pp:.2f} CRC (pp)\n"
+            body += f"- {a.nombre_aerolinea}: {costo_aerolinea_pp:.2f} {viaje.tipo_moneda} (pp)\n"
         pdf.chapter_body(body)
     
     pdf.chapter_title('TOTALES GENERALES POR PERSONA')
     pdf.chapter_body(
-        f"Total Individual (CRC): {totals['total_crc']:.2f}\n"
-        f"Total Individual (USD): {totals['total_usd']:.2f}"
+        f"Total Individual ({viaje.tipo_moneda}): {totals['total_crc']:.2f}\n"
     )
+    if viaje.tipo_moneda == 'CRC':
+        pdf.chapter_body(f"Total Individual (USD): {totals['total_usd']:.2f}")
 
     response = make_response(pdf.output(dest='S').encode('latin-1'))
     response.headers['Content-Type'] = 'application/pdf'
@@ -775,15 +818,16 @@ def exportar_jpg(id):
     lines.append((f"País: {viaje.pais}", 'normal'))
     lines.append(("", 'spacer'))
 
-    add_section_lines("Atracciones", viaje.lugares, lambda l: f"{l.nombre_sitio}: {l.precio_entrada or 0:.2f} CRC (Total)")
-    add_section_lines("Transportes", viaje.transportes, lambda t: f"{t.nombre_transporte}: {t.precio or 0:.2f} CRC (Total)")
-    add_section_lines("Guías", viaje.guias, lambda g: f"{g.nombre}: {((g.precio_guia_pp or 0) + (g.precio_acarreo or 0)):.2f} CRC (pp)")
-    add_section_lines("Estadías", viaje.estadias, lambda e: f"{e.nombre} ({e.cantidad_noches} noches): {(e.precio_pp or 0) * (e.cantidad_noches or 1):.2f} CRC (pp)")
-    add_section_lines("Aerolíneas", viaje.aerolineas, lambda a: f"{a.nombre_aerolinea}: Costo (pp) {totals['aerolinea_pp']:.2f} CRC")
+    add_section_lines("Atracciones", viaje.lugares, lambda l: f"{l.nombre_sitio}: {l.precio_entrada or 0:.2f} {viaje.tipo_moneda} (pp)")
+    add_section_lines("Transportes", viaje.transportes, lambda t: f"{t.nombre_transporte}: {t.precio or 0:.2f} {viaje.tipo_moneda} (pp)")
+    add_section_lines("Guías", viaje.guias, lambda g: f"{g.nombre}: {((g.precio_guia_pp or 0) + (g.precio_acarreo or 0)):.2f} {viaje.tipo_moneda} (pp)")
+    add_section_lines("Estadías", viaje.estadias, lambda e: f"{e.nombre} ({e.cantidad_noches} noches): {(e.precio_pp or 0) * (e.cantidad_noches or 1):.2f} {viaje.tipo_moneda} (pp)")
+    add_section_lines("Aerolíneas", viaje.aerolineas, lambda a: f"{a.nombre_aerolinea}: Costo (pp) {totals['aerolinea_pp']:.2f} {viaje.tipo_moneda}")
 
     lines.append(("TOTALES GENERALES POR PERSONA", 'bold'))
-    lines.append((f"  Total (CRC): {totals['total_crc']:.2f}", 'normal'))
-    lines.append((f"  Total (USD): {totals['total_usd']:.2f}", 'normal'))
+    lines.append((f"  Total ({viaje.tipo_moneda}): {totals['total_crc']:.2f}", 'normal'))
+    if viaje.tipo_moneda == 'CRC':
+        lines.append((f"  Total (USD): {totals['total_usd']:.2f}", 'normal'))
 
     try:
         font_title = ImageFont.truetype("arial.ttf", 32)
@@ -878,27 +922,28 @@ def exportar_excel(id):
 
     add_section("Pre-Alertas", ["Banco", "Teléfono", "Fecha", "Asesor"], viaje.prealertas,
         lambda p: [p.banco, p.telefono_entidad or "N/A", p.fecha_prealerta, p.asesor or "N/A"])
-    add_section("Lugares a Visitar", ["Sitio", "Tipo", "Precio Total (CRC)"], viaje.lugares,
-        lambda l: [l.nombre_sitio, l.tipo_lugar, l.precio_entrada or 0])
-    add_section("Transportes", ["Nombre", "Tipo", "Precio Total (CRC)"], viaje.transportes,
+    add_section("Lugares a Visitar", ["Sitio", "Tipo", f"Precio PP ({viaje.tipo_moneda})", "Contacto", "Email"], viaje.lugares,
+        lambda l: [l.nombre_sitio, l.tipo_lugar, l.precio_entrada or 0, l.telefono_contacto or "N/A", l.email or "N/A"])
+    add_section("Transportes", ["Nombre", "Tipo", f"Precio PP ({viaje.tipo_moneda})"], viaje.transportes,
         lambda t: [t.nombre_transporte, t.tipo_transporte, t.precio or 0])
-    add_section("Guías", ["Nombre", "Operador", "Costo PP (CRC)"], viaje.guias,
+    add_section("Guías", ["Nombre", "Operador", f"Costo PP ({viaje.tipo_moneda})"], viaje.guias,
         lambda g: [g.nombre, g.operador, (g.precio_guia_pp or 0) + (g.precio_acarreo or 0)])
-    add_section("Estadías", ["Lugar", "Noches", "Costo Total PP (CRC)"], viaje.estadias,
+    add_section("Estadías", ["Lugar", "Noches", f"Costo Total PP ({viaje.tipo_moneda})"], viaje.estadias,
         lambda e: [e.nombre, e.cantidad_noches, (e.precio_pp or 0) * (e.cantidad_noches or 1)])
-    add_section("Aerolíneas", ["Aerolínea", "Costo PP (CRC)"], viaje.aerolineas,
+    add_section("Aerolíneas", ["Aerolínea", f"Costo PP ({viaje.tipo_moneda})"], viaje.aerolineas,
         lambda a: [a.nombre_aerolinea, totals['aerolinea_pp']])
 
     ws[f'A{current_row}'] = "TOTALES POR PERSONA"
     ws[f'A{current_row}'].font = bold_font
     current_row += 1
-    ws[f'A{current_row}'] = "Total Individual (CRC)"
+    ws[f'A{current_row}'] = f"Total Individual ({viaje.tipo_moneda})"
     ws[f'B{current_row}'] = totals['total_crc']
     ws[f'B{current_row}'].number_format = '#,##0.00'
-    current_row += 1
-    ws[f'A{current_row}'] = "Total Individual (USD)"
-    ws[f'B{current_row}'] = totals['total_usd']
-    ws[f'B{current_row}'].number_format = '#,##0.00'
+    if viaje.tipo_moneda == 'CRC':
+        current_row += 1
+        ws[f'A{current_row}'] = "Total Individual (USD)"
+        ws[f'B{current_row}'] = totals['total_usd']
+        ws[f'B{current_row}'].number_format = '#,##0.00'
 
     dims = {}
     for row in ws.rows:

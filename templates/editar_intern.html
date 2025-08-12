@@ -74,6 +74,9 @@
         margin-top: 10px;
         border: 1px solid #dee2e6;
     }
+    .details-toggle {
+        margin-top: 1rem;
+    }
 
     /* --- ESTILOS PARA BOTÓN FLOTANTE DE VOLVER --- */
     .fab-container-back {
@@ -137,7 +140,7 @@
                 </div>
                 <div class="col-md-3 mb-3">
                     <label for="capacidad" class="form-label">Capacidad</label>
-                    <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 1 }}" oninput="recalculateAllTotals()">
+                    <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 1 }}">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
@@ -253,8 +256,61 @@
                             <input type="text" name="lugar_nombre[]" class="form-control" value="{{ lugar.nombre_sitio or '' }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio Total de Entrada (CRC)</label>
+                            <label class="form-label price-label">Precio Entrada (por persona)</label>
                             <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" value="{{ lugar.precio_entrada or 0 }}" oninput="updateTotalAtracciones()">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#lugar-details-{{ loop.index }}">
+                        Más Detalles <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="collapse mt-3" id="lugar-details-{{ loop.index }}">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fecha de Reserva</label>
+                                <input type="date" name="lugar_fecha_reserva[]" class="form-control" value="{{ lugar.fecha_reserva.strftime('%Y-%m-%d') if lugar.fecha_reserva else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Teléfono del Lugar</label>
+                                <input type="text" name="lugar_telefono_lugar[]" class="form-control" value="{{ lugar.telefono_lugar or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Teléfono de Contacto</label>
+                                <input type="text" name="lugar_telefono_contacto[]" class="form-control" value="{{ lugar.telefono_contacto or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">WhatsApp</label>
+                                <input type="text" name="lugar_whatsapp_contacto[]" class="form-control" value="{{ lugar.whatsapp_contacto or '' }}">
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="lugar_email[]" class="form-control" value="{{ lugar.email or '' }}">
+                            </div>
+                        </div>
+                         <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="lugar_guia_local_checkbox" value="lugar-{{loop.index}}-guia-local" id="guia-local-check-{{ loop.index }}" onchange="toggleGuiaLocal(this, 'guia-local-nombre-{{ loop.index }}')" {% if lugar.guia_local %}checked{% endif %}>
+                                    <label class="form-check-label" for="guia-local-check-{{ loop.index }}">¿Incluye Guía Local?</label>
+                                </div>
+                            </div>
+                            <div class="col-md-12 mb-3" id="guia-local-nombre-{{ loop.index }}" style="display: {% if lugar.guia_local %}block{% else %}none{% endif %};">
+                                <label class="form-label">Nombre del Guía</label>
+                                <input type="text" name="lugar_nombre_guia[]" class="form-control" value="{{ lugar.nombre_guia or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Enlaces de Interés</label>
+                                <textarea name="lugar_enlaces[]" class="form-control" rows="2">{{ lugar.enlaces or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Notas</label>
+                                <textarea name="lugar_nota[]" class="form-control" rows="2">{{ lugar.nota or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -293,8 +349,55 @@
                             <input type="text" name="transporte_nombre[]" class="form-control" value="{{ transporte.nombre_transporte or '' }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio Total (CRC)</label>
+                            <label class="form-label price-label">Precio Transporte (por persona)</label>
                             <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" value="{{ transporte.precio or 0 }}" oninput="updateTotalTransporte()">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#transporte-details-{{ loop.index }}">
+                        Más Detalles <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="collapse mt-3" id="transporte-details-{{ loop.index }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nombre del Conductor</label>
+                                <input type="text" name="transporte_conductor[]" class="form-control" value="{{ transporte.conductor or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha de Contratación</label>
+                                <input type="date" name="transporte_fecha_contratacion[]" class="form-control" value="{{ transporte.fecha_contratacion.strftime('%Y-%m-%d') if transporte.fecha_contratacion else '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Teléfono del Lugar</label>
+                                <input type="text" name="transporte_telefono_lugar[]" class="form-control" value="{{ transporte.telefono_lugar or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Teléfono del Contacto</label>
+                                <input type="text" name="transporte_telefono_contacto[]" class="form-control" value="{{ transporte.telefono_contacto or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">WhatsApp del Contacto</label>
+                                <input type="text" name="transporte_whatsapp[]" class="form-control" value="{{ transporte.whatsapp or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="transporte_email[]" class="form-control" value="{{ transporte.email or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Enlaces</label>
+                                <textarea name="transporte_enlaces[]" class="form-control" rows="2">{{ transporte.enlaces or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Nota</label>
+                                <textarea name="transporte_nota[]" class="form-control" rows="2">{{ transporte.nota or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -316,23 +419,72 @@
                     <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('guia-{{ loop.index }}', updateTotalGuias)"></button>
                     <input type="hidden" name="guia_id[]" value="{{ guia.id }}">
                     <div class="row">
-                        <div class="col-md-8 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Nombre</label>
                             <input type="text" name="guia_nombre[]" class="form-control" value="{{ guia.nombre or '' }}">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label price-label">Precio Guía PP (CRC)</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label price-label">Precio Guía PP</label>
                             <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" value="{{ guia.precio_guia_pp or 0 }}" oninput="updateTotalGuias()">
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label">Operador</label>
-                            <input type="text" name="guia_operador[]" class="form-control" value="{{ guia.operador or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label price-label">Precio Acarreo (CRC)</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label price-label">Precio Acarreo</label>
                             <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" value="{{ guia.precio_acarreo or 0 }}" oninput="updateTotalGuias()">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#guia-details-{{ loop.index }}">
+                        Más Detalles <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="collapse mt-3" id="guia-details-{{ loop.index }}">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Operador</label>
+                                <input type="text" name="guia_operador[]" class="form-control" value="{{ guia.operador or '' }}">
+                            </div>
+                             <div class="col-md-4 mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="guia_telefono[]" class="form-control" value="{{ guia.telefono or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">WhatsApp</label>
+                                <input type="text" name="guia_whatsapp[]" class="form-control" value="{{ guia.whatsapp or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="guia_email[]" class="form-control" value="{{ guia.email or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">CPL</label>
+                                <input type="text" name="guia_cpl[]" class="form-control" value="{{ guia.cpl or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fecha Disponible</label>
+                                <input type="date" name="guia_fecha_disponible[]" class="form-control" value="{{ guia.fecha_disponible.strftime('%Y-%m-%d') if guia.fecha_disponible else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fecha Reserva</label>
+                                <input type="date" name="guia_fecha_reserva[]" class="form-control" value="{{ guia.fecha_reserva.strftime('%Y-%m-%d') if guia.fecha_reserva else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Reserva</label>
+                                <input type="text" name="guia_reserva[]" class="form-control" value="{{ guia.reserva or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Enlaces</label>
+                                <textarea name="guia_enlaces[]" class="form-control" rows="2">{{ guia.enlaces or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Nota</label>
+                                <textarea name="guia_nota[]" class="form-control" rows="2">{{ guia.nota or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -354,17 +506,80 @@
                     <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('estadia-{{ loop.index }}', updateTotalEstadia)"></button>
                     <input type="hidden" name="estadia_id[]" value="{{ estadia.id }}">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Nombre</label>
                             <input type="text" name="estadia_nombre[]" class="form-control" value="{{ estadia.nombre or '' }}">
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio PP por Noche (CRC)</label>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de Estadía</label>
+                            <select name="estadia_tipo[]" class="form-select">
+                                <option {% if estadia.tipo_estadia == 'Hotel' %}selected{% endif %}>Hotel</option>
+                                <option {% if estadia.tipo_estadia == 'Hostel' %}selected{% endif %}>Hostel</option>
+                                <option {% if estadia.tipo_estadia == 'Airbnb' %}selected{% endif %}>Airbnb</option>
+                                <option {% if estadia.tipo_estadia == 'Casa/Apto' %}selected{% endif %}>Casa/Apto</option>
+                                <option {% if estadia.tipo_estadia == 'Otro' %}selected{% endif %}>Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label price-label">Precio PP Noche</label>
                             <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-estadia-pp" value="{{ estadia.precio_pp or 0 }}" oninput="updateTotalEstadia()">
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Cantidad de Noches</label>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label"># Noches</label>
                             <input type="number" name="estadia_noches[]" class="form-control noches-estadia" value="{{ estadia.cantidad_noches or 1 }}" oninput="updateTotalEstadia()">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#estadia-details-{{ loop.index }}">
+                        Más Detalles <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="collapse mt-3" id="estadia-details-{{ loop.index }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Check-in</label>
+                                <input type="date" name="estadia_checkin[]" class="form-control" value="{{ estadia.fecha_checkin.strftime('%Y-%m-%d') if estadia.fecha_checkin else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Check-out</label>
+                                <input type="date" name="estadia_checkout[]" class="form-control" value="{{ estadia.fecha_checkout.strftime('%Y-%m-%d') if estadia.fecha_checkout else '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Teléfono del Lugar</label>
+                                <input type="text" name="estadia_telefono_lugar[]" class="form-control" value="{{ estadia.telefono_lugar or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Teléfono de Contacto</label>
+                                <input type="text" name="estadia_telefono_contacto[]" class="form-control" value="{{ estadia.telefono_contacto or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">WhatsApp</label>
+                                <input type="text" name="estadia_whatsapp[]" class="form-control" value="{{ estadia.whatsapp or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="estadia_email[]" class="form-control" value="{{ estadia.email or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                             <div class="col-md-12 mb-3">
+                                <label class="form-label">Número de Reserva</label>
+                                <input type="text" name="estadia_reserva[]" class="form-control" value="{{ estadia.numero_reserva or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Enlaces</label>
+                                <textarea name="estadia_enlaces[]" class="form-control" rows="2">{{ estadia.enlaces or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Nota</label>
+                                <textarea name="estadia_nota[]" class="form-control" rows="2">{{ estadia.nota or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -467,28 +682,32 @@
     // --- LÓGICA DE MONEDA ---
     const tipoMonedaSelect = document.getElementById('tipo_moneda');
     const tipoCambioWrapper = document.getElementById('tipo-cambio-wrapper');
-    const priceLabels = document.querySelectorAll('.price-label');
-    const currencyLabels = document.querySelectorAll('.currency-label');
     const totalCRCWrapper = document.getElementById('total-crc-wrapper');
     const totalUSDWrapper = document.getElementById('total-usd-wrapper');
 
     function handleCurrencyChange() {
         const selectedCurrency = tipoMonedaSelect.value;
+        const priceLabels = document.querySelectorAll('.price-label');
+        const currencyLabels = document.querySelectorAll('.currency-label');
+        
         if (selectedCurrency === 'USD') {
             tipoCambioWrapper.style.display = 'none';
-            priceLabels.forEach(label => label.textContent = label.textContent.replace('(CRC)', '(USD)'));
-            currencyLabels.forEach(label => label.textContent = 'USD');
             totalCRCWrapper.style.display = 'none';
             totalUSDWrapper.classList.remove('col-md-6');
             totalUSDWrapper.classList.add('col-md-12');
         } else {
             tipoCambioWrapper.style.display = 'block';
-            priceLabels.forEach(label => label.textContent = label.textContent.replace('(USD)', '(CRC)'));
-            currencyLabels.forEach(label => label.textContent = 'CRC');
             totalCRCWrapper.style.display = 'block';
             totalUSDWrapper.classList.add('col-md-6');
             totalUSDWrapper.classList.remove('col-md-12');
         }
+
+        priceLabels.forEach(label => {
+            const text = label.innerText.split('(')[0];
+            label.innerText = `${text.trim()} (${selectedCurrency})`;
+        });
+        currencyLabels.forEach(label => label.textContent = selectedCurrency);
+        
         updateGrandTotals();
     }
 
@@ -565,6 +784,7 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `lugar-${lugarCount}`;
+        const currency = tipoMonedaSelect.value;
         newItem.innerHTML = `
             <span class="item-counter">${lugarCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('lugar-${lugarCount}', updateTotalAtracciones)"></button>
@@ -581,8 +801,61 @@
                     <input type="text" name="lugar_nombre[]" class="form-control">
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label price-label">Precio Total de Entrada (CRC)</label>
-                    <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" oninput="updateTotalAtracciones()">
+                    <label class="form-label price-label">Precio Entrada (por persona) (${currency})</label>
+                    <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" value="0" oninput="updateTotalAtracciones()">
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#lugar-details-${lugarCount}">
+                Más Detalles <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="collapse mt-3" id="lugar-details-${lugarCount}">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Fecha de Reserva</label>
+                        <input type="date" name="lugar_fecha_reserva[]" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Teléfono del Lugar</label>
+                        <input type="text" name="lugar_telefono_lugar[]" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Teléfono de Contacto</label>
+                        <input type="text" name="lugar_telefono_contacto[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">WhatsApp</label>
+                        <input type="text" name="lugar_whatsapp_contacto[]" class="form-control">
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="lugar_email[]" class="form-control">
+                    </div>
+                </div>
+                 <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="lugar_guia_local_checkbox" value="lugar-${lugarCount}-guia-local" id="guia-local-check-${lugarCount}" onchange="toggleGuiaLocal(this, 'guia-local-nombre-${lugarCount}')">
+                            <label class="form-check-label" for="guia-local-check-${lugarCount}">¿Incluye Guía Local?</label>
+                        </div>
+                    </div>
+                    <div class="col-md-12 mb-3" id="guia-local-nombre-${lugarCount}" style="display: none;">
+                        <label class="form-label">Nombre del Guía</label>
+                        <input type="text" name="lugar_nombre_guia[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Enlaces de Interés</label>
+                        <textarea name="lugar_enlaces[]" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea name="lugar_nota[]" class="form-control" rows="2"></textarea>
+                    </div>
                 </div>
             </div>
         `;
@@ -595,6 +868,7 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `transporte-${transporteCount}`;
+        const currency = tipoMonedaSelect.value;
         newItem.innerHTML = `
             <span class="item-counter">${transporteCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('transporte-${transporteCount}', updateTotalTransporte)"></button>
@@ -611,8 +885,55 @@
                     <input type="text" name="transporte_nombre[]" class="form-control">
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label price-label">Precio Total (CRC)</label>
-                    <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" oninput="updateTotalTransporte()">
+                    <label class="form-label price-label">Precio Transporte (por persona) (${currency})</label>
+                    <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" value="0" oninput="updateTotalTransporte()">
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#transporte-details-${transporteCount}">
+                Más Detalles <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="collapse mt-3" id="transporte-details-${transporteCount}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre del Conductor</label>
+                        <input type="text" name="transporte_conductor[]" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha de Contratación</label>
+                        <input type="date" name="transporte_fecha_contratacion[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Teléfono del Lugar</label>
+                        <input type="text" name="transporte_telefono_lugar[]" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Teléfono del Contacto</label>
+                        <input type="text" name="transporte_telefono_contacto[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">WhatsApp del Contacto</label>
+                        <input type="text" name="transporte_whatsapp[]" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="transporte_email[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Enlaces</label>
+                        <textarea name="transporte_enlaces[]" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Nota</label>
+                        <textarea name="transporte_nota[]" class="form-control" rows="2"></textarea>
+                    </div>
                 </div>
             </div>
         `;
@@ -625,28 +946,78 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `guia-${guiaCount}`;
+        const currency = tipoMonedaSelect.value;
         newItem.innerHTML = `
             <span class="item-counter">${guiaCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('guia-${guiaCount}', updateTotalGuias)"></button>
             <input type="hidden" name="guia_id[]" value="">
             <div class="row">
-                <div class="col-md-8 mb-3">
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Nombre</label>
                     <input type="text" name="guia_nombre[]" class="form-control">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label price-label">Precio Guía PP (CRC)</label>
-                    <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" oninput="updateTotalGuias()">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label price-label">Precio Guía PP (${currency})</label>
+                    <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" value="0" oninput="updateTotalGuias()">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label price-label">Precio Acarreo (${currency})</label>
+                    <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" value="0" oninput="updateTotalGuias()">
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-8 mb-3">
-                    <label class="form-label">Operador</label>
-                    <input type="text" name="guia_operador[]" class="form-control">
+            <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#guia-details-${guiaCount}">
+                Más Detalles <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="collapse mt-3" id="guia-details-${guiaCount}">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Operador</label>
+                        <input type="text" name="guia_operador[]" class="form-control">
+                    </div>
+                     <div class="col-md-4 mb-3">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="guia_telefono[]" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">WhatsApp</label>
+                        <input type="text" name="guia_whatsapp[]" class="form-control">
+                    </div>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label price-label">Precio Acarreo (CRC)</label>
-                    <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" oninput="updateTotalGuias()">
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="guia_email[]" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">CPL</label>
+                        <input type="text" name="guia_cpl[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Fecha Disponible</label>
+                        <input type="date" name="guia_fecha_disponible[]" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Fecha Reserva</label>
+                        <input type="date" name="guia_fecha_reserva[]" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Reserva</label>
+                        <input type="text" name="guia_reserva[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Enlaces</label>
+                        <textarea name="guia_enlaces[]" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Nota</label>
+                        <textarea name="guia_nota[]" class="form-control" rows="2"></textarea>
+                    </div>
                 </div>
             </div>
         `;
@@ -659,22 +1030,82 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `estadia-${estadiaCount}`;
+        const currency = tipoMonedaSelect.value;
         newItem.innerHTML = `
             <span class="item-counter">${estadiaCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('estadia-${estadiaCount}', updateTotalEstadia)"></button>
             <input type="hidden" name="estadia_id[]" value="">
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Nombre</label>
                     <input type="text" name="estadia_nombre[]" class="form-control">
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label price-label">Precio PP por Noche (CRC)</label>
-                    <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-estadia-pp" oninput="updateTotalEstadia()">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Tipo de Estadía</label>
+                    <select name="estadia_tipo[]" class="form-select">
+                        <option>Hotel</option><option>Hostel</option><option>Airbnb</option><option>Casa/Apto</option><option>Otro</option>
+                    </select>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Cantidad de Noches</label>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label price-label">Precio PP Noche (${currency})</label>
+                    <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-estadia-pp" value="0" oninput="updateTotalEstadia()">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label"># Noches</label>
                     <input type="number" name="estadia_noches[]" class="form-control noches-estadia" value="1" oninput="updateTotalEstadia()">
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#estadia-details-${estadiaCount}">
+                Más Detalles <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="collapse mt-3" id="estadia-details-${estadiaCount}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha Check-in</label>
+                        <input type="date" name="estadia_checkin[]" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha Check-out</label>
+                        <input type="date" name="estadia_checkout[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Teléfono del Lugar</label>
+                        <input type="text" name="estadia_telefono_lugar[]" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Teléfono de Contacto</label>
+                        <input type="text" name="estadia_telefono_contacto[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">WhatsApp</label>
+                        <input type="text" name="estadia_whatsapp[]" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="estadia_email[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                     <div class="col-md-12 mb-3">
+                        <label class="form-label">Número de Reserva</label>
+                        <input type="text" name="estadia_reserva[]" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Enlaces</label>
+                        <textarea name="estadia_enlaces[]" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Nota</label>
+                        <textarea name="estadia_nota[]" class="form-control" rows="2"></textarea>
+                    </div>
                 </div>
             </div>
         `;
@@ -687,10 +1118,10 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `aerolinea-${aerolineaCount}`;
+        const currency = tipoMonedaSelect.value;
         newItem.innerHTML = `
             <span class="item-counter">${aerolineaCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('aerolinea-${aerolineaCount}', updateTotalAerolinea)"></button>
-            <input type="hidden" name="aerolinea_id[]" value="">
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Tipo de Transporte</label>
@@ -705,19 +1136,19 @@
             </div>
             <div class="row">
                 <div class="col-md-3 mb-3 aerolinea-field-group">
-                    <label class="form-label price-label">Precio Asientos</label>
+                    <label class="form-label price-label">Precio Asientos (pp)</label>
                     <input type="number" step="0.01" name="aerolinea_precio_asientos[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
                 </div>
                 <div class="col-md-3 mb-3 aerolinea-field-group">
-                    <label class="form-label price-label">Precio Maletas Doc.</label>
+                    <label class="form-label price-label">Precio Maletas Doc. (pp)</label>
                     <input type="number" step="0.01" name="aerolinea_precio_maletas[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
                 </div>
                 <div class="col-md-3 mb-3 aerolinea-field-group">
-                    <label class="form-label price-label">Equipaje de Mano</label>
+                    <label class="form-label price-label">Equipaje de Mano (pp)</label>
                     <input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
                 </div>
                 <div class="col-md-3 mb-3 aerolinea-field-group">
-                    <label class="form-label price-label">Precio Impuestos</label>
+                    <label class="form-label price-label">Precio Impuestos (pp)</label>
                     <input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
                 </div>
             </div>
@@ -735,24 +1166,34 @@
             }
         }
     }
+
+    function toggleGuiaLocal(checkbox, divId) {
+        const div = document.getElementById(divId);
+        if (checkbox.checked) {
+            div.style.display = 'block';
+        } else {
+            div.style.display = 'none';
+        }
+    }
     
     function toggleAerolineaFields(selectElement) {
         const parentItem = selectElement.closest('.dynamic-item');
         const fieldGroups = parentItem.querySelectorAll('.aerolinea-field-group');
         const firstFieldGroup = fieldGroups[0];
         const firstLabel = firstFieldGroup.querySelector('.price-label');
+        const currency = tipoMonedaSelect.value;
 
         if (selectElement.value === 'Avión') {
-            firstLabel.textContent = 'Precio Asientos (pp)';
             fieldGroups.forEach((group, index) => {
                 group.style.display = 'block';
                 const label = group.querySelector('.price-label');
-                if(index === 1) label.textContent = 'Precio Maletas Doc. (pp)';
-                if(index === 2) label.textContent = 'Equipaje de Mano (pp)';
-                if(index === 3) label.textContent = 'Precio Impuestos (pp)';
+                if(index === 0) label.textContent = `Precio Asientos (pp) (${currency})`;
+                if(index === 1) label.textContent = `Precio Maletas Doc. (pp) (${currency})`;
+                if(index === 2) label.textContent = `Equipaje de Mano (pp) (${currency})`;
+                if(index === 3) label.textContent = `Precio Impuestos (pp) (${currency})`;
             });
         } else {
-            firstLabel.textContent = 'Precio Total del Servicio';
+            firstLabel.textContent = `Precio por Persona (${currency})`;
             fieldGroups.forEach((group, index) => {
                 if (index > 0) {
                     group.style.display = 'none';
@@ -779,9 +1220,7 @@
         document.querySelectorAll('.price-atraccion').forEach(input => {
             total += parseFloat(input.value) || 0;
         });
-        const capacidad = parseInt(document.getElementById('capacidad').value) || 1;
-        const perPersonTotal = capacidad > 0 ? total / capacidad : 0;
-        document.getElementById('total-atracciones').textContent = perPersonTotal.toFixed(2);
+        document.getElementById('total-atracciones').textContent = total.toFixed(2);
         updateGrandTotals();
     }
     
@@ -790,9 +1229,7 @@
         document.querySelectorAll('.price-transporte').forEach(input => {
             total += parseFloat(input.value) || 0;
         });
-        const capacidad = parseInt(document.getElementById('capacidad').value) || 1;
-        const perPersonTotal = capacidad > 0 ? total / capacidad : 0;
-        document.getElementById('total-transporte').textContent = perPersonTotal.toFixed(2);
+        document.getElementById('total-transporte').textContent = total.toFixed(2);
         updateGrandTotals();
     }
 
@@ -820,8 +1257,6 @@
 
     function updateTotalAerolinea() {
         let total = 0;
-        const capacidad = parseInt(document.getElementById('capacidad').value) || 1; 
-
         document.querySelectorAll('.dynamic-item[id^="aerolinea-"]').forEach(item => {
             const tipo = item.querySelector('.tipo-transporte-aerolinea').value;
             let itemTotal = 0;
@@ -832,10 +1267,8 @@
                     itemTotal += parseFloat(input.value) || 0;
                 });
             } else {
-                const precioTotal = parseFloat(inputs[0].value) || 0;
-                if (capacidad > 0) {
-                    itemTotal = precioTotal / capacidad;
-                }
+                const precioPorPersona = parseFloat(inputs[0].value) || 0;
+                itemTotal = precioPorPersona;
             }
             total += itemTotal;
         });

@@ -865,8 +865,8 @@ detalle_intern.html
 ver_intern.html
 
 
-Ahora en crear_intern.html va a estar lo siguiente
 
+Ahora en crear_intern.html va a estar lo siguiente
 TITULO DESTINO
 Flyer
 Nombre del viaje
