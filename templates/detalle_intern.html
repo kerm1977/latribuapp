@@ -5,42 +5,48 @@
 {% block head_content %}
 <style>
     body {
-        background-color: #f4f7f6;
+        background-color: #f8f9fa; /* Color de fondo similar */
     }
     .main-container {
         padding-top: 80px;
         padding-bottom: 80px;
     }
     .header-card {
-        background: linear-gradient(45deg, #ffc107, #ff9800);
-        color: #000;
+        background: #fff;
         padding: 2rem;
-        border-radius: .5rem;
+        border-radius: .375rem;
         margin-bottom: 2rem;
+        border: 1px solid #dee2e6;
     }
     .header-card h1 {
         font-weight: 700;
+        color: #212529;
     }
     .flyer-img {
         max-width: 100%;
         height: auto;
-        border-radius: .5rem;
-        border: 4px solid white;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: .375rem;
+        border: 1px solid #dee2e6;
     }
-    .section-card {
-        margin-bottom: 1.5rem;
-        border: none;
-        border-radius: .5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    .section-container { /* Usando la misma clase que en crear_intern */
+        margin-bottom: 2.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: .375rem;
+        padding: 1.5rem;
+        background-color: #fff;
     }
-    .section-card .card-header {
-        background-color: #343a40;
-        color: #ffc107;
+    .section-header { /* Usando la misma clase que en crear_intern */
         font-weight: bold;
-        border-bottom: none;
-        border-top-left-radius: .5rem;
-        border-top-right-radius: .5rem;
+        padding: 0.75rem 1.25rem;
+        margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top-left-radius: .375rem;
+        border-top-right-radius: .375rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #ffc107 !important; /* Color amarillo */
+        color: #000;
     }
     .detail-item {
         display: flex;
@@ -60,23 +66,18 @@
         color: #6c757d;
         text-align: right;
     }
-
- /* Contenedor para el botón de la izquierda */
     .fab-container-left {
         position: fixed;
-        bottom: 75px;
+        bottom: 20px;
         left: 20px;
         z-index: 1000;
     }
-
-    /* Contenedor para el botón de la derecha */
     .fab-container-right {
         position: fixed;
-        bottom: 75px;
+        bottom: 20px;
         right: 20px;
         z-index: 1000;
     }
-
     .fab-button {
         width: 60px;
         height: 60px;
@@ -91,73 +92,67 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         transition: all 0.3s ease;
     }
-    .fab-edit { background-color: #ffc107; color: #000; }
-    .fab-back { background-color: #0d6efd; } /* Color azul */
+    .fab-edit { background-color: #ffc107; color: #000; } /* Botón editar amarillo */
+    .fab-back { background-color: #6c757d; } /* Botón volver gris */
     .fab-button:hover {
         transform: scale(1.05);
         box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     }
-
-
-
-
-    .accordion-button:not(.collapsed) {
-        color: #000;
-        background-color: #ffc107;
+    .subtotal-footer {
+        text-align: right;
+        font-weight: bold;
+        font-size: 1.25rem;
+        padding-top: 1rem;
+        margin-top: 1rem;
+        border-top: 1px solid #dee2e6;
+        color: #212529;
     }
-    .accordion-body ul {
-        padding-left: 0;
-        list-style: none;
+    .card-within-section {
+        border: 1px dashed #ccc;
+        background-color: #f8f9fa;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-{# --- LÓGICA PARA CALCULAR TOTALES --- #}
-{% set total_individual = {'value': 0} %}
-{% if viaje.precio_paquete %}{% set _ = total_individual.update({'value': total_individual.value + viaje.precio_paquete}) %}{% endif %}
-{% for item in viaje.lugares %}{% if item.precio_entrada %}{% set _ = total_individual.update({'value': total_individual.value + item.precio_entrada}) %}{% endif %}{% endfor %}
-{% for item in viaje.transportes %}{% if item.precio %}{% set _ = total_individual.update({'value': total_individual.value + item.precio}) %}{% endif %}{% endfor %}
-{% for item in viaje.guias %}
-    {% if item.precio_guia_pp %}{% set _ = total_individual.update({'value': total_individual.value + item.precio_guia_pp}) %}{% endif %}
-    {% if item.precio_acarreo %}{% set _ = total_individual.update({'value': total_individual.value + item.precio_acarreo}) %}{% endif %}
-{% endfor %}
-{% for item in viaje.estadias %}
-    {% if item.precio_pp and item.cantidad_noches %}{% set _ = total_individual.update({'value': total_individual.value + (item.precio_pp * item.cantidad_noches)}) %}{% endif %}
-{% endfor %}
+{# --- LÓGICA PARA CALCULAR SUBTOTALES Y TOTALES --- #}
+{% set subtotal_lugares = viaje.lugares | sum(attribute='precio_entrada') %}
+{% set subtotal_transportes = viaje.transportes | sum(attribute='precio') %}
+
+{% set subtotal_guias = {'total': 0} %}
+{% for item in viaje.guias %}{% set _ = subtotal_guias.update({'total': subtotal_guias.total + (item.precio_guia_pp or 0) + (item.precio_acarreo or 0)}) %}{% endfor %}
+{% set subtotal_guias = subtotal_guias.total %}
+
+{% set subtotal_estadias = {'total': 0} %}
+{% for item in viaje.estadias %}{% set _ = subtotal_estadias.update({'total': subtotal_estadias.total + ((item.precio_pp or 0) * (item.cantidad_noches or 1))}) %}{% endfor %}
+{% set subtotal_estadias = subtotal_estadias.total %}
+
+{% set subtotal_aerolineas = {'total': 0} %}
 {% for item in viaje.aerolineas %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_asientos or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_maletas_documentado or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.equipaje_mano or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_impuestos or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_estandar or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_equipo or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_salida_rapida or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_premium or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_vip or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_basic or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_classic or 0)}) %}
-    {% set _ = total_individual.update({'value': total_individual.value + (item.precio_flexible or 0)}) %}
+    {% set _ = subtotal_aerolineas.update({'total': subtotal_aerolineas.total + (item.precio_asientos or 0) + (item.precio_maletas_documentado or 0) + (item.equipaje_mano or 0) + (item.precio_impuestos or 0) + (item.precio_estandar or 0) + (item.precio_equipo or 0) + (item.precio_salida_rapida or 0) + (item.precio_premium or 0) + (item.precio_vip or 0) + (item.precio_basic or 0) + (item.precio_classic or 0) + (item.precio_flexible or 0)}) %}
     {% for i in range(1, 5) %}
         {% set costo = item['otro_costo_valor_' ~ i] or 0 %}
         {% set cant = item['otro_costo_cant_' ~ i] or 1 %}
-        {% if costo %}{% set _ = total_individual.update({'value': total_individual.value + (costo * cant)}) %}{% endif %}
+        {% if costo %}{% set _ = subtotal_aerolineas.update({'total': subtotal_aerolineas.total + (costo * cant)}) %}{% endif %}
     {% endfor %}
 {% endfor %}
+{% set subtotal_aerolineas = subtotal_aerolineas.total %}
+
+{% set total_individual = (viaje.precio_paquete or 0) + subtotal_lugares + subtotal_transportes + subtotal_guias + subtotal_estadias + subtotal_aerolineas %}
 
 {% if viaje.tipo_moneda == 'USD' %}
-    {% set total_usd = total_individual.value %}
-    {% set total_crc = total_individual.value * (viaje.tipo_cambio or 1) %}
+    {% set total_usd = total_individual %}
+    {% set total_crc = total_individual * (viaje.tipo_cambio or 1) %}
 {% else %}
-    {% set total_crc = total_individual.value %}
-    {% set total_usd = total_individual.value / (viaje.tipo_cambio or 1) %}
+    {% set total_crc = total_individual %}
+    {% set total_usd = total_individual / (viaje.tipo_cambio or 1) %}
 {% endif %}
 {# --- FIN DE LA LÓGICA --- #}
 
 <div class="container main-container">
     
     <!-- Encabezado Principal -->
-    <div class="card header-card">
+    <div class="header-card">
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1>{{ viaje.nombre_viaje }}</h1>
@@ -173,256 +168,228 @@
         </div>
     </div>
 
-
-
-    <div class="accordion" id="detailsAccordion">
-        
-        <!-- Pre-Alertas -->
-        {% if viaje.prealertas %}
-        <div class="accordion-item section-card">
-            <h2 class="accordion-header" id="headingPrealertas">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrealertas">
-                    <i class="fas fa-exclamation-triangle me-2"></i> Administración de Viaje: Pre-Alertas ({{ viaje.prealertas|length }})
-                </button>
-            </h2>
-            <div id="collapsePrealertas" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
-                <div class="accordion-body">
-                    {% for item in viaje.prealertas %}
-                    <div class="card mb-3">
-                        <div class="card-header bg-light"><strong>{{ item.banco or 'Pre-alerta sin banco' }}</strong></div>
-                        <div class="card-body">
-                           <ul>
-                                {% if item.telefono_entidad %}<li class="detail-item"><strong>Tel. Entidad:</strong> <span>{{ item.telefono_entidad }}</span></li>{% endif %}
-                                {% if item.fecha_prealerta %}<li class="detail-item"><strong>Fecha Pre-alerta:</strong> <span>{{ item.fecha_prealerta.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if item.asesor %}<li class="detail-item"><strong>Asesor:</strong> <span>{{ item.asesor }}</span></li>{% endif %}
-                                {% if item.hora_prealerta %}<li class="detail-item"><strong>Hora Pre-alerta:</strong> <span>{{ item.hora_prealerta.strftime('%I:%M %p') }}</span></li>{% endif %}
-                                {% if item.numero_prealerta %}<li class="detail-item"><strong># Pre-alerta:</strong> <span>{{ item.numero_prealerta }}</span></li>{% endif %}
-                                {% if item.fecha_desde and item.fecha_hasta %}<li class="detail-item"><strong>Periodo Pre-alertado:</strong> <span>Del {{ item.fecha_desde.strftime('%d/%m/%Y') }} al {{ item.fecha_hasta.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                           </ul>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Lugares a Visitar -->
-        {% if viaje.lugares %}
-        <div class="accordion-item section-card">
-            <h2 class="accordion-header" id="headingLugares">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLugares">
-                    <i class="fas fa-map-marked-alt me-2"></i> Lugares a Visitar ({{ viaje.lugares|length }})
-                </button>
-            </h2>
-            <div id="collapseLugares" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
-                <div class="accordion-body">
-                    {% for item in viaje.lugares %}
-                     <div class="card mb-3">
-                        <div class="card-header bg-light"><strong>{{ item.nombre_sitio or 'Lugar sin nombre' }}</strong> ({{ item.tipo_lugar }})</div>
-                        <div class="card-body">
-                            <ul>
-                                {% if item.precio_entrada %}<li class="detail-item"><strong>Precio Entrada (PP):</strong> <span>{{ "{:,.2f}".format(item.precio_entrada) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.fecha_reserva %}<li class="detail-item"><strong>Fecha Reserva:</strong> <span>{{ item.fecha_reserva.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if item.guia_local %}<li class="detail-item"><strong>Guía Local:</strong> <span>Sí, {{ item.nombre_guia or 'No especificado' }}</span></li>{% endif %}
-                                {% if item.telefono_lugar %}<li class="detail-item"><strong>Tel. del Lugar:</strong> <span>{{ item.telefono_lugar }}</span></li>{% endif %}
-                                {% if item.telefono_contacto %}<li class="detail-item"><strong>Tel. de Contacto:</strong> <span>{{ item.telefono_contacto }}</span></li>{% endif %}
-                                {% if item.whatsapp_contacto %}<li class="detail-item"><strong>WhatsApp:</strong> <span>{{ item.whatsapp_contacto }}</span></li>{% endif %}
-                                {% if item.email %}<li class="detail-item"><strong>Email:</strong> <span>{{ item.email }}</span></li>{% endif %}
-                                {% if item.enlaces %}<li class="detail-item"><strong>Enlaces:</strong> <span>{{ item.enlaces }}</span></li>{% endif %}
-                                {% if item.nota %}<li class="detail-item"><strong>Nota:</strong> <span>{{ item.nota }}</span></li>{% endif %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Transportes Locales -->
-        {% if viaje.transportes %}
-        <div class="accordion-item section-card">
-            <h2 class="accordion-header" id="headingTransportes">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTransportes">
-                    <i class="fas fa-bus-alt me-2"></i> Transportes Locales ({{ viaje.transportes|length }})
-                </button>
-            </h2>
-            <div id="collapseTransportes" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
-                <div class="accordion-body">
-                    {% for item in viaje.transportes %}
-                    <div class="card mb-3">
-                        <div class="card-header bg-light"><strong>{{ item.nombre_transporte or 'Transporte sin nombre' }}</strong> ({{ item.tipo_transporte }})</div>
-                        <div class="card-body">
-                           <ul>
-                                {% if item.precio %}<li class="detail-item"><strong>Precio (PP):</strong> <span>{{ "{:,.2f}".format(item.precio) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.conductor %}<li class="detail-item"><strong>Conductor:</strong> <span>{{ item.conductor }}</span></li>{% endif %}
-                                {% if item.fecha_contratacion %}<li class="detail-item"><strong>Fecha Contratación:</strong> <span>{{ item.fecha_contratacion.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if item.telefono_lugar %}<li class="detail-item"><strong>Tel. del Lugar:</strong> <span>{{ item.telefono_lugar }}</span></li>{% endif %}
-                                {% if item.telefono_contacto %}<li class="detail-item"><strong>Tel. de Contacto:</strong> <span>{{ item.telefono_contacto }}</span></li>{% endif %}
-                                {% if item.whatsapp %}<li class="detail-item"><strong>WhatsApp:</strong> <span>{{ item.whatsapp }}</span></li>{% endif %}
-                                {% if item.email %}<li class="detail-item"><strong>Email:</strong> <span>{{ item.email }}</span></li>{% endif %}
-                                {% if item.enlaces %}<li class="detail-item"><strong>Enlaces:</strong> <span>{{ item.enlaces }}</span></li>{% endif %}
-                                {% if item.nota %}<li class="detail-item"><strong>Nota:</strong> <span>{{ item.nota }}</span></li>{% endif %}
-                           </ul>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Guías -->
-        {% if viaje.guias %}
-        <div class="accordion-item section-card">
-            <h2 class="accordion-header" id="headingGuias">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGuias">
-                    <i class="fas fa-user-tie me-2"></i> Guías Contratados ({{ viaje.guias|length }})
-                </button>
-            </h2>
-            <div id="collapseGuias" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
-                <div class="accordion-body">
-                    {% for guia in viaje.guias %}
-                    <div class="card mb-3">
-                        <div class="card-header bg-light"><strong>{{ guia.nombre or 'Guía sin nombre' }}</strong></div>
-                        <div class="card-body">
-                           <ul>
-                                {% if guia.precio_guia_pp %}<li class="detail-item"><strong>Precio Guía (PP):</strong> <span>{{ "{:,.2f}".format(guia.precio_guia_pp) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if guia.precio_acarreo %}<li class="detail-item"><strong>Precio Acarreo:</strong> <span>{{ "{:,.2f}".format(guia.precio_acarreo) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if guia.operador %}<li class="detail-item"><strong>Operador:</strong> <span>{{ guia.operador }}</span></li>{% endif %}
-                                {% if guia.telefono %}<li class="detail-item"><strong>Teléfono:</strong> <span>{{ guia.telefono }}</span></li>{% endif %}
-                                {% if guia.whatsapp %}<li class="detail-item"><strong>WhatsApp:</strong> <span>{{ guia.whatsapp }}</span></li>{% endif %}
-                                {% if guia.email %}<li class="detail-item"><strong>Email:</strong> <span>{{ guia.email }}</span></li>{% endif %}
-                                {% if guia.cpl %}<li class="detail-item"><strong>CPL:</strong> <span>{{ guia.cpl }}</span></li>{% endif %}
-                                {% if guia.fecha_disponible %}<li class="detail-item"><strong>Fecha Disponible:</strong> <span>{{ guia.fecha_disponible.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if guia.fecha_reserva %}<li class="detail-item"><strong>Fecha Reserva:</strong> <span>{{ guia.fecha_reserva.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if guia.reserva %}<li class="detail-item"><strong># Reserva:</strong> <span>{{ guia.reserva }}</span></li>{% endif %}
-                                {% if guia.enlaces %}<li class="detail-item"><strong>Enlaces:</strong> <span>{{ guia.enlaces }}</span></li>{% endif %}
-                                {% if guia.nota %}<li class="detail-item"><strong>Nota:</strong> <span>{{ guia.nota }}</span></li>{% endif %}
-                           </ul>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Estadías -->
-        {% if viaje.estadias %}
-        <div class="accordion-item section-card">
-            <h2 class="accordion-header" id="headingEstadias">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEstadias">
-                    <i class="fas fa-bed me-2"></i> Estadías ({{ viaje.estadias|length }})
-                </button>
-            </h2>
-            <div id="collapseEstadias" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
-                <div class="accordion-body">
-                    {% for estadia in viaje.estadias %}
-                    <div class="card mb-3">
-                        <div class="card-header bg-light"><strong>{{ estadia.nombre or 'Estadía sin nombre' }}</strong> ({{ estadia.tipo_estadia }})</div>
-                        <div class="card-body">
-                           <ul>
-                                <li class="detail-item"><strong>Precio (PP por noche):</strong> <span>{{ "{:,.2f}".format(estadia.precio_pp) }} {{ viaje.tipo_moneda }} x {{ estadia.cantidad_noches }} noches</span></li>
-                                {% if estadia.fecha_checkin %}<li class="detail-item"><strong>Check-in:</strong> <span>{{ estadia.fecha_checkin.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if estadia.fecha_checkout %}<li class="detail-item"><strong>Check-out:</strong> <span>{{ estadia.fecha_checkout.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if estadia.telefono_lugar %}<li class="detail-item"><strong>Tel. del Lugar:</strong> <span>{{ estadia.telefono_lugar }}</span></li>{% endif %}
-                                {% if estadia.telefono_contacto %}<li class="detail-item"><strong>Tel. de Contacto:</strong> <span>{{ estadia.telefono_contacto }}</span></li>{% endif %}
-                                {% if estadia.whatsapp %}<li class="detail-item"><strong>WhatsApp:</strong> <span>{{ estadia.whatsapp }}</span></li>{% endif %}
-                                {% if estadia.email %}<li class="detail-item"><strong>Email:</strong> <span>{{ estadia.email }}</span></li>{% endif %}
-                                {% if estadia.numero_reserva %}<li class="detail-item"><strong># Reserva:</strong> <span>{{ estadia.numero_reserva }}</span></li>{% endif %}
-                                {% if estadia.enlaces %}<li class="detail-item"><strong>Enlaces:</strong> <span>{{ estadia.enlaces }}</span></li>{% endif %}
-                                {% if estadia.nota %}<li class="detail-item"><strong>Nota:</strong> <span>{{ estadia.nota }}</span></li>{% endif %}
-                           </ul>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Aerolínea / Transporte Principal -->
-        {% if viaje.aerolineas %}
-        <div class="accordion-item section-card">
-            <h2 class="accordion-header" id="headingAerolineas">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAerolineas">
-                    <i class="fas fa-plane-departure me-2"></i> Aerolínea / Transporte Principal ({{ viaje.aerolineas|length }})
-                </button>
-            </h2>
-            <div id="collapseAerolineas" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
-                <div class="accordion-body">
-                    {% for item in viaje.aerolineas %}
-                    <div class="card mb-3">
-                        <div class="card-header bg-light"><strong>{{ item.nombre_aerolinea or 'Transporte sin nombre' }}</strong> ({{ item.tipo_transporte }})</div>
-                        <div class="card-body">
-                           <ul>
-                                {% if item.telefono %}<li class="detail-item"><strong>Teléfono:</strong> <span>{{ item.telefono }}</span></li>{% endif %}
-                                {% if item.email %}<li class="detail-item"><strong>Email:</strong> <span>{{ item.email }}</span></li>{% endif %}
-                                {% if item.whatsapp %}<li class="detail-item"><strong>WhatsApp:</strong> <span>{{ item.whatsapp }}</span></li>{% endif %}
-                                {% if item.tel_prealerta %}<li class="detail-item"><strong>Teléfono Pre-alerta:</strong> <span>{{ item.tel_prealerta }}</span></li>{% endif %}
-                                {% if item.fecha_prealerta %}<li class="detail-item"><strong>Fecha Pre-alerta:</strong> <span>{{ item.fecha_prealerta.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if item.enlace_prealerta %}<li class="detail-item"><strong>Enlace Pre-alerta:</strong> <span><a href="{{ item.enlace_prealerta }}" target="_blank">Visitar</a></span></li>{% endif %}
-                                {% if item.numero_vuelo %}<li class="detail-item"><strong># Vuelo:</strong> <span>{{ item.numero_vuelo }}</span></li>{% endif %}
-                                {% if item.horario_salida %}<li class="detail-item"><strong>Salida:</strong> <span>{{ item.horario_salida.strftime('%d/%m/%Y %I:%M %p') }}</span></li>{% endif %}
-                                {% if item.horario_llegada %}<li class="detail-item"><strong>Llegada:</strong> <span>{{ item.horario_llegada.strftime('%d/%m/%Y %I:%M %p') }}</span></li>{% endif %}
-                                {% if item.fecha_compra %}<li class="detail-item"><strong>Fecha Compra:</strong> <span>{{ item.fecha_compra.strftime('%d/%m/%Y') }}</span></li>{% endif %}
-                                {% if item.nombre_aeropuerto %}<li class="detail-item"><strong>Aeropuerto:</strong> <span>{{ item.nombre_aeropuerto }}</span></li>{% endif %}
-                                {% if item.tel_aeropuerto %}<li class="detail-item"><strong>Tel. Aeropuerto:</strong> <span>{{ item.tel_aeropuerto }}</span></li>{% endif %}
-                                
-                                {% if item.precio_asientos %}<li class="detail-item"><strong>Precio Asientos:</strong> <span>{{ "{:,.2f}".format(item.precio_asientos) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_maletas_documentado %}<li class="detail-item"><strong>Precio Maletas Doc.:</strong> <span>{{ "{:,.2f}".format(item.precio_maletas_documentado) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.equipaje_mano %}<li class="detail-item"><strong>Equipaje de Mano:</strong> <span>{{ "{:,.2f}".format(item.equipaje_mano) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_impuestos %}<li class="detail-item"><strong>Precio Impuestos:</strong> <span>{{ "{:,.2f}".format(item.precio_impuestos) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_estandar %}<li class="detail-item"><strong>Precio Estandar:</strong> <span>{{ "{:,.2f}".format(item.precio_estandar) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_equipo %}<li class="detail-item"><strong>Precio Mas Equipo:</strong> <span>{{ "{:,.2f}".format(item.precio_equipo) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_salida_rapida %}<li class="detail-item"><strong>Precio Salida Rápida:</strong> <span>{{ "{:,.2f}".format(item.precio_salida_rapida) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_premium %}<li class="detail-item"><strong>Precio Premium:</strong> <span>{{ "{:,.2f}".format(item.precio_premium) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_vip %}<li class="detail-item"><strong>Precio VIP:</strong> <span>{{ "{:,.2f}".format(item.precio_vip) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_basic %}<li class="detail-item"><strong>Precio Basic:</strong> <span>{{ "{:,.2f}".format(item.precio_basic) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_classic %}<li class="detail-item"><strong>Precio Classic:</strong> <span>{{ "{:,.2f}".format(item.precio_classic) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-                                {% if item.precio_flexible %}<li class="detail-item"><strong>Precio Flexible:</strong> <span>{{ "{:,.2f}".format(item.precio_flexible) }} {{ viaje.tipo_moneda }}</span></li>{% endif %}
-
-                                {% for i in range(1, 5) %}
-                                    {% set desc = item['otro_costo_desc_' ~ i] %}
-                                    {% set costo = item['otro_costo_valor_' ~ i] %}
-                                    {% if desc and costo %}
-                                    <li class="detail-item"><strong>{{ desc }}:</strong> <span>{{ "{:,.2f}".format(costo) }} {{ viaje.tipo_moneda }}</span></li>
-                                    {% endif %}
-                                {% endfor %}
-                           </ul>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-            <!-- Detalles Generales y Totales -->
-    <div class="card section-card">
-        <div class="card-header">Resumen Financiero y del Viaje</div>
-        <div class="card-body">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item detail-item"><strong>Capacidad:</strong> <span>{{ viaje.capacidad }} personas</span></li>
-                {% if viaje.precio_paquete %}
-                <li class="list-group-item detail-item"><strong>Precio Base del Paquete (PP):</strong> <span>{{ "{:,.2f}".format(viaje.precio_paquete or 0) }} {{ viaje.tipo_moneda }}</span></li>
-                {% endif %}
-                <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (USD):</strong> <span class="fw-bold fs-5">${{ "{:,.2f}".format(total_usd or 0) }}</span></li>
-                <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (CRC):</strong> <span class="fw-bold fs-5">₡{{ "{:,.2f}".format(total_crc or 0) }}</span></li>
-                 {% if viaje.tipo_moneda == 'CRC' %}
-                <li class="list-group-item detail-item"><small>Tipo de Cambio Usado:</small> <small>1 USD = {{ viaje.tipo_cambio }} CRC</small></li>
-                {% endif %}
-            </ul>
-        </div>
+    <!-- Detalles Generales y Totales -->
+    <div class="section-container">
+        <div class="section-header">Resumen Financiero y del Viaje</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item detail-item"><strong>Capacidad:</strong> <span>{{ viaje.capacidad }} personas</span></li>
+            <li class="list-group-item detail-item"><strong>Precio Base del Paquete (PP):</strong> <span>{{ "{:,.2f}".format(viaje.precio_paquete or 0) }} USD</span></li>
+            <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (USD):</strong> <span class="fw-bold fs-5">${{ "{:,.2f}".format(total_usd or 0) }}</span></li>
+            <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (CRC):</strong> <span class="fw-bold fs-5">₡{{ "{:,.2f}".format(total_crc or 0) }}</span></li>
+             {% if viaje.tipo_moneda == 'CRC' %}
+            <li class="list-group-item detail-item"><small>Tipo de Cambio Usado:</small> <small>1 USD = {{ viaje.tipo_cambio }} CRC</small></li>
+            {% endif %}
+        </ul>
     </div>
 
+    <!-- Pre-Alertas -->
+    {% if viaje.prealertas %}
+    <div class="section-container">
+        <div class="section-header">
+            <span><i class="fas fa-exclamation-triangle me-2"></i> Administración de Viaje: Pre-Alertas ({{ viaje.prealertas|length }})</span>
+        </div>
+        {% for item in viaje.prealertas %}
+        <div class="card mb-3 card-within-section">
+            <div class="card-header bg-light"><strong>{{ item.banco or 'Pre-alerta sin banco' }}</strong></div>
+            <div class="card-body">
+               <ul>
+                    <li class="detail-item"><strong>Tel. Entidad:</strong> <span>{{ item.telefono_entidad or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Fecha Pre-alerta:</strong> <span>{{ item.fecha_prealerta.strftime('%d/%m/%Y') if item.fecha_prealerta else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Asesor:</strong> <span>{{ item.asesor or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Hora Pre-alerta:</strong> <span>{{ item.hora_prealerta.strftime('%I:%M %p') if item.hora_prealerta else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong># Pre-alerta:</strong> <span>{{ item.numero_prealerta or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Periodo Pre-alertado:</strong> <span>Del {{ item.fecha_desde.strftime('%d/%m/%Y') if item.fecha_desde else 'N/A' }} al {{ item.fecha_hasta.strftime('%d/%m/%Y') if item.fecha_hasta else 'N/A' }}</span></li>
+               </ul>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+    {% endif %}
+
+    <!-- Lugares a Visitar -->
+    {% if viaje.lugares %}
+    <div class="section-container">
+        <div class="section-header">
+            <span><i class="fas fa-map-marked-alt me-2"></i> Lugares a Visitar ({{ viaje.lugares|length }})</span>
+        </div>
+        {% for item in viaje.lugares %}
+         <div class="card mb-3 card-within-section">
+            <div class="card-header bg-light"><strong>{{ item.nombre_sitio or 'Lugar sin nombre' }}</strong> ({{ item.tipo_lugar }})</div>
+            <div class="card-body">
+                <ul>
+                    <li class="detail-item"><strong>Precio Entrada (PP):</strong> <span>{{ "{:,.2f}".format(item.precio_entrada or 0) }} USD</span></li>
+                    <hr>
+                    <li class="detail-item"><strong>Fecha Reserva:</strong> <span>{{ item.fecha_reserva.strftime('%d/%m/%Y') if item.fecha_reserva else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Guía Local:</strong> <span>{% if item.guia_local %}Sí, {{ item.nombre_guia or 'No especificado' }}{% else %}No{% endif %}</span></li>
+                    <li class="detail-item"><strong>Tel. del Lugar:</strong> <span>{{ item.telefono_lugar or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Tel. de Contacto:</strong> <span>{{ item.telefono_contacto or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>WhatsApp:</strong> <span>{{ item.whatsapp_contacto or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Email:</strong> <span>{{ item.email or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Enlaces:</strong> <span>{{ item.enlaces or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Nota:</strong> <span>{{ item.nota or 'N/A' }}</span></li>
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="subtotal-footer">
+            SUBTOTAL: {{ "{:,.2f}".format(subtotal_lugares) }} USD
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Transportes Locales -->
+    {% if viaje.transportes %}
+    <div class="section-container">
+        <div class="section-header">
+            <span><i class="fas fa-bus-alt me-2"></i> Transportes Locales ({{ viaje.transportes|length }})</span>
+        </div>
+        {% for item in viaje.transportes %}
+        <div class="card mb-3 card-within-section">
+            <div class="card-header bg-light"><strong>{{ item.nombre_transporte or 'Transporte sin nombre' }}</strong> ({{ item.tipo_transporte }})</div>
+            <div class="card-body">
+               <ul>
+                    <li class="detail-item"><strong>Precio (PP):</strong> <span>{{ "{:,.2f}".format(item.precio or 0) }} USD</span></li>
+                    <hr>
+                    <li class="detail-item"><strong>Conductor:</strong> <span>{{ item.conductor or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Fecha Contratación:</strong> <span>{{ item.fecha_contratacion.strftime('%d/%m/%Y') if item.fecha_contratacion else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Tel. del Lugar:</strong> <span>{{ item.telefono_lugar or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Tel. de Contacto:</strong> <span>{{ item.telefono_contacto or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>WhatsApp:</strong> <span>{{ item.whatsapp or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Email:</strong> <span>{{ item.email or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Enlaces:</strong> <span>{{ item.enlaces or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Nota:</strong> <span>{{ item.nota or 'N/A' }}</span></li>
+               </ul>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="subtotal-footer">
+            SUBTOTAL: {{ "{:,.2f}".format(subtotal_transportes) }} USD
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Guías -->
+    {% if viaje.guias %}
+    <div class="section-container">
+        <div class="section-header">
+            <span><i class="fas fa-user-tie me-2"></i> Guías Contratados ({{ viaje.guias|length }})</span>
+        </div>
+        {% for guia in viaje.guias %}
+        <div class="card mb-3 card-within-section">
+            <div class="card-header bg-light"><strong>{{ guia.nombre or 'Guía sin nombre' }}</strong></div>
+            <div class="card-body">
+               <ul>
+                    <li class="detail-item"><strong>Precio Guía (PP):</strong> <span>{{ "{:,.2f}".format(guia.precio_guia_pp or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Acarreo:</strong> <span>{{ "{:,.2f}".format(guia.precio_acarreo or 0) }} USD</span></li>
+                    <hr>
+                    <li class="detail-item"><strong>Operador:</strong> <span>{{ guia.operador or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Teléfono:</strong> <span>{{ guia.telefono or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>WhatsApp:</strong> <span>{{ guia.whatsapp or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Email:</strong> <span>{{ guia.email or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>CPL:</strong> <span>{{ guia.cpl or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Fecha Disponible:</strong> <span>{{ guia.fecha_disponible.strftime('%d/%m/%Y') if guia.fecha_disponible else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Fecha Reserva:</strong> <span>{{ guia.fecha_reserva.strftime('%d/%m/%Y') if guia.fecha_reserva else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong># Reserva:</strong> <span>{{ guia.reserva or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Enlaces:</strong> <span>{{ guia.enlaces or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Nota:</strong> <span>{{ guia.nota or 'N/A' }}</span></li>
+               </ul>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="subtotal-footer">
+            SUBTOTAL: {{ "{:,.2f}".format(subtotal_guias) }} USD
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estadías -->
+    {% if viaje.estadias %}
+    <div class="section-container">
+        <div class="section-header">
+            <span><i class="fas fa-bed me-2"></i> Estadías ({{ viaje.estadias|length }})</span>
+        </div>
+        {% for estadia in viaje.estadias %}
+        <div class="card mb-3 card-within-section">
+            <div class="card-header bg-light"><strong>{{ estadia.nombre or 'Estadía sin nombre' }}</strong> ({{ estadia.tipo_estadia }})</div>
+            <div class="card-body">
+               <ul>
+                    <li class="detail-item"><strong>Precio (PP por noche):</strong> <span>{{ "{:,.2f}".format(estadia.precio_pp or 0) }} USD x {{ estadia.cantidad_noches }} noches</span></li>
+                    <hr>
+                    <li class="detail-item"><strong>Check-in:</strong> <span>{{ estadia.fecha_checkin.strftime('%d/%m/%Y') if estadia.fecha_checkin else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Check-out:</strong> <span>{{ estadia.fecha_checkout.strftime('%d/%m/%Y') if estadia.fecha_checkout else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Tel. del Lugar:</strong> <span>{{ estadia.telefono_lugar or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Tel. de Contacto:</strong> <span>{{ estadia.telefono_contacto or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>WhatsApp:</strong> <span>{{ estadia.whatsapp or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Email:</strong> <span>{{ estadia.email or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong># Reserva:</strong> <span>{{ estadia.numero_reserva or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Enlaces:</strong> <span>{{ estadia.enlaces or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Nota:</strong> <span>{{ estadia.nota or 'N/A' }}</span></li>
+               </ul>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="subtotal-footer">
+            SUBTOTAL: {{ "{:,.2f}".format(subtotal_estadias) }} USD
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Aerolínea / Transporte Principal -->
+    {% if viaje.aerolineas %}
+    <div class="section-container">
+        <div class="section-header">
+            <span><i class="fas fa-plane-departure me-2"></i> Aerolínea / Transporte Principal ({{ viaje.aerolineas|length }})</span>
+        </div>
+        {% for item in viaje.aerolineas %}
+        <div class="card mb-3 card-within-section">
+            <div class="card-header bg-light"><strong>{{ item.nombre_aerolinea or 'Transporte sin nombre' }}</strong> ({{ item.tipo_transporte }})</div>
+            <div class="card-body">
+               <ul>
+                    <li class="detail-item"><strong>Teléfono:</strong> <span>{{ item.telefono or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Email:</strong> <span>{{ item.email or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>WhatsApp:</strong> <span>{{ item.whatsapp or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Teléfono Pre-alerta:</strong> <span>{{ item.tel_prealerta or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Fecha Pre-alerta:</strong> <span>{{ item.fecha_prealerta.strftime('%d/%m/%Y') if item.fecha_prealerta else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Enlace Pre-alerta:</strong> <span><a href="{{ item.enlace_prealerta }}" target="_blank">Visitar</a></span></li>
+                    <hr>
+                    <li class="detail-item"><strong># Vuelo:</strong> <span>{{ item.numero_vuelo or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Salida:</strong> <span>{{ item.horario_salida.strftime('%d/%m/%Y %I:%M %p') if item.horario_salida else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Llegada:</strong> <span>{{ item.horario_llegada.strftime('%d/%m/%Y %I:%M %p') if item.horario_llegada else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Fecha Compra:</strong> <span>{{ item.fecha_compra.strftime('%d/%m/%Y') if item.fecha_compra else 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Aeropuerto:</strong> <span>{{ item.nombre_aeropuerto or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Tel. Aeropuerto:</strong> <span>{{ item.tel_aeropuerto or 'N/A' }}</span></li>
+                    <hr>
+                    <li class="detail-item"><strong>Precio Asientos:</strong> <span>{{ "{:,.2f}".format(item.precio_asientos or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Maletas Doc.:</strong> <span>{{ "{:,.2f}".format(item.precio_maletas_documentado or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Equipaje de Mano:</strong> <span>{{ "{:,.2f}".format(item.equipaje_mano or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Impuestos:</strong> <span>{{ "{:,.2f}".format(item.precio_impuestos or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Estandar:</strong> <span>{{ "{:,.2f}".format(item.precio_estandar or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Mas Equipo:</strong> <span>{{ "{:,.2f}".format(item.precio_equipo or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Salida Rápida:</strong> <span>{{ "{:,.2f}".format(item.precio_salida_rapida or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Premium:</strong> <span>{{ "{:,.2f}".format(item.precio_premium or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio VIP:</strong> <span>{{ "{:,.2f}".format(item.precio_vip or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Basic:</strong> <span>{{ "{:,.2f}".format(item.precio_basic or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Classic:</strong> <span>{{ "{:,.2f}".format(item.precio_classic or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Precio Flexible:</strong> <span>{{ "{:,.2f}".format(item.precio_flexible or 0) }} USD</span></li>
+                    {% for i in range(1, 5) %}
+                        {% set desc = item['otro_costo_desc_' ~ i] %}
+                        {% set costo = item['otro_costo_valor_' ~ i] %}
+                        {% if desc and costo %}
+                        <li class="detail-item"><strong>{{ desc }}:</strong> <span>{{ "{:,.2f}".format(costo) }} USD</span></li>
+                        {% endif %}
+                    {% endfor %}
+               </ul>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="subtotal-footer">
+            SUBTOTAL: {{ "{:,.2f}".format(subtotal_aerolineas) }} USD
+        </div>
+    </div>
+    {% endif %}
 
 </div>
 
-<!-- Botones Flotantes -->
 <!-- Botones Flotantes -->
 <div class="fab-container-left">
     <a href="{{ url_for('intern.index') }}" class="fab-button fab-back" title="Volver al Listado">

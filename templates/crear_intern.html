@@ -249,7 +249,15 @@
     let estadiaCount = 0;
     let aerolineaCount = 0;
     
-    const AEROLINEA_OPTIONS = {{ aerolineas_json|safe }};
+    // Asumiendo que AEROLINEA_OPTIONS se pasa desde el backend (Flask)
+    // Asegúrate de que tu ruta Flask en intern.py que renderiza crear_intern.html
+    // pase esta variable, por ejemplo:
+    // return render_template('crear_intern.html', aerolineas_opciones=aerolineas_opciones, ...)
+    // Y en el HTML de crear_intern.html:
+    // const AEROLINEA_OPTIONS = {{ aerolineas_opciones | tojson | safe }};
+    // Si no tienes el `tojson` filtro disponible, puedes hacer un arreglo simple manualmente:
+    const AEROLINEA_OPTIONS = ["Avianca", "American Airlines", "Copa", "Volaris", "Jetblue", "Sansa", "Spirit", "United", "Wingo", "KLM", "Iberia", "Lufthansa", "Latam Airlines", "IberoJet", "Delta", "AirFrance", "Alaska", "AeroMéxico", "Arajet", "Air Canadá", "Airtransat", "Green Airways", "Southwest", "Edelweiss", "Frontier", "GOL"];
+
 
     // --- LÓGICA DE MONEDA ---
     const tipoMonedaSelect = document.getElementById('tipo_moneda');
@@ -796,17 +804,70 @@
             </div>
         `;
         container.appendChild(newItem);
+        // Asegúrate de llamar a toggleAerolineaFields para el nuevo elemento
         toggleAerolineaFields(newItem.querySelector('.tipo-transporte-aerolinea'));
     }
 
+    // Función para eliminar elementos dinámicos
     function removeItem(id, callback) {
         const item = document.getElementById(id);
         if (item) {
             item.remove();
+            // Reindexar los contadores visuales después de eliminar un elemento
+            updateItemCounters();
             if (callback) {
                 callback();
             }
         }
+    }
+
+    // Función para reindexar los contadores visuales
+    function updateItemCounters() {
+        document.querySelectorAll('.section-container').forEach(section => {
+            let currentSectionId;
+            if (section.querySelector('#prealertas-container')) currentSectionId = 'prealerta';
+            else if (section.querySelector('#lugares-container')) currentSectionId = 'lugar';
+            else if (section.querySelector('#transportes-container')) currentSectionId = 'transporte';
+            else if (section.querySelector('#guias-container')) currentSectionId = 'guia';
+            else if (section.querySelector('#estadias-container')) currentSectionId = 'estadia';
+            else if (section.querySelector('#aerolineas-container')) currentSectionId = 'aerolinea';
+            
+            if (currentSectionId) {
+                let index = 1;
+                section.querySelectorAll(`.dynamic-item[id^="${currentSectionId}-"]`).forEach(item => {
+                    item.querySelector('.item-counter').textContent = index;
+                    // También actualiza los data-bs-target para los detalles colapsables
+                    const detailsToggle = item.querySelector('.details-toggle');
+                    if (detailsToggle) {
+                        detailsToggle.setAttribute('data-bs-target', `#${currentSectionId}-details-${index}`);
+                    }
+                    const detailsCollapse = item.querySelector(`.collapse`);
+                    if (detailsCollapse) {
+                        detailsCollapse.id = `${currentSectionId}-details-${index}`;
+                    }
+
+                    // Actualizar IDs para el checkbox del guía local (si aplica)
+                    if (currentSectionId === 'lugar') {
+                        const guiaLocalCheck = item.querySelector('[id^="guia-local-check-"]');
+                        const guiaLocalNombreDiv = item.querySelector('[id^="guia-local-nombre-"]');
+                        if (guiaLocalCheck && guiaLocalNombreDiv) {
+                            guiaLocalCheck.id = `guia-local-check-${index}`;
+                            guiaLocalCheck.setAttribute('onchange', `toggleGuiaLocal(this, 'guia-local-nombre-${index}')`);
+                            guiaLocalNombreDiv.id = `guia-local-nombre-${index}`;
+                        }
+                    }
+
+                    index++;
+                });
+                // Actualizar los contadores JavaScript a la cantidad correcta
+                if (currentSectionId === 'prealerta') preAlertaCount = index - 1;
+                else if (currentSectionId === 'lugar') lugarCount = index - 1;
+                else if (currentSectionId === 'transporte') transporteCount = index - 1;
+                else if (currentSectionId === 'guia') guiaCount = index - 1;
+                else if (currentSectionId === 'estadia') estadiaCount = index - 1;
+                else if (currentSectionId === 'aerolinea') aerolineaCount = index - 1;
+            }
+        });
     }
 
     function toggleGuiaLocal(checkbox, divId) {
@@ -821,10 +882,21 @@
     function toggleAerolineaFields(selectElement) {
         const parentItem = selectElement.closest('.dynamic-item');
         const detailsWrapper = parentItem.querySelector('.aerolinea-details-wrapper');
-        if (selectElement.value === 'Avión') {
-            detailsWrapper.style.display = 'block';
-        } else {
-            detailsWrapper.style.display = 'none';
+        // Asegúrate de que detailsWrapper no sea null antes de intentar acceder a style
+        if (detailsWrapper) {
+            if (selectElement.value === 'Avión') {
+                detailsWrapper.style.display = 'block';
+            } else {
+                detailsWrapper.style.display = 'none';
+                // Restablecer los valores de los campos ocultos a 0 para que no se envíen datos no deseados
+                detailsWrapper.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.value = 0;
+                });
+                // Restablecer otros campos si es necesario (ej. texto, fechas)
+                detailsWrapper.querySelectorAll('input[type="text"], input[type="date"], input[type="datetime-local"], input[type="email"], textarea').forEach(input => {
+                    input.value = '';
+                });
+            }
         }
         updateTotalAerolinea();
     }
@@ -882,18 +954,27 @@
         let total = 0;
         document.querySelectorAll('.dynamic-item[id^="aerolinea-"]').forEach(item => {
             const tipo = item.querySelector('.tipo-transporte-aerolinea').value;
-            if (tipo !== 'Avión') return;
+            // Solo sumar si el tipo es 'Avión' para los campos específicos de avión
+            if (tipo === 'Avión') {
+                // Sumar todos los precios de tarifas aéreas
+                item.querySelectorAll('.price-aerolinea').forEach(input => {
+                    total += parseFloat(input.value) || 0;
+                });
 
-            // Sumar todos los precios de tarifas
-            item.querySelectorAll('.price-aerolinea').forEach(input => {
-                total += parseFloat(input.value) || 0;
-            });
-
-            // Sumar otros costos (costo * cantidad)
-            for (let i = 1; i <= 4; i++) {
-                const costo = parseFloat(item.querySelector(`[name="aerolinea_otro_costo_${i}[]"]`).value) || 0;
-                const cant = parseInt(item.querySelector(`[name="aerolinea_otro_cant_${i}[]"]`).value) || 0;
-                total += costo * cant;
+                // Sumar otros costos (costo * cantidad)
+                for (let i = 1; i <= 4; i++) {
+                    const costoInput = item.querySelector(`[name="aerolinea_otro_costo_${i}[]"]`);
+                    const cantInput = item.querySelector(`[name="aerolinea_otro_cant_${i}[]"]`);
+                    const costo = parseFloat(costoInput ? costoInput.value : 0) || 0;
+                    const cant = parseInt(cantInput ? cantInput.value : 0) || 0;
+                    total += costo * cant;
+                }
+            } else {
+                // Para otros tipos de transporte principal (Bus, Buseta, etc.), solo consideramos el primer campo de precio
+                const precioPorPersonaInput = item.querySelector('.price-aerolinea');
+                if (precioPorPersonaInput) {
+                    total += parseFloat(precioPorPersonaInput.value) || 0;
+                }
             }
         });
         document.getElementById('total-aerolinea').textContent = total.toFixed(2);
