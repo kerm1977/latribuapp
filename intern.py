@@ -225,24 +225,12 @@ def crear_intern():
             # --- GUARDAR PRE-ALERTAS ---
             bancos = request.form.getlist('prealerta_banco[]')
             telefonos_entidad = request.form.getlist('prealerta_telefono[]')
-            fechas_prealerta = request.form.getlist('prealerta_fecha[]')
-            asesores = request.form.getlist('prealerta_asesor[]')
-            horas_prealerta = request.form.getlist('prealerta_hora[]')
-            numeros_prealerta = request.form.getlist('prealerta_numero[]')
-            fechas_desde = request.form.getlist('prealerta_desde[]')
-            fechas_hasta = request.form.getlist('prealerta_hasta[]')
             for i in range(len(bancos)):
                 if bancos[i]:
                     prealerta = PreAlerta(
                         intern_id=nuevo_viaje.id,
                         banco=bancos[i],
-                        telefono_entidad=telefonos_entidad[i],
-                        fecha_prealerta=to_date(fechas_prealerta[i]),
-                        asesor=asesores[i],
-                        hora_prealerta=to_time(horas_prealerta[i]),
-                        numero_prealerta=numeros_prealerta[i],
-                        fecha_desde=to_date(fechas_desde[i]),
-                        fecha_hasta=to_date(fechas_hasta[i])
+                        telefono_entidad=telefonos_entidad[i]
                     )
                     db.session.add(prealerta)
 
@@ -311,8 +299,8 @@ def crear_intern():
             precios_maletas = request.form.getlist('aerolinea_precio_maletas[]')
             equipajes_mano = request.form.getlist('aerolinea_equipaje_mano[]')
             precios_impuestos = request.form.getlist('aerolinea_impuestos[]')
-            for i in range(len(tipos_transporte_aerolinea)):
-                if tipos_transporte_aerolinea[i]:
+            for i in range(len(nombres_aerolinea)):
+                if nombres_aerolinea[i]:
                     aerolinea = Aerolinea(
                         intern_id=nuevo_viaje.id,
                         tipo_transporte=tipos_transporte_aerolinea[i],
@@ -341,14 +329,41 @@ def crear_intern():
                            bancos=bancos, 
                            aerolineas_opciones=aerolineas_opciones)
 
+def update_dynamic_items(model_class, existing_items, submitted_data):
+    """
+    Función genérica para actualizar, crear y eliminar elementos dinámicos.
+    :param model_class: La clase del modelo (ej. LugarVisitar).
+    :param existing_items: Lista de objetos existentes en la BD para el viaje.
+    :param submitted_data: Lista de diccionarios con los datos enviados desde el form.
+    """
+    existing_ids = {str(item.id) for item in existing_items}
+    submitted_ids = {data['id'] for data in submitted_data if data.get('id')}
+    
+    # Eliminar
+    ids_to_delete = existing_ids - submitted_ids
+    if ids_to_delete:
+        model_class.query.filter(model_class.id.in_(ids_to_delete)).delete(synchronize_session=False)
+
+    # Actualizar o Crear
+    for data in submitted_data:
+        item_id = data.get('id')
+        if item_id and item_id in existing_ids: # Actualizar
+            item = next((item for item in existing_items if str(item.id) == item_id), None)
+            if item:
+                for key, value in data.items():
+                    if key != 'id':
+                        setattr(item, key, value)
+        else: # Crear
+            data.pop('id', None) # Eliminar el id vacío si existe
+            new_item = model_class(**data)
+            db.session.add(new_item)
+
 @intern_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar_intern(id):
     viaje = Intern.query.get_or_404(id)
     if request.method == 'POST':
-        # La lógica de edición para campos dinámicos es compleja y requiere
-        # comparar los IDs existentes con los enviados para saber qué borrar,
-        # qué actualizar y qué crear. Se deja pendiente para una futura implementación.
         try:
+            # 1. Actualizar datos principales del viaje
             viaje.nombre_viaje = request.form.get('nombre_viaje')
             viaje.precio_paquete=safe_float(request.form.get('precio_paquete', 0))
             viaje.capacidad=safe_int(request.form.get('capacidad', 0))
@@ -365,12 +380,111 @@ def editar_intern(id):
                             os.remove(old_flyer_path)
                     viaje.flyer = save_flyer(flyer_file)
 
+            # 2. Procesar Pre-Alertas
+            prealerta_data = []
+            prealerta_ids = request.form.getlist('prealerta_id[]')
+            bancos = request.form.getlist('prealerta_banco[]')
+            telefonos = request.form.getlist('prealerta_telefono[]')
+            for i in range(len(bancos)):
+                if bancos[i]:
+                    prealerta_data.append({
+                        'id': prealerta_ids[i], 'intern_id': viaje.id,
+                        'banco': bancos[i], 'telefono_entidad': telefonos[i]
+                    })
+            update_dynamic_items(PreAlerta, viaje.prealertas, prealerta_data)
+
+            # 3. Procesar Lugares a Visitar
+            lugar_data = []
+            lugar_ids = request.form.getlist('lugar_id[]')
+            nombres_sitio = request.form.getlist('lugar_nombre[]')
+            tipos_lugar = request.form.getlist('lugar_tipo[]')
+            precios_entrada = request.form.getlist('lugar_precio[]')
+            for i in range(len(nombres_sitio)):
+                if nombres_sitio[i]:
+                    lugar_data.append({
+                        'id': lugar_ids[i], 'intern_id': viaje.id,
+                        'nombre_sitio': nombres_sitio[i], 'tipo_lugar': tipos_lugar[i],
+                        'precio_entrada': safe_float(precios_entrada[i])
+                    })
+            update_dynamic_items(LugarVisitar, viaje.lugares, lugar_data)
+
+            # 4. Procesar Transportes
+            transporte_data = []
+            transporte_ids = request.form.getlist('transporte_id[]')
+            nombres_transporte = request.form.getlist('transporte_nombre[]')
+            tipos_transporte = request.form.getlist('transporte_tipo[]')
+            precios_transporte = request.form.getlist('transporte_precio[]')
+            for i in range(len(nombres_transporte)):
+                if nombres_transporte[i]:
+                    transporte_data.append({
+                        'id': transporte_ids[i], 'intern_id': viaje.id,
+                        'nombre_transporte': nombres_transporte[i], 'tipo_transporte': tipos_transporte[i],
+                        'precio': safe_float(precios_transporte[i])
+                    })
+            update_dynamic_items(Transporte, viaje.transportes, transporte_data)
+            
+            # 5. Procesar Guías
+            guia_data = []
+            guia_ids = request.form.getlist('guia_id[]')
+            nombres_guia = request.form.getlist('guia_nombre[]')
+            operadores_guia = request.form.getlist('guia_operador[]')
+            precios_guia_pp = request.form.getlist('guia_precio_pp[]')
+            precios_acarreo = request.form.getlist('guia_acarreo[]')
+            for i in range(len(nombres_guia)):
+                if nombres_guia[i]:
+                    guia_data.append({
+                        'id': guia_ids[i], 'intern_id': viaje.id,
+                        'nombre': nombres_guia[i], 'operador': operadores_guia[i],
+                        'precio_guia_pp': safe_float(precios_guia_pp[i]),
+                        'precio_acarreo': safe_float(precios_acarreo[i])
+                    })
+            update_dynamic_items(Guia, viaje.guias, guia_data)
+
+            # 6. Procesar Estadías
+            estadia_data = []
+            estadia_ids = request.form.getlist('estadia_id[]')
+            nombres_estadia = request.form.getlist('estadia_nombre[]')
+            precios_pp_estadia = request.form.getlist('estadia_precio_pp[]')
+            noches_estadia = request.form.getlist('estadia_noches[]')
+            for i in range(len(nombres_estadia)):
+                if nombres_estadia[i]:
+                    estadia_data.append({
+                        'id': estadia_ids[i], 'intern_id': viaje.id,
+                        'nombre': nombres_estadia[i],
+                        'precio_pp': safe_float(precios_pp_estadia[i]),
+                        'cantidad_noches': safe_int(noches_estadia[i], 1)
+                    })
+            update_dynamic_items(Estadia, viaje.estadias, estadia_data)
+
+            # 7. Procesar Aerolíneas
+            aerolinea_data = []
+            aerolinea_ids = request.form.getlist('aerolinea_id[]')
+            tipos_transporte_aerolinea = request.form.getlist('aerolinea_tipo_transporte[]')
+            nombres_aerolinea = request.form.getlist('aerolinea_nombre[]')
+            precios_asientos = request.form.getlist('aerolinea_precio_asientos[]')
+            precios_maletas = request.form.getlist('aerolinea_precio_maletas[]')
+            equipajes_mano = request.form.getlist('aerolinea_equipaje_mano[]')
+            precios_impuestos = request.form.getlist('aerolinea_impuestos[]')
+            for i in range(len(nombres_aerolinea)):
+                if nombres_aerolinea[i]:
+                    aerolinea_data.append({
+                        'id': aerolinea_ids[i], 'intern_id': viaje.id,
+                        'tipo_transporte': tipos_transporte_aerolinea[i],
+                        'nombre_aerolinea': nombres_aerolinea[i],
+                        'precio_asientos': safe_float(precios_asientos[i]),
+                        'precio_maletas_documentado': safe_float(precios_maletas[i]),
+                        'equipaje_mano': safe_float(equipajes_mano[i]),
+                        'precio_impuestos': safe_float(precios_impuestos[i])
+                    })
+            update_dynamic_items(Aerolinea, viaje.aerolineas, aerolinea_data)
+
             db.session.commit()
-            flash('Plan de viaje actualizado correctamente (solo datos principales).', 'success')
+            flash('Plan de viaje actualizado correctamente.', 'success')
             return redirect(url_for('intern.detalle_intern', id=id))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al editar el viaje: {str(e)}', 'danger')
+            current_app.logger.error(f"Error en editar_intern: {e}")
 
     paises = ["Panamá", "Nicaragua", "Honduras", "El Salvador", "Guatemala", "México", "Perú", "España"]
     bancos = ["Banco de Costa Rica (BCR)", "Banco Nacional de Costa Rica (BNCR)", "Banco Popular", "Mucap", "Mutual", "BAC Credomatic", "Banco Cathay", "Banco BCT", "Banco CMB", "Banco Davivienda", "Banco General", "Banco Improsa", "Banco Lafise", "Banco Promérica", "Prival Bank", "Scotiabank", "Coopealianza", "Coopeande", "CoopeAnde No. 1", "CoopeAnde No. 2", "CoopeAnde No. 3", "CoopeAnde No. 4", "CoopeAnde No. 5", "CoopeAnde No. 6", "CoopeAnde No. 7", "CoopeAnde No. 8", "CoopeAnde No. 9", "CoopeAnde No. 10", "CoopeAnde No. 11", "CoopeCaja", "Caja de ANDE", "COOPENAE", "COOPEUCHA", "COOPESANRAMON", "COOPESERVIDORES", "COOPEUNA", "CREDECOOP"]

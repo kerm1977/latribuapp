@@ -5,36 +5,45 @@
 {% block head_content %}
 <style>
     .main-container {
-        padding-top: 80px; /* Ajusta este valor según la altura de tu navbar */
+        padding-top: 80px;
         padding-bottom: 40px;
     }
-    .card {
-        box-shadow: none !important;
+    .section-container {
+        margin-bottom: 2.5rem;
         border: 1px solid #dee2e6;
-        margin-bottom: 1.5rem;
+        border-radius: .375rem;
+        padding: 1.5rem;
+        background-color: #fff;
     }
-    .card-header {
-        background-color: #e9ecef;
+    .section-header {
         font-weight: bold;
+        padding: 0.75rem 1.25rem;
+        margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top-left-radius: .375rem;
+        border-top-right-radius: .375rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    .btn-warning {
+    .bg-warning {
+        background-color: #ffc107 !important;
         color: #000;
-    }
-    .section-separator {
-        border-top: 2px solid #ffc107;
-        margin-top: 2rem;
-        margin-bottom: 2rem;
     }
     .total-field {
         font-weight: bold;
         font-size: 1.2rem;
+        text-align: right;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
     }
     .dynamic-item {
         border: 1px dashed #ccc;
         padding: 1.5rem;
         padding-top: 2rem;
         margin-bottom: 1rem;
-        background-color: #fff;
+        background-color: #f8f9fa;
         position: relative;
         border-radius: .375rem;
     }
@@ -68,167 +77,132 @@
     <form action="{{ url_for('intern.crear_intern') }}" method="POST" enctype="multipart/form-data">
         
         <!-- SECCIÓN DESTINO -->
-        <div class="card">
-            <div class="card-header">
-                DESTINO
+        <div class="section-container">
+            <div class="section-header bg-warning">DESTINO</div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
+                    <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="flyer_file" class="form-label">Flyer del Viaje (Imagen)</label>
+                    <input type="file" class="form-control" id="flyer_file" name="flyer_file" accept="image/png, image/jpeg, image/gif">
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
-                        <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="flyer_file" class="form-label">Flyer del Viaje (Imagen)</label>
-                        <input type="file" class="form-control" id="flyer_file" name="flyer_file" accept="image/png, image/jpeg, image/gif">
-                    </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="precio_paquete" class="form-label">Precio del Paquete</label>
+                    <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete">
                 </div>
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="precio_paquete" class="form-label">Precio del Paquete</label>
-                        <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="capacidad" class="form-label">Capacidad</label>
-                        <input type="number" class="form-control" id="capacidad" name="capacidad">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
-                        <select class="form-select" id="tipo_moneda" name="tipo_moneda">
-                            <option value="CRC">Colones (CRC)</option>
-                            <option value="USD">Dólares (USD)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
-                        <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="500">
-                    </div>
+                <div class="col-md-3 mb-3">
+                    <label for="capacidad" class="form-label">Capacidad</label>
+                    <input type="number" class="form-control" id="capacidad" name="capacidad">
                 </div>
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label for="pais" class="form-label">País</label>
-                        <select class="form-select" id="pais" name="pais" required>
-                            <option value="" disabled selected>Seleccione un destino</option>
-                            {% for p in paises %}
-                            <option value="{{ p }}">{{ p }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="col-md-3 mb-3">
+                    <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
+                    <select class="form-select" id="tipo_moneda" name="tipo_moneda">
+                        <option value="CRC">Colones (CRC)</option>
+                        <option value="USD">Dólares (USD)</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
+                    <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="500">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="pais" class="form-label">País</label>
+                    <select class="form-select" id="pais" name="pais" required>
+                        <option value="" disabled selected>Seleccione un destino</option>
+                        {% for p in paises %}
+                        <option value="{{ p }}">{{ p }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
         </div>
 
-        <!-- SEPARADOR ADMINISTRACIÓN -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">ADMINISTRACIÓN DE VIAJE</h2>
-
         <!-- SECCIÓN PRE-ALERTAS -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                LLAMADO PRE-ALERTA
-                <button type="button" class="btn btn-sm btn-success" onclick="addPreAlerta()"><i class="fas fa-plus"></i> Agregar Pre-Alerta</button>
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>LLAMADO PRE-ALERTA</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addPreAlerta()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="prealertas-container">
+            <div id="prealertas-container">
                 <!-- Las pre-alertas se agregarán aquí dinámicamente -->
             </div>
         </div>
 
-        <!-- SEPARADOR LUGARES A VISITAR -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">LUGARES A VISITAR</h2>
-        
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Atracciones
-                 <button type="button" class="btn btn-sm btn-success" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar Lugar</button>
+        <!-- SECCIÓN LUGARES A VISITAR -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Atracciones</span>
+                 <button type="button" class="btn btn-sm btn-dark" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="lugares-container">
+            <div id="lugares-container">
                 <!-- Los lugares se agregarán aquí dinámicamente -->
             </div>
-            <div class="card-footer text-end">
-                <span class="total-field">TOTAL DE ATRACCIONES: CRC <span id="total-atracciones">0.00</span></span>
-            </div>
+            <div class="total-field">TOTAL DE ATRACCIONES: CRC <span id="total-atracciones">0.00</span></div>
         </div>
 
-        <!-- SEPARADOR TRANSPORTES -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">TRANSPORTES</h2>
-
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Transportes
-                <button type="button" class="btn btn-sm btn-success" onclick="addTransporte()"><i class="fas fa-plus"></i> Agregar Transporte</button>
+        <!-- SECCIÓN TRANSPORTES -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Transportes</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addTransporte()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="transportes-container">
+            <div id="transportes-container">
                 <!-- Los transportes se agregarán aquí dinámicamente -->
             </div>
-            <div class="card-footer text-end">
-                <span class="total-field">TOTAL DE TRANSPORTE: CRC <span id="total-transporte">0.00</span></span>
-            </div>
+            <div class="total-field">TOTAL DE TRANSPORTE: CRC <span id="total-transporte">0.00</span></div>
         </div>
 
-        <!-- SEPARADOR GUÍAS -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">GUÍAS</h2>
-
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Guías
-                <button type="button" class="btn btn-sm btn-success" onclick="addGuia()"><i class="fas fa-plus"></i> Agregar Guía</button>
+        <!-- SECCIÓN GUÍAS -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Guías</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addGuia()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="guias-container">
+            <div id="guias-container">
                 <!-- Los guías se agregarán aquí dinámicamente -->
             </div>
-            <div class="card-footer text-end">
-                <span class="total-field">TOTAL DE GUÍAS POR PERSONA: CRC <span id="total-guias">0.00</span></span>
-            </div>
+            <div class="total-field">TOTAL DE GUÍAS POR PERSONA: CRC <span id="total-guias">0.00</span></div>
         </div>
         
-        <!-- SEPARADOR ESTADÍAS -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">ESTADÍAS</h2>
-
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Estadías
-                <button type="button" class="btn btn-sm btn-success" onclick="addEstadia()"><i class="fas fa-plus"></i> Agregar Estadía</button>
+        <!-- SECCIÓN ESTADÍAS -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Estadías</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addEstadia()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="estadias-container">
+            <div id="estadias-container">
                 <!-- Las estadías se agregarán aquí dinámicamente -->
             </div>
-            <div class="card-footer text-end">
-                <span class="total-field">TOTAL DE ESTADÍA POR PERSONA: CRC <span id="total-estadia">0.00</span></span>
-            </div>
+            <div class="total-field">TOTAL DE ESTADÍA POR PERSONA: CRC <span id="total-estadia">0.00</span></div>
         </div>
 
-        <!-- SEPARADOR AEROLÍNEA -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">AEROLÍNEA / TRANSPORTE PRINCIPAL</h2>
-
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Aerolíneas
-                <button type="button" class="btn btn-sm btn-success" onclick="addAerolinea()"><i class="fas fa-plus"></i> Agregar Aerolínea</button>
+        <!-- SECCIÓN AEROLÍNEA -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Aerolínea / Transporte Principal</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addAerolinea()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="aerolineas-container">
+            <div id="aerolineas-container">
                 <!-- Las aerolíneas se agregarán aquí dinámicamente -->
             </div>
-            <div class="card-footer text-end">
-                 <span class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: CRC <span id="total-aerolinea">0.00</span></span>
-            </div>
+            <div class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: CRC <span id="total-aerolinea">0.00</span></div>
         </div>
 
         <!-- SECCIÓN DE TOTALES GENERALES -->
-        <div class="card mt-4">
-            <div class="card-header">TOTALES GENERALES</div>
-            <div class="card-body text-center">
-                <div class="row">
-                    <div class="col-md-6">
-                        <p class="total-field">TOTAL INDIVIDUAL (CRC): <span id="total-crc">0.00</span></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p class="total-field">TOTAL INDIVIDUAL (USD): <span id="total-usd">0.00</span></p>
-                    </div>
+        <div class="section-container text-center">
+            <div class="section-header bg-warning justify-content-center">TOTALES GENERALES</div>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="total-field" style="border-top: none; text-align: center;">TOTAL INDIVIDUAL (CRC): <span class="badge bg-success fs-5" id="total-crc">0.00</span></p>
+                </div>
+                <div class="col-md-6">
+                    <p class="total-field" style="border-top: none; text-align: center;">TOTAL INDIVIDUAL (USD): <span class="badge bg-primary fs-5" id="total-usd">0.00</span></p>
                 </div>
             </div>
         </div>
@@ -239,49 +213,44 @@
     </form>
 
     <!-- SECCIÓN CALCULADORA -->
-    <div class="section-separator"></div>
-    <div class="card">
-        <div class="card-header">
-            Calculadora de Divisas
+    <div class="section-container mt-5">
+        <div class="section-header bg-warning justify-content-center">Calculadora de Divisas</div>
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <label for="calc-amount" class="form-label">Monto</label>
+                <input type="number" class="form-control" id="calc-amount" placeholder="100">
+            </div>
+            <div class="col-md-3">
+                <label for="calc-from" class="form-label">De:</label>
+                <select class="form-select" id="calc-from">
+                    <option value="USD">Dólar USA (USD)</option>
+                    <option value="CRC" selected>Colón (CRC)</option>
+                    <option value="GTQ">Quetzal (GTQ)</option>
+                    <option value="HNL">Lempira (HNL)</option>
+                    <option value="NIO">Córdoba (NIO)</option>
+                    <option value="PAB">Balboa (PAB)</option>
+                </select>
+            </div>
+            <div class="col-md-1 text-center">
+                <i class="fas fa-exchange-alt fs-4"></i>
+            </div>
+            <div class="col-md-3">
+                <label for="calc-to" class="form-label">A:</label>
+                <select class="form-select" id="calc-to">
+                    <option value="USD" selected>Dólar USA (USD)</option>
+                    <option value="CRC">Colón (CRC)</option>
+                    <option value="GTQ">Quetzal (GTQ)</option>
+                    <option value="HNL">Lempira (HNL)</option>
+                    <option value="NIO">Córdoba (NIO)</option>
+                    <option value="PAB">Balboa (PAB)</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                 <button class="btn btn-primary mt-3" onclick="convertCurrency()">Convertir</button>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-3">
-                    <label for="calc-amount" class="form-label">Monto</label>
-                    <input type="number" class="form-control" id="calc-amount" placeholder="100">
-                </div>
-                <div class="col-md-3">
-                    <label for="calc-from" class="form-label">De:</label>
-                    <select class="form-select" id="calc-from">
-                        <option value="USD">Dólar USA (USD)</option>
-                        <option value="CRC" selected>Colón (CRC)</option>
-                        <option value="GTQ">Quetzal (GTQ)</option>
-                        <option value="HNL">Lempira (HNL)</option>
-                        <option value="NIO">Córdoba (NIO)</option>
-                        <option value="PAB">Balboa (PAB)</option>
-                    </select>
-                </div>
-                <div class="col-md-1 text-center">
-                    <i class="fas fa-exchange-alt"></i>
-                </div>
-                <div class="col-md-3">
-                    <label for="calc-to" class="form-label">A:</label>
-                    <select class="form-select" id="calc-to">
-                        <option value="USD" selected>Dólar USA (USD)</option>
-                        <option value="CRC">Colón (CRC)</option>
-                        <option value="GTQ">Quetzal (GTQ)</option>
-                        <option value="HNL">Lempira (HNL)</option>
-                        <option value="NIO">Córdoba (NIO)</option>
-                        <option value="PAB">Balboa (PAB)</option>
-                    </select>
-                </div>
-                <div class="col-md-2 d-grid">
-                     <button class="btn btn-primary mt-3" onclick="convertCurrency()">Convertir</button>
-                </div>
-            </div>
-            <div class="mt-3 text-center">
-                <h4>Resultado: <span id="calc-result" class="badge bg-success">0.00</span></h4>
-            </div>
+        <div class="mt-3 text-center">
+            <h4>Resultado: <span id="calc-result" class="badge bg-success">0.00</span></h4>
         </div>
     </div>
 </div>
@@ -381,7 +350,6 @@
                     <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" oninput="updateTotalAtracciones()">
                 </div>
             </div>
-            <!-- ... otros campos para lugares ... -->
         `;
         container.appendChild(newItem);
     }
@@ -411,7 +379,6 @@
                     <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" oninput="updateTotalTransporte()">
                 </div>
             </div>
-             <!-- ... otros campos para transportes ... -->
         `;
         container.appendChild(newItem);
     }
@@ -445,7 +412,6 @@
                     <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" oninput="updateTotalGuias()">
                 </div>
             </div>
-            <!-- ... otros campos para guías ... -->
         `;
         container.appendChild(newItem);
     }
@@ -473,7 +439,6 @@
                     <input type="number" name="estadia_noches[]" class="form-control noches-estadia" value="1" oninput="updateTotalEstadia()">
                 </div>
             </div>
-            <!-- ... otros campos para estadías ... -->
         `;
         container.appendChild(newItem);
     }
@@ -511,7 +476,6 @@
                     <div class="col-md-3 mb-3"><label class="form-label">Equipaje de Mano</label><input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
                     <div class="col-md-3 mb-3"><label class="form-label">Precio Impuestos</label><input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
                 </div>
-                <!-- ... otros campos de precios de aerolínea ... -->
             </div>
         `;
         container.appendChild(newItem);
@@ -604,7 +568,7 @@
     }
 
     // --- LÓGICA DE LA CALCULADORA ---
-    async function convertCurrency() {
+    function convertCurrency() {
         const amount = parseFloat(document.getElementById('calc-amount').value);
         const fromCurrency = document.getElementById('calc-from').value;
         const toCurrency = document.getElementById('calc-to').value;
@@ -632,6 +596,5 @@
         resultSpan.textContent = `${convertedAmount.toFixed(2)} ${toCurrency}`;
         resultSpan.className = 'badge bg-success';
     }
-
 </script>
 {% endblock %}

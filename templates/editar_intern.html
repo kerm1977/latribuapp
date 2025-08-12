@@ -5,36 +5,45 @@
 {% block head_content %}
 <style>
     .main-container {
-        padding-top: 80px; /* Ajusta este valor según la altura de tu navbar */
-        padding-bottom: 40px;
+        padding-top: 80px;
+        padding-bottom: 80px; /* Aumentar espacio para el botón flotante */
     }
-    .card {
-        box-shadow: none !important;
+    .section-container {
+        margin-bottom: 2.5rem;
         border: 1px solid #dee2e6;
-        margin-bottom: 1.5rem;
+        border-radius: .375rem;
+        padding: 1.5rem;
+        background-color: #fff;
     }
-    .card-header {
-        background-color: #e9ecef;
+    .section-header {
         font-weight: bold;
+        padding: 0.75rem 1.25rem;
+        margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+        border-bottom: 1px solid #dee2e6;
+        border-top-left-radius: .375rem;
+        border-top-right-radius: .375rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    .btn-warning {
+    .bg-warning {
+        background-color: #ffc107 !important;
         color: #000;
-    }
-    .section-separator {
-        border-top: 2px solid #ffc107;
-        margin-top: 2rem;
-        margin-bottom: 2rem;
     }
     .total-field {
         font-weight: bold;
         font-size: 1.2rem;
+        text-align: right;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
     }
     .dynamic-item {
         border: 1px dashed #ccc;
         padding: 1.5rem;
         padding-top: 2rem;
         margin-bottom: 1rem;
-        background-color: #fff;
+        background-color: #f8f9fa;
         position: relative;
         border-radius: .375rem;
     }
@@ -65,6 +74,34 @@
         margin-top: 10px;
         border: 1px solid #dee2e6;
     }
+
+    /* --- ESTILOS PARA BOTÓN FLOTANTE DE VOLVER --- */
+    .fab-container-back {
+        position: fixed;
+        bottom: 75px;
+        left: 20px;
+        z-index: 1000;
+    }
+    .fab-button-back {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        transition: all 0.3s ease;
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        text-decoration: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .fab-button-back:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        background-color: #0b5ed7;
+    }
 </style>
 {% endblock %}
 
@@ -75,73 +112,65 @@
     <form action="{{ url_for('intern.editar_intern', id=viaje.id) }}" method="POST" enctype="multipart/form-data">
         
         <!-- SECCIÓN DESTINO -->
-        <div class="card">
-            <div class="card-header">
-                DESTINO
+        <div class="section-container">
+            <div class="section-header bg-warning">DESTINO</div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
+                    <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" value="{{ viaje.nombre_viaje }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="flyer_file" class="form-label">Cambiar Flyer (Imagen)</label>
+                    <input type="file" class="form-control" id="flyer_file" name="flyer_file" accept="image/png, image/jpeg, image/gif">
+                    {% if viaje.flyer %}
+                        <div class="mt-2">
+                            <p class="mb-1 small text-muted">Flyer actual:</p>
+                            <img src="{{ url_for('static', filename=viaje.flyer) }}" alt="Flyer actual" class="current-flyer">
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
-                        <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" value="{{ viaje.nombre_viaje }}" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="flyer_file" class="form-label">Cambiar Flyer (Imagen)</label>
-                        <input type="file" class="form-control" id="flyer_file" name="flyer_file" accept="image/png, image/jpeg, image/gif">
-                        {% if viaje.flyer %}
-                            <div class="mt-2">
-                                <p class="mb-1 small text-muted">Flyer actual:</p>
-                                <img src="{{ url_for('static', filename=viaje.flyer) }}" alt="Flyer actual" class="current-flyer">
-                            </div>
-                        {% endif %}
-                    </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="precio_paquete" class="form-label">Precio del Paquete</label>
+                    <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}">
                 </div>
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="precio_paquete" class="form-label">Precio del Paquete</label>
-                        <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="capacidad" class="form-label">Capacidad</label>
-                        <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 0 }}">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
-                        <select class="form-select" id="tipo_moneda" name="tipo_moneda">
-                            <option value="CRC" {% if viaje.tipo_moneda == 'CRC' %}selected{% endif %}>Colones (CRC)</option>
-                            <option value="USD" {% if viaje.tipo_moneda == 'USD' %}selected{% endif %}>Dólares (USD)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
-                        <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="{{ viaje.tipo_cambio or 500 }}">
-                    </div>
+                <div class="col-md-3 mb-3">
+                    <label for="capacidad" class="form-label">Capacidad</label>
+                    <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 0 }}">
                 </div>
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label for="pais" class="form-label">País</label>
-                        <select class="form-select" id="pais" name="pais" required>
-                            <option value="" disabled>Seleccione un destino</option>
-                            {% for p in paises %}
-                            <option value="{{ p }}" {% if viaje.pais == p %}selected{% endif %}>{{ p }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="col-md-3 mb-3">
+                    <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
+                    <select class="form-select" id="tipo_moneda" name="tipo_moneda">
+                        <option value="CRC" {% if viaje.tipo_moneda == 'CRC' %}selected{% endif %}>Colones (CRC)</option>
+                        <option value="USD" {% if viaje.tipo_moneda == 'USD' %}selected{% endif %}>Dólares (USD)</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3" id="tipo-cambio-wrapper">
+                    <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
+                    <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="{{ viaje.tipo_cambio or 500 }}">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="pais" class="form-label">País</label>
+                    <select class="form-select" id="pais" name="pais" required>
+                        <option value="" disabled>Seleccione un destino</option>
+                        {% for p in paises %}
+                        <option value="{{ p }}" {% if viaje.pais == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
         </div>
 
-        <!-- SEPARADOR ADMINISTRACIÓN -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">ADMINISTRACIÓN DE VIAJE</h2>
-
         <!-- SECCIÓN PRE-ALERTAS -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                LLAMADO PRE-ALERTA
-                <button type="button" class="btn btn-sm btn-success" onclick="addPreAlerta()"><i class="fas fa-plus"></i> Agregar Pre-Alerta</button>
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>LLAMADO PRE-ALERTA</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addPreAlerta()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="prealertas-container">
+            <div id="prealertas-container">
                 {% for prealerta in viaje.prealertas %}
                 <div class="dynamic-item" id="prealerta-{{ loop.index }}">
                     <span class="item-counter">{{ loop.index }}</span>
@@ -161,22 +190,18 @@
                             <input type="text" name="prealerta_telefono[]" class="form-control" value="{{ prealerta.telefono_entidad or '' }}">
                         </div>
                     </div>
-                    <!-- ... otros campos de prealerta pre-poblados ... -->
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- SEPARADOR LUGARES A VISITAR -->
-        <div class="section-separator"></div>
-        <h2 class="text-center mb-3">LUGARES A VISITAR</h2>
-        
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Atracciones
-                 <button type="button" class="btn btn-sm btn-success" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar Lugar</button>
+        <!-- SECCIÓN LUGARES A VISITAR -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Atracciones</span>
+                 <button type="button" class="btn btn-sm btn-dark" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
-            <div class="card-body" id="lugares-container">
+            <div id="lugares-container">
                 {% for lugar in viaje.lugares %}
                 <div class="dynamic-item" id="lugar-{{ loop.index }}">
                     <span class="item-counter">{{ loop.index }}</span>
@@ -200,28 +225,197 @@
                             <input type="text" name="lugar_nombre[]" class="form-control" value="{{ lugar.nombre_sitio or '' }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Precio de Entrada (CRC)</label>
+                            <label class="form-label price-label">Precio de Entrada (CRC)</label>
                             <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" value="{{ lugar.precio_entrada or 0 }}" oninput="updateTotalAtracciones()">
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            <div class="card-footer text-end">
-                <span class="total-field">TOTAL DE ATRACCIONES: CRC <span id="total-atracciones">0.00</span></span>
+            <div class="total-field">TOTAL DE ATRACCIONES: <span class="currency-label">CRC</span> <span id="total-atracciones">0.00</span></div>
+        </div>
+
+        <!-- SECCIÓN TRANSPORTES -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Transportes</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addTransporte()"><i class="fas fa-plus"></i> Agregar</button>
+            </div>
+            <div id="transportes-container">
+                {% for transporte in viaje.transportes %}
+                <div class="dynamic-item" id="transporte-{{ loop.index }}">
+                    <span class="item-counter">{{ loop.index }}</span>
+                    <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('transporte-{{ loop.index }}', updateTotalTransporte)"></button>
+                    <input type="hidden" name="transporte_id[]" value="{{ transporte.id }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo</label>
+                            <select name="transporte_tipo[]" class="form-select">
+                                <option {% if transporte.tipo_transporte == 'Buseta' %}selected{% endif %}>Buseta</option>
+                                <option {% if transporte.tipo_transporte == 'Bus' %}selected{% endif %}>Bus</option>
+                                <option {% if transporte.tipo_transporte == 'Taxi' %}selected{% endif %}>Taxi</option>
+                                <option {% if transporte.tipo_transporte == 'Uber' %}selected{% endif %}>Uber</option>
+                                <option {% if transporte.tipo_transporte == 'Auto' %}selected{% endif %}>Auto</option>
+                                <option {% if transporte.tipo_transporte == 'Lancha' %}selected{% endif %}>Lancha</option>
+                                <option {% if transporte.tipo_transporte == 'Avión' %}selected{% endif %}>Avión</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label class="form-label">Nombre del Transporte</label>
+                            <input type="text" name="transporte_nombre[]" class="form-control" value="{{ transporte.nombre_transporte or '' }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label price-label">Precio (CRC)</label>
+                            <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" value="{{ transporte.precio or 0 }}" oninput="updateTotalTransporte()">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="total-field">TOTAL DE TRANSPORTE: <span class="currency-label">CRC</span> <span id="total-transporte">0.00</span></div>
+        </div>
+
+        <!-- SECCIÓN GUÍAS -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Guías</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addGuia()"><i class="fas fa-plus"></i> Agregar</button>
+            </div>
+            <div id="guias-container">
+                {% for guia in viaje.guias %}
+                <div class="dynamic-item" id="guia-{{ loop.index }}">
+                    <span class="item-counter">{{ loop.index }}</span>
+                    <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('guia-{{ loop.index }}', updateTotalGuias)"></button>
+                    <input type="hidden" name="guia_id[]" value="{{ guia.id }}">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="guia_nombre[]" class="form-control" value="{{ guia.nombre or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label price-label">Precio Guía PP (CRC)</label>
+                            <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" value="{{ guia.precio_guia_pp or 0 }}" oninput="updateTotalGuias()">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Operador</label>
+                            <input type="text" name="guia_operador[]" class="form-control" value="{{ guia.operador or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label price-label">Precio Acarreo (CRC)</label>
+                            <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" value="{{ guia.precio_acarreo or 0 }}" oninput="updateTotalGuias()">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="total-field">TOTAL DE GUÍAS POR PERSONA: <span class="currency-label">CRC</span> <span id="total-guias">0.00</span></div>
+        </div>
+        
+        <!-- SECCIÓN ESTADÍAS -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Estadías</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addEstadia()"><i class="fas fa-plus"></i> Agregar</button>
+            </div>
+            <div id="estadias-container">
+                {% for estadia in viaje.estadias %}
+                <div class="dynamic-item" id="estadia-{{ loop.index }}">
+                    <span class="item-counter">{{ loop.index }}</span>
+                    <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('estadia-{{ loop.index }}', updateTotalEstadia)"></button>
+                    <input type="hidden" name="estadia_id[]" value="{{ estadia.id }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="estadia_nombre[]" class="form-control" value="{{ estadia.nombre or '' }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label price-label">Precio PP por Noche (CRC)</label>
+                            <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-estadia-pp" value="{{ estadia.precio_pp or 0 }}" oninput="updateTotalEstadia()">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Cantidad de Noches</label>
+                            <input type="number" name="estadia_noches[]" class="form-control noches-estadia" value="{{ estadia.cantidad_noches or 1 }}" oninput="updateTotalEstadia()">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="total-field">TOTAL DE ESTADÍA POR PERSONA: <span class="currency-label">CRC</span> <span id="total-estadia">0.00</span></div>
+        </div>
+
+        <!-- SECCIÓN AEROLÍNEA -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Aerolínea / Transporte Principal</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addAerolinea()"><i class="fas fa-plus"></i> Agregar</button>
+            </div>
+            <div id="aerolineas-container">
+                {% for aerolinea in viaje.aerolineas %}
+                <div class="dynamic-item" id="aerolinea-{{ loop.index }}">
+                    <span class="item-counter">{{ loop.index }}</span>
+                    <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('aerolinea-{{ loop.index }}', updateTotalAerolinea)"></button>
+                    <input type="hidden" name="aerolinea_id[]" value="{{ aerolinea.id }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de Transporte</label>
+                            <select name="aerolinea_tipo_transporte[]" class="form-select tipo-transporte-aerolinea" onchange="toggleAerolineaFields(this)">
+                                <option {% if aerolinea.tipo_transporte == 'Avión' %}selected{% endif %}>Avión</option>
+                                <option {% if aerolinea.tipo_transporte == 'Bus' %}selected{% endif %}>Bus</option>
+                                <option {% if aerolinea.tipo_transporte == 'Buseta' %}selected{% endif %}>Buseta</option>
+                                <option {% if aerolinea.tipo_transporte == 'Auto' %}selected{% endif %}>Auto</option>
+                                <option {% if aerolinea.tipo_transporte == 'Moto' %}selected{% endif %}>Moto</option>
+                                <option {% if aerolinea.tipo_transporte == 'Barco' %}selected{% endif %}>Barco</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8 mb-3 aerolinea-fields" style="display: {% if aerolinea.tipo_transporte != 'Avión' %}none{% else %}block{% endif %};">
+                            <label class="form-label">Aerolínea</label>
+                            <select name="aerolinea_nombre[]" class="form-select">
+                                {% for opcion in aerolineas_opciones %}
+                                <option value="{{ opcion }}" {% if aerolinea.nombre_aerolinea == opcion %}selected{% endif %}>{{ opcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="aerolinea-fields" style="display: {% if aerolinea.tipo_transporte != 'Avión' %}none{% else %}block{% endif %};">
+                        <div class="row">
+                            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" step="0.01" name="aerolinea_precio_asientos[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_asientos or 0 }}" oninput="updateTotalAerolinea()"></div>
+                            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" step="0.01" name="aerolinea_precio_maletas[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_maletas_documentado or 0 }}" oninput="updateTotalAerolinea()"></div>
+                            <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" value="{{ aerolinea.equipaje_mano or 0 }}" oninput="updateTotalAerolinea()"></div>
+                            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_impuestos or 0 }}" oninput="updateTotalAerolinea()"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: <span class="currency-label">CRC</span> <span id="total-aerolinea">0.00</span></div>
+        </div>
+
+        <!-- SECCIÓN DE TOTALES GENERALES -->
+        <div class="section-container text-center">
+            <div class="section-header bg-warning justify-content-center">TOTALES GENERALES</div>
+            <div class="row">
+                <div class="col-md-6" id="total-crc-wrapper">
+                    <p class="total-field" style="border-top: none; text-align: center;">TOTAL INDIVIDUAL (CRC): <span class="badge bg-success fs-5" id="total-crc">0.00</span></p>
+                </div>
+                <div class="col-md-6" id="total-usd-wrapper">
+                    <p class="total-field" style="border-top: none; text-align: center;">TOTAL INDIVIDUAL (USD): <span class="badge bg-primary fs-5" id="total-usd">0.00</span></p>
+                </div>
             </div>
         </div>
 
-        <!-- ... (resto de las secciones con los bucles for para rellenar los datos existentes) ... -->
-
         <div class="text-center mt-4">
             <button type="submit" class="btn btn-warning btn-lg">Guardar Cambios</button>
-            <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-secondary btn-lg">Cancelar</a>
         </div>
     </form>
     
-    <!-- ... Calculadora (igual que en crear_intern.html) ... -->
-
+    <!-- Botón Flotante para Volver -->
+    <div class="fab-container-back">
+        <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="fab-button-back" title="Volver a Detalles">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
 </div>
 {% endblock %}
 
@@ -236,15 +430,325 @@
     let estadiaCount = {{ viaje.estadias|length }};
     let aerolineaCount = {{ viaje.aerolineas|length }};
 
-    // --- (El resto de tu JavaScript para añadir/quitar elementos y calcular totales) ---
+    // --- LÓGICA DE MONEDA ---
+    const tipoMonedaSelect = document.getElementById('tipo_moneda');
+    const tipoCambioWrapper = document.getElementById('tipo-cambio-wrapper');
+    const priceLabels = document.querySelectorAll('.price-label');
+    const currencyLabels = document.querySelectorAll('.currency-label');
+    const totalCRCWrapper = document.getElementById('total-crc-wrapper');
+    const totalUSDWrapper = document.getElementById('total-usd-wrapper');
+
+    function handleCurrencyChange() {
+        const selectedCurrency = tipoMonedaSelect.value;
+        if (selectedCurrency === 'USD') {
+            tipoCambioWrapper.style.display = 'none';
+            priceLabels.forEach(label => label.textContent = label.textContent.replace('(CRC)', '(USD)'));
+            currencyLabels.forEach(label => label.textContent = 'USD');
+            totalCRCWrapper.style.display = 'none';
+            totalUSDWrapper.classList.remove('col-md-6');
+            totalUSDWrapper.classList.add('col-md-12');
+        } else {
+            tipoCambioWrapper.style.display = 'block';
+            priceLabels.forEach(label => label.textContent = label.textContent.replace('(USD)', '(CRC)'));
+            currencyLabels.forEach(label => label.textContent = 'CRC');
+            totalCRCWrapper.style.display = 'block';
+            totalUSDWrapper.classList.add('col-md-6');
+            totalUSDWrapper.classList.remove('col-md-12');
+        }
+        updateGrandTotals();
+    }
+
+    tipoMonedaSelect.addEventListener('change', handleCurrencyChange);
     
-    // --- INICIALIZAR TOTALES AL CARGAR LA PÁGINA ---
+    // --- INICIALIZAR TOTALES Y MONEDA AL CARGAR LA PÁGINA ---
     document.addEventListener('DOMContentLoaded', function() {
         updateTotalAtracciones();
-        // updateTotalTransporte();
-        // updateTotalGuias();
-        // updateTotalEstadia();
-        // updateTotalAerolinea();
+        updateTotalTransporte();
+        updateTotalGuias();
+        updateTotalEstadia();
+        updateTotalAerolinea();
+        handleCurrencyChange();
     });
+
+    // --- FUNCIONES PARA AÑADIR ELEMENTOS ---
+    function addPreAlerta() {
+        preAlertaCount++;
+        const container = document.getElementById('prealertas-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-item';
+        newItem.id = `prealerta-${preAlertaCount}`;
+        newItem.innerHTML = `
+            <span class="item-counter">${preAlertaCount}</span>
+            <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('prealerta-${preAlertaCount}')"></button>
+            <input type="hidden" name="prealerta_id[]" value="">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Banco</label>
+                    <select name="prealerta_banco[]" class="form-select">
+                        <option selected disabled>Seleccione un banco</option>
+                        {% for banco in bancos %}
+                        <option value="{{ banco }}">{{ banco }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Teléfono Entidad Financiera</label>
+                    <input type="text" name="prealerta_telefono[]" class="form-control">
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+    }
+
+    function addLugar() {
+        lugarCount++;
+        const container = document.getElementById('lugares-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-item';
+        newItem.id = `lugar-${lugarCount}`;
+        newItem.innerHTML = `
+            <span class="item-counter">${lugarCount}</span>
+            <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('lugar-${lugarCount}', updateTotalAtracciones)"></button>
+            <input type="hidden" name="lugar_id[]" value="">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Tipo de Lugar</label>
+                    <select name="lugar_tipo[]" class="form-select">
+                        <option>Volcán</option><option>Montaña</option><option>Playa</option><option>Ciudad</option><option>Parque Nacional</option><option>Camino</option><option>Otros</option>
+                    </select>
+                </div>
+                <div class="col-md-5 mb-3">
+                    <label class="form-label">Nombre de Sitio</label>
+                    <input type="text" name="lugar_nombre[]" class="form-control">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label price-label">Precio de Entrada (CRC)</label>
+                    <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" oninput="updateTotalAtracciones()">
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+    }
+    
+    // ... (El resto de las funciones add... y removeItem... son idénticas a las de crear_intern.html)
+    function addTransporte() {
+        transporteCount++;
+        const container = document.getElementById('transportes-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-item';
+        newItem.id = `transporte-${transporteCount}`;
+        newItem.innerHTML = `
+            <span class="item-counter">${transporteCount}</span>
+            <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('transporte-${transporteCount}', updateTotalTransporte)"></button>
+            <input type="hidden" name="transporte_id[]" value="">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Tipo</label>
+                    <select name="transporte_tipo[]" class="form-select">
+                        <option>Buseta</option><option>Bus</option><option>Taxi</option><option>Uber</option><option>Auto</option><option>Lancha</option><option>Avión</option>
+                    </select>
+                </div>
+                <div class="col-md-5 mb-3">
+                    <label class="form-label">Nombre del Transporte</label>
+                    <input type="text" name="transporte_nombre[]" class="form-control">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label price-label">Precio (CRC)</label>
+                    <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" oninput="updateTotalTransporte()">
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+    }
+
+    function addGuia() {
+        guiaCount++;
+        const container = document.getElementById('guias-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-item';
+        newItem.id = `guia-${guiaCount}`;
+        newItem.innerHTML = `
+            <span class="item-counter">${guiaCount}</span>
+            <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('guia-${guiaCount}', updateTotalGuias)"></button>
+            <input type="hidden" name="guia_id[]" value="">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="guia_nombre[]" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label price-label">Precio Guía PP (CRC)</label>
+                    <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" oninput="updateTotalGuias()">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Operador</label>
+                    <input type="text" name="guia_operador[]" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label price-label">Precio Acarreo (CRC)</label>
+                    <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" oninput="updateTotalGuias()">
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+    }
+
+    function addEstadia() {
+        estadiaCount++;
+        const container = document.getElementById('estadias-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-item';
+        newItem.id = `estadia-${estadiaCount}`;
+        newItem.innerHTML = `
+            <span class="item-counter">${estadiaCount}</span>
+            <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('estadia-${estadiaCount}', updateTotalEstadia)"></button>
+            <input type="hidden" name="estadia_id[]" value="">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="estadia_nombre[]" class="form-control">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label price-label">Precio PP por Noche (CRC)</label>
+                    <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-estadia-pp" oninput="updateTotalEstadia()">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cantidad de Noches</label>
+                    <input type="number" name="estadia_noches[]" class="form-control noches-estadia" value="1" oninput="updateTotalEstadia()">
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+    }
+
+    function addAerolinea() {
+        aerolineaCount++;
+        const container = document.getElementById('aerolineas-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-item';
+        newItem.id = `aerolinea-${aerolineaCount}`;
+        newItem.innerHTML = `
+            <span class="item-counter">${aerolineaCount}</span>
+            <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('aerolinea-${aerolineaCount}', updateTotalAerolinea)"></button>
+            <input type="hidden" name="aerolinea_id[]" value="">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Tipo de Transporte</label>
+                    <select name="aerolinea_tipo_transporte[]" class="form-select tipo-transporte-aerolinea" onchange="toggleAerolineaFields(this)">
+                        <option>Avión</option><option>Bus</option><option>Buseta</option><option>Auto</option><option>Moto</option><option>Barco</option>
+                    </select>
+                </div>
+                <div class="col-md-8 mb-3 aerolinea-fields">
+                    <label class="form-label">Aerolínea</label>
+                    <select name="aerolinea_nombre[]" class="form-select">
+                        <option selected disabled>Seleccione una aerolínea</option>
+                        {% for aerolinea in aerolineas_opciones %}
+                        <option value="{{ aerolinea }}">{{ aerolinea }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="aerolinea-fields">
+                <div class="row">
+                    <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" step="0.01" name="aerolinea_precio_asientos[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
+                    <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" step="0.01" name="aerolinea_precio_maletas[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
+                    <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
+                    <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+    }
+
+    function removeItem(id, callback) {
+        const item = document.getElementById(id);
+        if (item) {
+            item.remove();
+            if (callback) {
+                callback();
+            }
+        }
+    }
+    
+    function toggleAerolineaFields(selectElement) {
+        const parentItem = selectElement.closest('.dynamic-item');
+        const aerolineaFields = parentItem.querySelectorAll('.aerolinea-fields');
+        if (selectElement.value === 'Avión') {
+            aerolineaFields.forEach(field => field.style.display = 'block');
+        } else {
+            aerolineaFields.forEach(field => field.style.display = 'none');
+        }
+    }
+
+    // --- FUNCIONES PARA ACTUALIZAR TOTALES ---
+    function updateTotalAtracciones() {
+        let total = 0;
+        document.querySelectorAll('.price-atraccion').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('total-atracciones').textContent = total.toFixed(2);
+        updateGrandTotals();
+    }
+    
+    function updateTotalTransporte() {
+        let total = 0;
+        document.querySelectorAll('.price-transporte').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('total-transporte').textContent = total.toFixed(2);
+        updateGrandTotals();
+    }
+
+    function updateTotalGuias() {
+        let total = 0;
+        document.querySelectorAll('.dynamic-item[id^="guia-"]').forEach(item => {
+            const precioPP = parseFloat(item.querySelector('.price-guia-pp').value) || 0;
+            const acarreo = parseFloat(item.querySelector('.price-guia-acarreo').value) || 0;
+            total += precioPP + acarreo;
+        });
+        document.getElementById('total-guias').textContent = total.toFixed(2);
+        updateGrandTotals();
+    }
+
+    function updateTotalEstadia() {
+        let total = 0;
+        document.querySelectorAll('.dynamic-item[id^="estadia-"]').forEach(item => {
+            const precioPP = parseFloat(item.querySelector('.price-estadia-pp').value) || 0;
+            const noches = parseInt(item.querySelector('.noches-estadia').value) || 1;
+            total += precioPP * noches;
+        });
+        document.getElementById('total-estadia').textContent = total.toFixed(2);
+        updateGrandTotals();
+    }
+
+    function updateTotalAerolinea() {
+        let total = 0;
+        document.querySelectorAll('.price-aerolinea').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('total-aerolinea').textContent = total.toFixed(2);
+        updateGrandTotals();
+    }
+    
+    function updateGrandTotals() {
+        const totalAtracciones = parseFloat(document.getElementById('total-atracciones').textContent) || 0;
+        const totalTransporte = parseFloat(document.getElementById('total-transporte').textContent) || 0;
+        const totalGuias = parseFloat(document.getElementById('total-guias').textContent) || 0;
+        const totalEstadia = parseFloat(document.getElementById('total-estadia').textContent) || 0;
+        const totalAerolinea = parseFloat(document.getElementById('total-aerolinea').textContent) || 0;
+        
+        const total = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
+        const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
+        
+        if (tipoMonedaSelect.value === 'USD') {
+            document.getElementById('total-usd').textContent = total.toFixed(2);
+        } else {
+            const totalUSD = total / tipoCambio;
+            document.getElementById('total-crc').textContent = total.toFixed(2);
+            document.getElementById('total-usd').textContent = totalUSD.toFixed(2);
+        }
+    }
 </script>
 {% endblock %}

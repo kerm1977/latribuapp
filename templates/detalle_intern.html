@@ -163,13 +163,21 @@
             {% if viaje.flyer %}
             <div class="col-md-4">
                 <img src="{{ url_for('static', filename=viaje.flyer) }}" alt="Flyer del viaje" class="flyer-img" onerror="this.style.display='none'">
+                <div class="text-center mt-2">
+                    <p class="total-field" style="border-top: none; text-align: center;">
+                        COSTO INDIVIDUAL: 
+                        <span class="badge bg-success fs-5">
+                            ¢{{ "{:,.0f}".format((total_individual_crc) | int) }}
+                        </span>
+                    </p>
+                </div>
             </div>
             {% endif %}
             <div class="col-md-{{ '8' if viaje.flyer else '12' }}">
                 <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">País:</div><div class="col-md-8">{{ viaje.pais }}</div></div>
-                {% if viaje.precio_paquete and viaje.precio_paquete > 0 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio Paquete:</div><div class="col-md-8">{{ "%.2f"|format(viaje.precio_paquete) }} {{ viaje.tipo_moneda }}</div></div>{% endif %}
+                {% if viaje.precio_paquete and viaje.precio_paquete > 0 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio Paquete:</div><div class="col-md-8">{{ "{:,.0f}".format(viaje.precio_paquete | int) }} {{ viaje.tipo_moneda }}</div></div>{% endif %}
                 {% if viaje.capacidad and viaje.capacidad > 0 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Capacidad:</div><div class="col-md-8">{{ viaje.capacidad }} personas</div></div>{% endif %}
-                {% if viaje.tipo_cambio and viaje.tipo_cambio > 0 and viaje.tipo_cambio != 1 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Tipo de Cambio:</div><div class="col-md-8">1 USD = {{ "%.2f"|format(viaje.tipo_cambio) }} CRC</div></div>{% endif %}
+                {% if viaje.tipo_moneda == 'CRC' and viaje.tipo_cambio and viaje.tipo_cambio > 0 and viaje.tipo_cambio != 1 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Tipo de Cambio:</div><div class="col-md-8">1 USD = {{ "{:,.0f}".format(viaje.tipo_cambio | int) }} CRC</div></div>{% endif %}
             </div>
         </div>
     </div>
@@ -205,12 +213,12 @@
                 <span class="item-counter">{{ loop.index }}</span>
                 <div class="item-content">
                     <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Sitio:</div><div class="col-md-8">{{ lugar.nombre_sitio }} ({{ lugar.tipo_lugar }})</div></div>
-                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio Entrada:</div><div class="col-md-8">{{ "%.2f"|format(lugar.precio_entrada) }} CRC</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio Entrada:</div><div class="col-md-8">{{ "{:,.0f}".format(lugar.precio_entrada | int) }} {{ viaje.tipo_moneda }}</div></div>
                 </div>
             </li>
             {% endfor %}
         </ul>
-        <div class="total-field">TOTAL DE ATRACCIONES: CRC {{ "%.2f"|format(total_atracciones) }}</div>
+        <div class="total-field">TOTAL DE ATRACCIONES: {{ viaje.tipo_moneda }} {{ "{:,.0f}".format(total_atracciones | int) }}</div>
     </div>
     {% endif %}
 
@@ -224,12 +232,12 @@
                 <span class="item-counter">{{ loop.index }}</span>
                 <div class="item-content">
                     <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Nombre:</div><div class="col-md-8">{{ transporte.nombre_transporte }}</div></div>
-                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio:</div><div class="col-md-8">{{ "%.2f"|format(transporte.precio) }} CRC</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio:</div><div class="col-md-8">{{ "{:,.0f}".format(transporte.precio | int) }} {{ viaje.tipo_moneda }}</div></div>
                 </div>
             </li>
             {% endfor %}
         </ul>
-        <div class="total-field">TOTAL DE TRANSPORTE: CRC {{ "%.2f"|format(total_transporte) }}</div>
+        <div class="total-field">TOTAL DE TRANSPORTE: {{ viaje.tipo_moneda }} {{ "{:,.0f}".format(total_transporte | int) }}</div>
     </div>
     {% endif %}
     
@@ -244,12 +252,12 @@
                 <div class="item-content">
                     <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Nombre:</div><div class="col-md-8">{{ guia.nombre }}</div></div>
                     <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Operador:</div><div class="col-md-8">{{ guia.operador }}</div></div>
-                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo PP:</div><div class="col-md-8">{{ "%.2f"|format(guia.precio_guia_pp + guia.precio_acarreo) }} CRC</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo PP:</div><div class="col-md-8">{{ "{:,.0f}".format((guia.precio_guia_pp + guia.precio_acarreo) | int) }} {{ viaje.tipo_moneda }}</div></div>
                 </div>
             </li>
             {% endfor %}
         </ul>
-        <div class="total-field">TOTAL DE GUÍAS POR PERSONA: CRC {{ "%.2f"|format(total_guias_pp) }}</div>
+        <div class="total-field">TOTAL DE GUÍAS POR PERSONA: {{ viaje.tipo_moneda }} {{ "{:,.0f}".format(total_guias_pp | int) }}</div>
     </div>
     {% endif %}
 
@@ -263,12 +271,12 @@
                 <span class="item-counter">{{ loop.index }}</span>
                 <div class="item-content">
                     <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Lugar:</div><div class="col-md-8">{{ estadia.nombre }}</div></div>
-                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo Total PP:</div><div class="col-md-8">{{ "%.2f"|format(estadia.precio_pp * estadia.cantidad_noches) }} CRC ({{ estadia.cantidad_noches }} noches)</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo Total PP:</div><div class="col-md-8">{{ "{:,.0f}".format((estadia.precio_pp * estadia.cantidad_noches) | int) }} {{ viaje.tipo_moneda }} ({{ estadia.cantidad_noches }} noches)</div></div>
                 </div>
             </li>
             {% endfor %}
         </ul>
-        <div class="total-field">TOTAL DE ESTADÍA POR PERSONA: CRC {{ "%.2f"|format(total_estadia_pp) }}</div>
+        <div class="total-field">TOTAL DE ESTADÍA POR PERSONA: {{ viaje.tipo_moneda }} {{ "{:,.0f}".format(total_estadia_pp | int) }}</div>
     </div>
     {% endif %}
 
@@ -283,24 +291,36 @@
                 <div class="item-content">
                     <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Transporte:</div><div class="col-md-8">{{ aerolinea.tipo_transporte }}</div></div>
                     <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Aerolínea:</div><div class="col-md-8">{{ aerolinea.nombre_aerolinea }}</div></div>
-                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo Total PP:</div><div class="col-md-8">{{ "%.2f"|format(aerolinea.precio_asientos + aerolinea.precio_maletas_documentado + aerolinea.equipaje_mano + aerolinea.precio_impuestos) }} CRC</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo Total PP:</div><div class="col-md-8">{{ "{:,.0f}".format((aerolinea.precio_asientos + aerolinea.precio_maletas_documentado + aerolinea.equipaje_mano + aerolinea.precio_impuestos) | int) }} {{ viaje.tipo_moneda }}</div></div>
                 </div>
             </li>
             {% endfor %}
         </ul>
-        <div class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: CRC {{ "%.2f"|format(total_aerolinea_pp) }}</div>
+        <div class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: {{ viaje.tipo_moneda }} {{ "{:,.0f}".format(total_aerolinea_pp | int) }}</div>
     </div>
     {% endif %}
 
     <!-- SECCIÓN DE TOTALES GENERALES -->
     <div class="section-container text-center">
         <div class="section-header bg-warning">TOTALES GENERALES DEL VIAJE</div>
-        <div class="row">
-            <div class="col-md-6">
-                <p class="total-field" style="border-top: none; text-align: center;">COSTO INDIVIDUAL (CRC): <span class="badge bg-success fs-5">{{ "%.2f"|format(total_individual_crc) }}</span></p>
-            </div>
-            <div class="col-md-6">
-                <p class="total-field" style="border-top: none; text-align: center;">COSTO INDIVIDUAL (USD): <span class="badge bg-primary fs-5">{{ "%.2f"|format(total_individual_usd) }}</span></p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <p class="total-field" style="border-top: none; text-align: center;">
+                    COSTO INDIVIDUAL: 
+                    <span class="badge bg-primary fs-5">
+                        {% if viaje.tipo_moneda == 'CRC' %}
+                            ¢{{ "{:,.0f}".format(total_individual_crc | int) }}
+                        {% else %}
+                            ${{ "{:,.0f}".format(total_individual_crc | int) }}
+                        {% endif %}
+                    </span>
+                </p>
+                {% if viaje.tipo_moneda == 'CRC' %}
+                <p class="text-muted text-center small mt-2">
+                    Aproximadamente <strong>${{ "{:,.0f}".format(total_individual_usd | int) }} USD</strong> 
+                    (Tipo de cambio: {{ viaje.tipo_cambio }})
+                </p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -325,6 +345,8 @@
             </div>
         </div>
     </div>
+
+    <a href="https://gee.bccr.fi.cr/indicadoreseconomicos/cuadros/frmvercatcuadro.aspx?idioma=1&codcuadro=%20435">Tipo de Cambio</a>
 
     <!-- Botón Flotante para Volver -->
     <div class="fab-container-back">
