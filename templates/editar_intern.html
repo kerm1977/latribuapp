@@ -78,7 +78,7 @@
     /* --- ESTILOS PARA BOTÓN FLOTANTE DE VOLVER --- */
     .fab-container-back {
         position: fixed;
-        bottom: 75px;
+        bottom: 20px;
         left: 20px;
         z-index: 1000;
     }
@@ -132,12 +132,12 @@
             </div>
             <div class="row">
                 <div class="col-md-3 mb-3">
-                    <label for="precio_paquete" class="form-label">Precio del Paquete</label>
-                    <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}">
+                    <label for="precio_paquete" class="form-label">Precio Paquete (por persona)</label>
+                    <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}" oninput="updateGrandTotals()">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label for="capacidad" class="form-label">Capacidad</label>
-                    <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 0 }}">
+                    <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 1 }}" oninput="recalculateAllTotals()">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
@@ -148,7 +148,7 @@
                 </div>
                 <div class="col-md-3 mb-3" id="tipo-cambio-wrapper">
                     <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
-                    <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="{{ viaje.tipo_cambio or 500 }}">
+                    <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="{{ viaje.tipo_cambio or 500 }}" oninput="updateGrandTotals()">
                 </div>
             </div>
             <div class="row">
@@ -177,7 +177,7 @@
                     <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('prealerta-{{ loop.index }}')"></button>
                     <input type="hidden" name="prealerta_id[]" value="{{ prealerta.id }}">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Banco</label>
                             <select name="prealerta_banco[]" class="form-select">
                                 {% for banco in bancos %}
@@ -185,9 +185,37 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Teléfono Entidad Financiera</label>
                             <input type="text" name="prealerta_telefono[]" class="form-control" value="{{ prealerta.telefono_entidad or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Fecha de la prealerta</label>
+                            <input type="date" name="prealerta_fecha[]" class="form-control" value="{{ prealerta.fecha_prealerta.strftime('%Y-%m-%d') if prealerta.fecha_prealerta else '' }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Nombre del Asesor Bancario</label>
+                            <input type="text" name="prealerta_asesor[]" class="form-control" value="{{ prealerta.asesor or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Hora de la Prealerta</label>
+                            <input type="time" name="prealerta_hora[]" class="form-control" value="{{ prealerta.hora_prealerta.strftime('%H:%M') if prealerta.hora_prealerta else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Número de la prealerta</label>
+                            <input type="text" name="prealerta_numero[]" class="form-control" value="{{ prealerta.numero_prealerta or '' }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha prealertada desde</label>
+                            <input type="date" name="prealerta_desde[]" class="form-control" value="{{ prealerta.fecha_desde.strftime('%Y-%m-%d') if prealerta.fecha_desde else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha prealertada hasta</label>
+                            <input type="date" name="prealerta_hasta[]" class="form-control" value="{{ prealerta.fecha_hasta.strftime('%Y-%m-%d') if prealerta.fecha_hasta else '' }}">
                         </div>
                     </div>
                 </div>
@@ -225,20 +253,20 @@
                             <input type="text" name="lugar_nombre[]" class="form-control" value="{{ lugar.nombre_sitio or '' }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio de Entrada (CRC)</label>
+                            <label class="form-label price-label">Precio Total de Entrada (CRC)</label>
                             <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" value="{{ lugar.precio_entrada or 0 }}" oninput="updateTotalAtracciones()">
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            <div class="total-field">TOTAL DE ATRACCIONES: <span class="currency-label">CRC</span> <span id="total-atracciones">0.00</span></div>
+            <div class="total-field">TOTAL DE ATRACCIONES POR PERSONA: <span class="currency-label">CRC</span> <span id="total-atracciones">0.00</span></div>
         </div>
 
-        <!-- SECCIÓN TRANSPORTES -->
+        <!-- SECCIÓN TRANSPORTES LOCALES -->
         <div class="section-container">
             <div class="section-header bg-warning">
-                <span>Transportes</span>
+                <span>Transportes Locales</span>
                 <button type="button" class="btn btn-sm btn-dark" onclick="addTransporte()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
             <div id="transportes-container">
@@ -265,14 +293,14 @@
                             <input type="text" name="transporte_nombre[]" class="form-control" value="{{ transporte.nombre_transporte or '' }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio (CRC)</label>
+                            <label class="form-label price-label">Precio Total (CRC)</label>
                             <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" value="{{ transporte.precio or 0 }}" oninput="updateTotalTransporte()">
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            <div class="total-field">TOTAL DE TRANSPORTE: <span class="currency-label">CRC</span> <span id="total-transporte">0.00</span></div>
+            <div class="total-field">TOTAL DE TRANSPORTE POR PERSONA: <span class="currency-label">CRC</span> <span id="total-transporte">0.00</span></div>
         </div>
 
         <!-- SECCIÓN GUÍAS -->
@@ -345,7 +373,7 @@
             <div class="total-field">TOTAL DE ESTADÍA POR PERSONA: <span class="currency-label">CRC</span> <span id="total-estadia">0.00</span></div>
         </div>
 
-        <!-- SECCIÓN AEROLÍNEA -->
+        <!-- SECCIÓN AEROLÍNEA / TRANSPORTE PRINCIPAL -->
         <div class="section-container">
             <div class="section-header bg-warning">
                 <span>Aerolínea / Transporte Principal</span>
@@ -369,32 +397,38 @@
                                 <option {% if aerolinea.tipo_transporte == 'Barco' %}selected{% endif %}>Barco</option>
                             </select>
                         </div>
-                        <div class="col-md-8 mb-3 aerolinea-fields" style="display: {% if aerolinea.tipo_transporte != 'Avión' %}none{% else %}block{% endif %};">
-                            <label class="form-label">Aerolínea</label>
-                            <select name="aerolinea_nombre[]" class="form-select">
-                                {% for opcion in aerolineas_opciones %}
-                                <option value="{{ opcion }}" {% if aerolinea.nombre_aerolinea == opcion %}selected{% endif %}>{{ opcion }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Aerolínea / Compañía</label>
+                            <input type="text" name="aerolinea_nombre[]" class="form-control" value="{{ aerolinea.nombre_aerolinea or '' }}" placeholder="Nombre de la compañía">
                         </div>
                     </div>
-                    <div class="aerolinea-fields" style="display: {% if aerolinea.tipo_transporte != 'Avión' %}none{% else %}block{% endif %};">
-                        <div class="row">
-                            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" step="0.01" name="aerolinea_precio_asientos[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_asientos or 0 }}" oninput="updateTotalAerolinea()"></div>
-                            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" step="0.01" name="aerolinea_precio_maletas[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_maletas_documentado or 0 }}" oninput="updateTotalAerolinea()"></div>
-                            <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" value="{{ aerolinea.equipaje_mano or 0 }}" oninput="updateTotalAerolinea()"></div>
-                            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_impuestos or 0 }}" oninput="updateTotalAerolinea()"></div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3 aerolinea-field-group">
+                            <label class="form-label price-label">Precio Asientos</label>
+                            <input type="number" step="0.01" name="aerolinea_precio_asientos[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_asientos or 0 }}" oninput="updateTotalAerolinea()">
+                        </div>
+                        <div class="col-md-3 mb-3 aerolinea-field-group">
+                            <label class="form-label price-label">Precio Maletas Doc.</label>
+                            <input type="number" step="0.01" name="aerolinea_precio_maletas[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_maletas_documentado or 0 }}" oninput="updateTotalAerolinea()">
+                        </div>
+                        <div class="col-md-3 mb-3 aerolinea-field-group">
+                            <label class="form-label price-label">Equipaje de Mano</label>
+                            <input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" value="{{ aerolinea.equipaje_mano or 0 }}" oninput="updateTotalAerolinea()">
+                        </div>
+                        <div class="col-md-3 mb-3 aerolinea-field-group">
+                            <label class="form-label price-label">Precio Impuestos</label>
+                            <input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" value="{{ aerolinea.precio_impuestos or 0 }}" oninput="updateTotalAerolinea()">
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            <div class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: <span class="currency-label">CRC</span> <span id="total-aerolinea">0.00</span></div>
+            <div class="total-field">TOTAL DE TRANSPORTE PRINCIPAL POR PERSONA: <span class="currency-label">CRC</span> <span id="total-aerolinea">0.00</span></div>
         </div>
 
         <!-- SECCIÓN DE TOTALES GENERALES -->
         <div class="section-container text-center">
-            <div class="section-header bg-warning justify-content-center">TOTALES GENERALES</div>
+            <div class="section-header bg-warning justify-content-center">TOTALES GENERALES POR PERSONA</div>
             <div class="row">
                 <div class="col-md-6" id="total-crc-wrapper">
                     <p class="total-field" style="border-top: none; text-align: center;">TOTAL INDIVIDUAL (CRC): <span class="badge bg-success fs-5" id="total-crc">0.00</span></p>
@@ -462,11 +496,8 @@
     
     // --- INICIALIZAR TOTALES Y MONEDA AL CARGAR LA PÁGINA ---
     document.addEventListener('DOMContentLoaded', function() {
-        updateTotalAtracciones();
-        updateTotalTransporte();
-        updateTotalGuias();
-        updateTotalEstadia();
-        updateTotalAerolinea();
+        document.querySelectorAll('.tipo-transporte-aerolinea').forEach(select => toggleAerolineaFields(select));
+        recalculateAllTotals();
         handleCurrencyChange();
     });
 
@@ -482,7 +513,7 @@
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('prealerta-${preAlertaCount}')"></button>
             <input type="hidden" name="prealerta_id[]" value="">
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Banco</label>
                     <select name="prealerta_banco[]" class="form-select">
                         <option selected disabled>Seleccione un banco</option>
@@ -491,9 +522,37 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Teléfono Entidad Financiera</label>
                     <input type="text" name="prealerta_telefono[]" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Fecha de la prealerta</label>
+                    <input type="date" name="prealerta_fecha[]" class="form-control">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Nombre del Asesor Bancario</label>
+                    <input type="text" name="prealerta_asesor[]" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Hora de la Prealerta</label>
+                    <input type="time" name="prealerta_hora[]" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Número de la prealerta</label>
+                    <input type="text" name="prealerta_numero[]" class="form-control">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha prealertada desde</label>
+                    <input type="date" name="prealerta_desde[]" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha prealertada hasta</label>
+                    <input type="date" name="prealerta_hasta[]" class="form-control">
                 </div>
             </div>
         `;
@@ -522,7 +581,7 @@
                     <input type="text" name="lugar_nombre[]" class="form-control">
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label price-label">Precio de Entrada (CRC)</label>
+                    <label class="form-label price-label">Precio Total de Entrada (CRC)</label>
                     <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" oninput="updateTotalAtracciones()">
                 </div>
             </div>
@@ -530,7 +589,6 @@
         container.appendChild(newItem);
     }
     
-    // ... (El resto de las funciones add... y removeItem... son idénticas a las de crear_intern.html)
     function addTransporte() {
         transporteCount++;
         const container = document.getElementById('transportes-container');
@@ -553,7 +611,7 @@
                     <input type="text" name="transporte_nombre[]" class="form-control">
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label price-label">Precio (CRC)</label>
+                    <label class="form-label price-label">Precio Total (CRC)</label>
                     <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" oninput="updateTotalTransporte()">
                 </div>
             </div>
@@ -640,26 +698,32 @@
                         <option>Avión</option><option>Bus</option><option>Buseta</option><option>Auto</option><option>Moto</option><option>Barco</option>
                     </select>
                 </div>
-                <div class="col-md-8 mb-3 aerolinea-fields">
-                    <label class="form-label">Aerolínea</label>
-                    <select name="aerolinea_nombre[]" class="form-select">
-                        <option selected disabled>Seleccione una aerolínea</option>
-                        {% for aerolinea in aerolineas_opciones %}
-                        <option value="{{ aerolinea }}">{{ aerolinea }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Aerolínea / Compañía</label>
+                    <input type="text" name="aerolinea_nombre[]" class="form-control" placeholder="Nombre de la compañía">
                 </div>
             </div>
-            <div class="aerolinea-fields">
-                <div class="row">
-                    <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" step="0.01" name="aerolinea_precio_asientos[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
-                    <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" step="0.01" name="aerolinea_precio_maletas[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
-                    <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
-                    <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" oninput="updateTotalAerolinea()"></div>
+            <div class="row">
+                <div class="col-md-3 mb-3 aerolinea-field-group">
+                    <label class="form-label price-label">Precio Asientos</label>
+                    <input type="number" step="0.01" name="aerolinea_precio_asientos[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
+                </div>
+                <div class="col-md-3 mb-3 aerolinea-field-group">
+                    <label class="form-label price-label">Precio Maletas Doc.</label>
+                    <input type="number" step="0.01" name="aerolinea_precio_maletas[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
+                </div>
+                <div class="col-md-3 mb-3 aerolinea-field-group">
+                    <label class="form-label price-label">Equipaje de Mano</label>
+                    <input type="number" step="0.01" name="aerolinea_equipaje_mano[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
+                </div>
+                <div class="col-md-3 mb-3 aerolinea-field-group">
+                    <label class="form-label price-label">Precio Impuestos</label>
+                    <input type="number" step="0.01" name="aerolinea_impuestos[]" class="form-control price-aerolinea" value="0" oninput="updateTotalAerolinea()">
                 </div>
             </div>
         `;
         container.appendChild(newItem);
+        toggleAerolineaFields(newItem.querySelector('.tipo-transporte-aerolinea'));
     }
 
     function removeItem(id, callback) {
@@ -674,21 +738,50 @@
     
     function toggleAerolineaFields(selectElement) {
         const parentItem = selectElement.closest('.dynamic-item');
-        const aerolineaFields = parentItem.querySelectorAll('.aerolinea-fields');
+        const fieldGroups = parentItem.querySelectorAll('.aerolinea-field-group');
+        const firstFieldGroup = fieldGroups[0];
+        const firstLabel = firstFieldGroup.querySelector('.price-label');
+
         if (selectElement.value === 'Avión') {
-            aerolineaFields.forEach(field => field.style.display = 'block');
+            firstLabel.textContent = 'Precio Asientos (pp)';
+            fieldGroups.forEach((group, index) => {
+                group.style.display = 'block';
+                const label = group.querySelector('.price-label');
+                if(index === 1) label.textContent = 'Precio Maletas Doc. (pp)';
+                if(index === 2) label.textContent = 'Equipaje de Mano (pp)';
+                if(index === 3) label.textContent = 'Precio Impuestos (pp)';
+            });
         } else {
-            aerolineaFields.forEach(field => field.style.display = 'none');
+            firstLabel.textContent = 'Precio Total del Servicio';
+            fieldGroups.forEach((group, index) => {
+                if (index > 0) {
+                    group.style.display = 'none';
+                    group.querySelector('input').value = 0;
+                } else {
+                    group.style.display = 'block';
+                }
+            });
         }
+        updateTotalAerolinea();
     }
 
     // --- FUNCIONES PARA ACTUALIZAR TOTALES ---
+    function recalculateAllTotals() {
+        updateTotalAtracciones();
+        updateTotalTransporte();
+        updateTotalGuias();
+        updateTotalEstadia();
+        updateTotalAerolinea();
+    }
+
     function updateTotalAtracciones() {
         let total = 0;
         document.querySelectorAll('.price-atraccion').forEach(input => {
             total += parseFloat(input.value) || 0;
         });
-        document.getElementById('total-atracciones').textContent = total.toFixed(2);
+        const capacidad = parseInt(document.getElementById('capacidad').value) || 1;
+        const perPersonTotal = capacidad > 0 ? total / capacidad : 0;
+        document.getElementById('total-atracciones').textContent = perPersonTotal.toFixed(2);
         updateGrandTotals();
     }
     
@@ -697,7 +790,9 @@
         document.querySelectorAll('.price-transporte').forEach(input => {
             total += parseFloat(input.value) || 0;
         });
-        document.getElementById('total-transporte').textContent = total.toFixed(2);
+        const capacidad = parseInt(document.getElementById('capacidad').value) || 1;
+        const perPersonTotal = capacidad > 0 ? total / capacidad : 0;
+        document.getElementById('total-transporte').textContent = perPersonTotal.toFixed(2);
         updateGrandTotals();
     }
 
@@ -725,21 +820,38 @@
 
     function updateTotalAerolinea() {
         let total = 0;
-        document.querySelectorAll('.price-aerolinea').forEach(input => {
-            total += parseFloat(input.value) || 0;
+        const capacidad = parseInt(document.getElementById('capacidad').value) || 1; 
+
+        document.querySelectorAll('.dynamic-item[id^="aerolinea-"]').forEach(item => {
+            const tipo = item.querySelector('.tipo-transporte-aerolinea').value;
+            let itemTotal = 0;
+            const inputs = item.querySelectorAll('.price-aerolinea');
+
+            if (tipo === 'Avión') {
+                inputs.forEach(input => {
+                    itemTotal += parseFloat(input.value) || 0;
+                });
+            } else {
+                const precioTotal = parseFloat(inputs[0].value) || 0;
+                if (capacidad > 0) {
+                    itemTotal = precioTotal / capacidad;
+                }
+            }
+            total += itemTotal;
         });
         document.getElementById('total-aerolinea').textContent = total.toFixed(2);
         updateGrandTotals();
     }
     
     function updateGrandTotals() {
+        const precioPaquete = parseFloat(document.getElementById('precio_paquete').value) || 0;
         const totalAtracciones = parseFloat(document.getElementById('total-atracciones').textContent) || 0;
         const totalTransporte = parseFloat(document.getElementById('total-transporte').textContent) || 0;
         const totalGuias = parseFloat(document.getElementById('total-guias').textContent) || 0;
         const totalEstadia = parseFloat(document.getElementById('total-estadia').textContent) || 0;
         const totalAerolinea = parseFloat(document.getElementById('total-aerolinea').textContent) || 0;
         
-        const total = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
+        const total = precioPaquete + totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
         const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
         
         if (tipoMonedaSelect.value === 'USD') {
