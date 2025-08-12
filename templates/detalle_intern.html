@@ -5,34 +5,37 @@
 {% block head_content %}
 <style>
     .main-container {
-        padding-top: 80px; /* Ajusta este valor según la altura de tu navbar */
-        padding-bottom: 80px; /* Espacio para el botón flotante */
+        padding-top: 80px;
+        padding-bottom: 80px;
     }
-    .card {
-        box-shadow: none !important;
+    .section-container {
+        margin-bottom: 2.5rem;
         border: 1px solid #dee2e6;
-        margin-bottom: 1.5rem;
+        border-radius: .375rem;
+        padding: 1.5rem;
+        background-color: #fff;
     }
-    .card-header {
-        background-color: #e9ecef;
+    .section-header {
         font-weight: bold;
+        padding: 0.75rem 1.25rem;
+        margin: -1.5rem -1.5rem 1.5rem -1.5rem; /* Ajusta para que ocupe todo el ancho del padding */
+        border-bottom: 1px solid #dee2e6;
+        border-top-left-radius: .375rem;
+        border-top-right-radius: .375rem;
     }
-    .section-separator {
-        border-top: 2px solid #ffc107;
-        margin-top: 2rem;
-        margin-bottom: 2rem;
+    /* Usando las variables de Bootstrap para el color warning */
+    .bg-warning {
+        background-color: #ffc107 !important;
+        color: #000;
     }
     .total-field {
         font-weight: bold;
         font-size: 1.3rem;
         color: #000;
-    }
-    .detail-item {
-        margin-bottom: 0.5rem;
-    }
-    .detail-label {
-        font-weight: bold;
-        color: #495057;
+        text-align: right;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
     }
     .flyer-img {
         max-width: 100%;
@@ -53,6 +56,8 @@
     }
     .item-list li:last-child {
         border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
     .item-counter {
         background-color: #ffc107;
@@ -70,9 +75,18 @@
     .item-content {
         flex-grow: 1;
     }
+    /* Nuevas clases para la rejilla de detalles */
+    .detail-grid-row {
+        margin-bottom: 0.5rem;
+    }
+    .detail-grid-label {
+        font-weight: bold;
+        color: #495057;
+    }
+
     .fab-container-back {
         position: fixed;
-        bottom: 20px;
+        bottom: 75px;
         left: 20px;
         z-index: 1000;
     }
@@ -96,215 +110,197 @@
         box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         background-color: #0b5ed7;
     }
+    
+    /* --- ESTILOS PARA BOTONES FLOTANTES DE ACCIONES --- */
+    .fab-container-actions {
+        position: fixed;
+        bottom: 75px;
+        right: 20px;
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .fab-button-action {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    .fab-button-action:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+    .fab-button-edit { background-color: #ffc107; color: black; } /* Warning */
+    .fab-button-delete { background-color: #dc3545; color: white; } /* Danger */
+    .fab-button-excel { background-color: #198754; color: white; } /* Success */
+    .fab-button-pdf { background-color: #6f42c1; color: white; } /* Purple */
+    .fab-button-jpg { background-color: #fd7e14; color: white; } /* Orange */
+    .fab-button-txt { background-color: #0dcaf0; color: white; } /* Info */
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container main-container">
 
-    <!-- Encabezado y Botones de Acción -->
+    <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h1 class="mb-0 h2">Detalle: {{ viaje.nombre_viaje }}</h1>
-        <div class="btn-group">
-            <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="fas fa-trash"></i> Eliminar</button>
-            <div class="btn-group">
-                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-file-export"></i> Exportar
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_pdf', id=viaje.id) }}">PDF</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_txt', id=viaje.id) }}">TXT</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_jpg', id=viaje.id) }}">JPG</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_excel', id=viaje.id) }}">Excel</a></li>
-                </ul>
-            </div>
-        </div>
+        <!-- Los botones de acción se han movido a los botones flotantes -->
     </div>
 
     <!-- SECCIÓN DESTINO -->
-    <div class="card">
-        <div class="card-header">DESTINO</div>
-        <div class="card-body">
-            <div class="row">
-                {% if viaje.flyer %}
-                <div class="col-md-4">
-                    <img src="{{ url_for('static', filename=viaje.flyer) }}" alt="Flyer del viaje" class="flyer-img" onerror="this.style.display='none'">
-                </div>
-                {% endif %}
-                <div class="col-md-{{ '8' if viaje.flyer else '12' }}">
-                    <p class="detail-item"><span class="detail-label">País:</span> {{ viaje.pais }}</p>
-                    {% if viaje.precio_paquete and viaje.precio_paquete > 0 %}<p class="detail-item"><span class="detail-label">Precio Paquete:</span> {{ "%.2f"|format(viaje.precio_paquete) }} {{ viaje.tipo_moneda }}</p>{% endif %}
-                    {% if viaje.capacidad and viaje.capacidad > 0 %}<p class="detail-item"><span class="detail-label">Capacidad:</span> {{ viaje.capacidad }} personas</p>{% endif %}
-                    {% if viaje.tipo_cambio and viaje.tipo_cambio > 0 and viaje.tipo_cambio != 1 %}<p class="detail-item"><span class="detail-label">Tipo de Cambio:</span> 1 USD = {{ "%.2f"|format(viaje.tipo_cambio) }} CRC</p>{% endif %}
-                </div>
+    <div class="section-container">
+        <div class="section-header bg-warning">DESTINO</div>
+        <div class="row">
+            {% if viaje.flyer %}
+            <div class="col-md-4">
+                <img src="{{ url_for('static', filename=viaje.flyer) }}" alt="Flyer del viaje" class="flyer-img" onerror="this.style.display='none'">
+            </div>
+            {% endif %}
+            <div class="col-md-{{ '8' if viaje.flyer else '12' }}">
+                <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">País:</div><div class="col-md-8">{{ viaje.pais }}</div></div>
+                {% if viaje.precio_paquete and viaje.precio_paquete > 0 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio Paquete:</div><div class="col-md-8">{{ "%.2f"|format(viaje.precio_paquete) }} {{ viaje.tipo_moneda }}</div></div>{% endif %}
+                {% if viaje.capacidad and viaje.capacidad > 0 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Capacidad:</div><div class="col-md-8">{{ viaje.capacidad }} personas</div></div>{% endif %}
+                {% if viaje.tipo_cambio and viaje.tipo_cambio > 0 and viaje.tipo_cambio != 1 %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Tipo de Cambio:</div><div class="col-md-8">1 USD = {{ "%.2f"|format(viaje.tipo_cambio) }} CRC</div></div>{% endif %}
             </div>
         </div>
     </div>
 
     <!-- SECCIÓN PRE-ALERTAS -->
     {% if viaje.prealertas %}
-    <div class="section-separator"></div>
-    <h2 class="text-center mb-3">ADMINISTRACIÓN DE VIAJE</h2>
-    <div class="card">
-        <div class="card-header">LLAMADO PRE-ALERTA</div>
-        <div class="card-body">
-            <ul class="item-list">
-                {% for prealerta in viaje.prealertas %}
-                <li>
-                    <span class="item-counter">{{ loop.index }}</span>
-                    <div class="item-content">
-                        <p class="mb-1"><span class="detail-label">Banco:</span> {{ prealerta.banco }}</p>
-                        {% if prealerta.telefono_entidad %}<p class="mb-1"><span class="detail-label">Teléfono:</span> {{ prealerta.telefono_entidad }}</p>{% endif %}
-                        {% if prealerta.asesor %}<p class="mb-1"><span class="detail-label">Asesor:</span> {{ prealerta.asesor }}</p>{% endif %}
-                        {% if prealerta.numero_prealerta %}<p class="mb-1"><span class="detail-label"># Pre-alerta:</span> {{ prealerta.numero_prealerta }}</p>{% endif %}
-                        {% if prealerta.fecha_desde and prealerta.fecha_hasta %}<p class="mb-0"><span class="detail-label">Periodo:</span> Del {{ prealerta.fecha_desde.strftime('%d/%m/%Y') }} al {{ prealerta.fecha_hasta.strftime('%d/%m/%Y') }}</p>{% endif %}
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
+    <div class="section-container">
+        <div class="section-header bg-warning">LLAMADO PRE-ALERTA</div>
+        <ul class="item-list">
+            {% for prealerta in viaje.prealertas %}
+            <li>
+                <span class="item-counter">{{ loop.index }}</span>
+                <div class="item-content">
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Banco:</div><div class="col-md-8">{{ prealerta.banco }}</div></div>
+                    {% if prealerta.telefono_entidad %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Teléfono:</div><div class="col-md-8">{{ prealerta.telefono_entidad }}</div></div>{% endif %}
+                    {% if prealerta.asesor %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Asesor:</div><div class="col-md-8">{{ prealerta.asesor }}</div></div>{% endif %}
+                    {% if prealerta.numero_prealerta %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label"># Pre-alerta:</div><div class="col-md-8">{{ prealerta.numero_prealerta }}</div></div>{% endif %}
+                    {% if prealerta.fecha_desde and prealerta.fecha_hasta %}<div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Periodo:</div><div class="col-md-8">Del {{ prealerta.fecha_desde.strftime('%d/%m/%Y') }} al {{ prealerta.fecha_hasta.strftime('%d/%m/%Y') }}</div></div>{% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
     {% endif %}
 
     <!-- SECCIÓN LUGARES A VISITAR -->
     {% if viaje.lugares %}
-    <div class="section-separator"></div>
-    <h2 class="text-center mb-3">LUGARES A VISITAR</h2>
-    <div class="card">
-        <div class="card-header">Atracciones</div>
-        <div class="card-body">
-            <ul class="item-list">
-                {% for lugar in viaje.lugares %}
-                <li>
-                    <span class="item-counter">{{ loop.index }}</span>
-                    <div class="item-content">
-                        <p class="mb-1"><span class="detail-label">Sitio:</span> {{ lugar.nombre_sitio }} ({{ lugar.tipo_lugar }})</p>
-                        <p class="mb-0"><span class="detail-label">Precio Entrada:</span> {{ "%.2f"|format(lugar.precio_entrada) }} CRC</p>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="card-footer text-end">
-            <span class="total-field">TOTAL DE ATRACCIONES: CRC {{ "%.2f"|format(total_atracciones) }}</span>
-        </div>
+    <div class="section-container">
+        <div class="section-header bg-warning">Atracciones</div>
+        <ul class="item-list">
+            {% for lugar in viaje.lugares %}
+            <li>
+                <span class="item-counter">{{ loop.index }}</span>
+                <div class="item-content">
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Sitio:</div><div class="col-md-8">{{ lugar.nombre_sitio }} ({{ lugar.tipo_lugar }})</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio Entrada:</div><div class="col-md-8">{{ "%.2f"|format(lugar.precio_entrada) }} CRC</div></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="total-field">TOTAL DE ATRACCIONES: CRC {{ "%.2f"|format(total_atracciones) }}</div>
     </div>
     {% endif %}
 
     <!-- SECCIÓN TRANSPORTES -->
     {% if viaje.transportes %}
-    <div class="section-separator"></div>
-    <h2 class="text-center mb-3">TRANSPORTES</h2>
-    <div class="card">
-        <div class="card-header">Transportes Locales</div>
-        <div class="card-body">
-            <ul class="item-list">
-                {% for transporte in viaje.transportes %}
-                <li>
-                    <span class="item-counter">{{ loop.index }}</span>
-                    <div class="item-content">
-                        <p class="mb-1"><span class="detail-label">Nombre:</span> {{ transporte.nombre_transporte }}</p>
-                        <p class="mb-0"><span class="detail-label">Precio:</span> {{ "%.2f"|format(transporte.precio) }} CRC</p>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="card-footer text-end">
-            <span class="total-field">TOTAL DE TRANSPORTE: CRC {{ "%.2f"|format(total_transporte) }}</span>
-        </div>
+    <div class="section-container">
+        <div class="section-header bg-warning">Transportes Locales</div>
+        <ul class="item-list">
+            {% for transporte in viaje.transportes %}
+            <li>
+                <span class="item-counter">{{ loop.index }}</span>
+                <div class="item-content">
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Nombre:</div><div class="col-md-8">{{ transporte.nombre_transporte }}</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Precio:</div><div class="col-md-8">{{ "%.2f"|format(transporte.precio) }} CRC</div></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="total-field">TOTAL DE TRANSPORTE: CRC {{ "%.2f"|format(total_transporte) }}</div>
     </div>
     {% endif %}
     
     <!-- SECCIÓN GUÍAS -->
     {% if viaje.guias %}
-    <div class="section-separator"></div>
-    <h2 class="text-center mb-3">GUÍAS</h2>
-    <div class="card">
-        <div class="card-header">Guías</div>
-        <div class="card-body">
-            <ul class="item-list">
-                {% for guia in viaje.guias %}
-                <li>
-                    <span class="item-counter">{{ loop.index }}</span>
-                    <div class="item-content">
-                        <p class="mb-1"><span class="detail-label">Nombre:</span> {{ guia.nombre }}</p>
-                        <p class="mb-1"><span class="detail-label">Operador:</span> {{ guia.operador }}</p>
-                        <p class="mb-0"><span class="detail-label">Costo PP:</span> {{ "%.2f"|format(guia.precio_guia_pp + guia.precio_acarreo) }} CRC</p>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="card-footer text-end">
-            <span class="total-field">TOTAL DE GUÍAS POR PERSONA: CRC {{ "%.2f"|format(total_guias_pp) }}</span>
-        </div>
+    <div class="section-container">
+        <div class="section-header bg-warning">Guías</div>
+        <ul class="item-list">
+            {% for guia in viaje.guias %}
+            <li>
+                <span class="item-counter">{{ loop.index }}</span>
+                <div class="item-content">
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Nombre:</div><div class="col-md-8">{{ guia.nombre }}</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Operador:</div><div class="col-md-8">{{ guia.operador }}</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo PP:</div><div class="col-md-8">{{ "%.2f"|format(guia.precio_guia_pp + guia.precio_acarreo) }} CRC</div></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="total-field">TOTAL DE GUÍAS POR PERSONA: CRC {{ "%.2f"|format(total_guias_pp) }}</div>
     </div>
     {% endif %}
 
     <!-- SECCIÓN ESTADÍAS -->
     {% if viaje.estadias %}
-    <div class="section-separator"></div>
-    <h2 class="text-center mb-3">ESTADÍAS</h2>
-    <div class="card">
-        <div class="card-header">Estadías</div>
-        <div class="card-body">
-            <ul class="item-list">
-                {% for estadia in viaje.estadias %}
-                <li>
-                    <span class="item-counter">{{ loop.index }}</span>
-                    <div class="item-content">
-                        <p class="mb-1"><span class="detail-label">Lugar:</span> {{ estadia.nombre }}</p>
-                        <p class="mb-0"><span class="detail-label">Costo Total PP:</span> {{ "%.2f"|format(estadia.precio_pp * estadia.cantidad_noches) }} CRC ({{ estadia.cantidad_noches }} noches)</p>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="card-footer text-end">
-            <span class="total-field">TOTAL DE ESTADÍA POR PERSONA: CRC {{ "%.2f"|format(total_estadia_pp) }}</span>
-        </div>
+    <div class="section-container">
+        <div class="section-header bg-warning">Estadías</div>
+        <ul class="item-list">
+            {% for estadia in viaje.estadias %}
+            <li>
+                <span class="item-counter">{{ loop.index }}</span>
+                <div class="item-content">
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Lugar:</div><div class="col-md-8">{{ estadia.nombre }}</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo Total PP:</div><div class="col-md-8">{{ "%.2f"|format(estadia.precio_pp * estadia.cantidad_noches) }} CRC ({{ estadia.cantidad_noches }} noches)</div></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="total-field">TOTAL DE ESTADÍA POR PERSONA: CRC {{ "%.2f"|format(total_estadia_pp) }}</div>
     </div>
     {% endif %}
 
     <!-- SECCIÓN AEROLÍNEA -->
     {% if viaje.aerolineas %}
-    <div class="section-separator"></div>
-    <h2 class="text-center mb-3">AEROLÍNEA / TRANSPORTE PRINCIPAL</h2>
-    <div class="card">
-        <div class="card-header">Aerolíneas</div>
-        <div class="card-body">
-            <ul class="item-list">
-                {% for aerolinea in viaje.aerolineas %}
-                <li>
-                    <span class="item-counter">{{ loop.index }}</span>
-                    <div class="item-content">
-                        <p class="mb-1"><span class="detail-label">Transporte:</span> {{ aerolinea.tipo_transporte }}</p>
-                        <p class="mb-1"><span class="detail-label">Aerolínea:</span> {{ aerolinea.nombre_aerolinea }}</p>
-                        <p class="mb-0"><span class="detail-label">Costo Total PP:</span> {{ "%.2f"|format(aerolinea.precio_asientos + aerolinea.precio_maletas_documentado + aerolinea.equipaje_mano + aerolinea.precio_impuestos) }} CRC</p>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="card-footer text-end">
-             <span class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: CRC {{ "%.2f"|format(total_aerolinea_pp) }}</span>
-        </div>
+    <div class="section-container">
+        <div class="section-header bg-warning">Aerolíneas</div>
+        <ul class="item-list">
+            {% for aerolinea in viaje.aerolineas %}
+            <li>
+                <span class="item-counter">{{ loop.index }}</span>
+                <div class="item-content">
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Transporte:</div><div class="col-md-8">{{ aerolinea.tipo_transporte }}</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Aerolínea:</div><div class="col-md-8">{{ aerolinea.nombre_aerolinea }}</div></div>
+                    <div class="row detail-grid-row"><div class="col-md-4 detail-grid-label">Costo Total PP:</div><div class="col-md-8">{{ "%.2f"|format(aerolinea.precio_asientos + aerolinea.precio_maletas_documentado + aerolinea.equipaje_mano + aerolinea.precio_impuestos) }} CRC</div></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="total-field">TOTAL DE AEROLÍNEA POR PERSONA: CRC {{ "%.2f"|format(total_aerolinea_pp) }}</div>
     </div>
     {% endif %}
 
     <!-- SECCIÓN DE TOTALES GENERALES -->
-    <div class="card mt-4 bg-light">
-        <div class="card-header">TOTALES GENERALES DEL VIAJE</div>
-        <div class="card-body text-center">
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="total-field">COSTO INDIVIDUAL (CRC): <span class="badge bg-success fs-5">{{ "%.2f"|format(total_individual_crc) }}</span></p>
-                </div>
-                <div class="col-md-6">
-                    <p class="total-field">COSTO INDIVIDUAL (USD): <span class="badge bg-primary fs-5">{{ "%.2f"|format(total_individual_usd) }}</span></p>
-                </div>
+    <div class="section-container text-center">
+        <div class="section-header bg-warning">TOTALES GENERALES DEL VIAJE</div>
+        <div class="row">
+            <div class="col-md-6">
+                <p class="total-field" style="border-top: none; text-align: center;">COSTO INDIVIDUAL (CRC): <span class="badge bg-success fs-5">{{ "%.2f"|format(total_individual_crc) }}</span></p>
+            </div>
+            <div class="col-md-6">
+                <p class="total-field" style="border-top: none; text-align: center;">COSTO INDIVIDUAL (USD): <span class="badge bg-primary fs-5">{{ "%.2f"|format(total_individual_usd) }}</span></p>
             </div>
         </div>
     </div>
@@ -334,6 +330,28 @@
     <div class="fab-container-back">
         <a href="{{ url_for('intern.index') }}" class="fab-button-back" title="Volver al Listado">
             <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+    
+    <!-- Botones Flotantes de Acciones -->
+    <div class="fab-container-actions">
+        <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="fab-button-action fab-button-edit" title="Editar">
+            <i class="fas fa-edit"></i>
+        </a>
+        <a href="#" class="fab-button-action fab-button-delete" title="Eliminar" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="fas fa-trash-alt"></i>
+        </a>
+        <a href="{{ url_for('intern.exportar_excel', id=viaje.id) }}" class="fab-button-action fab-button-excel" title="Exportar a Excel">
+            <i class="fas fa-file-excel"></i>
+        </a>
+        <a href="{{ url_for('intern.exportar_pdf', id=viaje.id) }}" class="fab-button-action fab-button-pdf" title="Exportar a PDF">
+            <i class="fas fa-file-pdf"></i>
+        </a>
+        <a href="{{ url_for('intern.exportar_jpg', id=viaje.id) }}" class="fab-button-action fab-button-jpg" title="Exportar a JPG">
+            <i class="fas fa-file-image"></i>
+        </a>
+        <a href="{{ url_for('intern.exportar_txt', id=viaje.id) }}" class="fab-button-action fab-button-txt" title="Exportar a TXT">
+            <i class="fas fa-file-alt"></i>
         </a>
     </div>
 </div>
