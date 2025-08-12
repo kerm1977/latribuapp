@@ -152,7 +152,7 @@
             <div class="contact-detail-card">
                 <div class="text-center mb-4">
                     <img src="{{ avatar_url }}" alt="Avatar de {{ user.username }}" class="profile-avatar mb-3">
-                    <h3 class="text-warning">{{ user.nombre }} {{ user.primer_apellido }} {{ user.segundo_apellido if user.segundo_apellido else '' }}</h3>
+                    <h3 class="text-warning">{{ user.nombre | title }} {{ user.primer_apellido | title}} {{ user.segundo_apellido | title if user.segundo_apellido  else '' }}</h3>
                     <p class="text-muted">@{{ user.username }}</p>
                 </div>
 

@@ -108,6 +108,18 @@
                 {% endfor %}
             </select>
         </div>
+
+        <!-- ***** CORRECCIÓN: Campo de selección para Dificultad ***** -->
+        <div class="form-group mb-3">
+            <label for="dificultad">Dificultad:</label>
+            <select class="form-control" id="dificultad" name="dificultad" required>
+                {% for d in dificultades %}
+                    <option value="{{ d }}" {% if ruta.dificultad == d %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- ***** FIN DEL CAMPO CORREGIDO ***** -->
+
         <div class="form-group mb-3">
             <label for="fecha">Fecha:</label>
             <input type="date" class="form-control" id="fecha" name="fecha" value="{{ ruta.fecha.strftime('%Y-%m-%d') if ruta.fecha }}" > {# Fecha no obligatoria #}

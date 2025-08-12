@@ -1,6 +1,35 @@
 {% extends 'base.html' %}
 {% block content %}
-
+<style>
+    /* Estilos para las insignias de dificultad con colores pastel */
+    .badge-dificultad {
+        padding: 0.5em 0.75em;
+        font-size: 0.9rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+    }
+    .badge-text-light {
+        color: #fff;
+    }
+    .badge-text-dark {
+        color: #212529;
+    }
+    .badge-basico {
+        background-color: #A8D8B9; /* Verde Pastel */
+    }
+    .badge-intermedio {
+        background-color: #F5CBA7; /* Naranja Pastel */
+    }
+    .badge-dificil {
+        background-color: #F5B7B1; /* Rojo Pastel */
+    }
+    .badge-avanzado {
+        background-color: #E59866; /* Terracota/Rojo Oscuro Pastel */
+    }
+    .badge-tecnico {
+        background-color: #C3B1E1; /* Lila Pastel */
+    }
+</style>
 
 {# --- INICIO DEL BLOQUE DEL VIDEO CON NUEVA ESTRUCTURA --- #}
 {% if embed_url %}
@@ -34,6 +63,15 @@
 
 <div class="container">
     <div class="content-wrapper">
+        {# ***** MODIFICADO: Diccionario para mapear dificultad a clases CSS (color de fondo y texto) ***** #}
+        {% set dificultad_classes = {
+            'Básico': 'badge-text-dark badge-basico',
+            'Intermedio': 'badge-text-dark badge-intermedio',
+            'Difícil': 'badge-text-dark badge-dificil',
+            'Avanzado': 'badge-text-light badge-avanzado',
+            'Técnico': 'badge-text-light badge-tecnico'
+        } %}
+
         <div class="detail-section">
             {# Mostrar nombre de ruta - fecha - ¢precio, solo si existen #}
             <h2 class="text-warning">
@@ -46,6 +84,20 @@
             <p class="text-warning">Categoría:</p> {# Cambiado de Provincia a Categoría #}
             <p class="">{{ ruta.provincia }}</p>
         </div>
+
+        <!-- ***** MODIFICADO: Mostrar Dificultad con color ***** -->
+        <div class="detail-section">
+            <p class="text-warning">Dificultad:</p>
+            <p>
+                {% if ruta.dificultad %}
+                    <span class="badge-dificultad {{ dificultad_classes.get(ruta.dificultad, 'bg-secondary') }}">{{ ruta.dificultad }}</span>
+                {% else %}
+                    'No especificada'
+                {% endif %}
+            </p>
+        </div>
+        <!-- ***** FIN DE LA SECCIÓN DE DIFICULTAD ***** -->
+
         <div class="detail-section">
             <p class="text-warning">Detalle de la Ruta:</p>
             {# Se eliminó el filtro '| title' para que el contenido HTML se renderice correctamente #}

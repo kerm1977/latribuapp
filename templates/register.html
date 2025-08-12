@@ -46,19 +46,19 @@
                 <!-- Nombre -->
                 <div class="mb-3">
                     <label for="nombre" class="form-label">Nombre *</label>
-                    <input type="text" class="form-control" id="nombre" name="nombre" value="{{ request.form.get('nombre', '') }}" required>
+                    <input type="text" class="form-control" id="nombre" name="nombre" value="{{ request.form.get('nombre', '') | title }}" required>
                 </div>
 
                 <!-- Primer Apellido -->
                 <div class="mb-3">
                     <label for="primer_apellido" class="form-label">Primer Apellido *</label>
-                    <input type="text" class="form-control" id="primer_apellido" name="primer_apellido" value="{{ request.form.get('primer_apellido', '') }}" required>
+                    <input type="text" class="form-control" id="primer_apellido" name="primer_apellido" value="{{ request.form.get('primer_apellido', '') | title }}" required>
                 </div>
 
                 <!-- Segundo Apellido (Opcional) -->
                 <div class="mb-3">
                     <label for="segundo_apellido" class="form-label">Segundo Apellido (Opcional)</label>
-                    <input type="text" class="form-control" id="segundo_apellido" name="segundo_apellido" value="{{ request.form.get('segundo_apellido', '') }}">
+                    <input type="text" class="form-control" id="segundo_apellido" name="segundo_apellido" value="{{ request.form.get('segundo_apellido', '') | title }}">
                 </div>
 
                 <!-- Email (Requerido) -->

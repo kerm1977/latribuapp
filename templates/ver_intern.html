@@ -1,106 +1,92 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes de Viajes Internacionales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #dee2e6;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-img-top {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #e9ecef;
+        }
+        .card-title {
+            font-weight: bold;
+        }
+        .card-text {
+            color: #6c757d;
+        }
+        .btn-warning {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Planes de Viajes Internacionales</h1>
+            <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning">
+                <i class="fas fa-plus"></i> Crear Nuevo Plan
+            </a>
+        </div>
 
-{% block title %}Viajes Internacionales{% endblock %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-{% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4 text-center">Área Internacional</h2>
-    <hr>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="row">
+            {% if viajes %}
+                {% for viaje in viajes %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="{{ viaje.flyer if viaje.flyer else 'https://placehold.co/600x400/E9ECEF/495057?text=Sin+Flyer' }}" 
+                             class="card-img-top" 
+                             alt="Flyer de {{ viaje.nombre_viaje }}"
+                             onerror="this.onerror=null;this.src='https://placehold.co/600x400/E9ECEF/495057?text=Error';">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
+                            <p class="card-text"><i class="fas fa-map-marker-alt me-2"></i>{{ viaje.pais }}</p>
+                            {% if viaje.precio_paquete and viaje.precio_paquete > 0 %}
+                                <p class="card-text fw-bold fs-5">{{ "%.2f"|format(viaje.precio_paquete) }} {{ viaje.tipo_moneda }}</p>
+                            {% endif %}
+                            <div class="mt-auto">
+                                <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-outline-primary w-100">Ver Detalles</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>Listado de Viajes Internacionales</h3>
-        <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i> Crear Nuevo Viaje
-        </a>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        No hay planes de viaje creados todavía. ¡Crea el primero!
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
-    {% if not travels %}
-        <div class="alert alert-info text-center" role="alert">
-            No hay viajes internacionales registrados aún. ¡Crea uno nuevo!
-        </div>
-    {% else %}
-        <div class="table-responsive">
-            <table class="table table-hover table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Contacto</th>
-                        <th scope="col">País Destino</th>
-                        <th scope="col">Aerolínea Ida</th>
-                        <th scope="col">Fecha Ida</th>
-                        <th scope="col">Aerolínea Vuelta</th>
-                        <th scope="col">Fecha Vuelta</th>
-                        <th scope="col">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for travel in travels %}
-                    <tr>
-                        <th scope="row">{{ travel.id }}</th>
-                        <td>
-                            {% if travel.contact %}
-                                {{ travel.contact.nombre }} {{ travel.contact.primer_apellido }}
-                            {% else %}
-                                {{ travel.nombre_contacto_manual }} {{ travel.apellido_contacto_manual }}
-                            {% endif %}
-                        </td>
-                        <td>{{ travel.pais_destino_america }}</td>
-                        <td>{{ travel.aerolinea_ida }}</td>
-                        <td>{{ travel.fecha_vuelo_ida.strftime('%d/%m/%Y') if travel.fecha_vuelo_ida else 'N/A' }}</td>
-                        <td>{{ travel.aerolinea_vuelta }}</td>
-                        <td>{{ travel.fecha_vuelo_vuelta.strftime('%d/%m/%Y') if travel.fecha_vuelo_vuelta else 'N/A' }}</td>
-                        <td>
-                            <a href="{{ url_for('intern.detalle_intern', travel_id=travel.id) }}" class="btn btn-info btn-sm" title="Ver Detalles">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ url_for('intern.editar_intern', travel_id=travel.id) }}" class="btn btn-warning btn-sm" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ travel.id }}" title="Eliminar">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-
-                            <div class="modal fade" id="deleteModal{{ travel.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ travel.id }}" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="deleteModalLabel{{ travel.id }}">Confirmar Eliminación</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            ¿Estás seguro de que quieres eliminar el viaje internacional a **{{ travel.pais_destino_america }}** de
-                                            {% if travel.contact %}
-                                                **{{ travel.contact.nombre }} {{ travel.contact.primer_apellido }}**
-                                            {% else %}
-                                                **{{ travel.nombre_contacto_manual }} {{ travel.apellido_contacto_manual }}**
-                                            {% endif %}? Esta acción no se puede deshacer.
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <form action="{{ url_for('intern.eliminar_intern', travel_id=travel.id) }}" method="POST" class="d-inline">
-                                                <button type="submit" class="btn btn-danger">Eliminar</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
-</div>
-{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

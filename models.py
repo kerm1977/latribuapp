@@ -1,4 +1,4 @@
-# models.py
+    # models.py
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
@@ -524,6 +524,7 @@ class Ruta(db.Model):
     gpx_file_url = db.Column(db.String(255), nullable=True)
     kml_file_url = db.Column(db.String(255), nullable=True)
     kmz_file_url = db.Column(db.String(255), nullable=True)
+    dificultad = db.Column(db.String(50), nullable=False, default='Básico')
 
     def __repr__(self):
         return f"Ruta(Nombre: {self.nombre}, Categoría: {self.provincia}, Fecha: {self.fecha}, Precio: {self.precio})"

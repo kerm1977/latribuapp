@@ -835,3 +835,235 @@ detalle_polizas.html
 estA vista mostrará absolutamente todo lo ingresado desde crear_polizas.html con los botones de exportar a jpg, pdf, txt con utf-8 editar y eliminar como te indiqué al inicio construidos con Flask y Flash y el Modal con bootstrap
 
 Agregar ver_polizas al perfil 
+
+
+
+
+
+
+
+
+
+PLANIFICADOR  INTERNACION
+
+Genial ahora necesito crear un nueva área
+Solo se va a exportar lo necesario a app.py
+Todos los botones de borrar o eliminar tienen que ser construidos con Flask y Flash y el Modal con bootstrap
+las opciones de exportar a jpg, pdf, txt con utf-8 para que reconozca la ñ y las tildes (solo en caso de que existiera)
+cada archivo y cada vista vas a darmelo cuando te diga ok
+Permitir exporta a PDF, TXT, JPG, EXCEL 
+Los cards no pueden contener sombras. los botones de crear deben tener color warning.
+Vas a generar todo el código en el canvas pero vas a crear cada enlace también con cada vista
+No mostrar en detalle_intern.html ni en ver_intern.html precios en 0 ni campos que tengan N/A ni divisiones en Cero
+
+
+las áreas que va a contener son:
+intern.py va a contener los modelos y absolutamente toda la lógica de esta área
+crear_intern.html
+editar_intern.html
+detalle_intern.html
+ver_intern.html
+
+
+Ahora en crear_intern.html va a estar lo siguiente
+
+TITULO DESTINO
+Flyer
+Nombre del viaje
+Precio del Paquete
+Capacidad
+Tipo de Moneda
+Tipo de Cambio
+País Select Destinos probables
+Panamá
+Nicaragua
+Honduras
+El Salvador
+Guatemala
+México
+Perú
+España
+
+SEPARADOR  ADMINISTRACIÓN DE VIAJE
+
+subtitulo LLAMADO PRE-ALERTA
+Agregar una pre-alerta con un + 
+que cada opción agregada tenga un número consecutivo
+# Lista de opciones para Declaración de Tarjetas
+Prealertas de banco
+DECLARACION_TARJETAS DE(
+    "Banco de Costa Rica (BCR)", "Banco Nacional de Costa Rica (BNCR)", "Banco Popular",
+    "Mucap", "Mutual", "BAC Credomatic", "Banco Cathay", "Banco BCT", "Banco CMB",
+    "Banco Davivienda", "Banco General", "Banco Improsa", "Banco Lafise", "Banco Promérica",
+    "Prival Bank", "Scotiabank", "Coopealianza", "Coopeande", "CoopeAnde No. 1",
+    "CoopeAnde No. 2", "CoopeAnde No. 3", "CoopeAnde No. 4", "CoopeAnde No. 5",
+    "CoopeAnde No. 6", "CoopeAnde No. 7", "CoopeAnde No. 8", "CoopeAnde No. 9",
+    "CoopeAnde No. 10", "CoopeAnde No. 11", "CoopeCaja", "Caja de ANDE", "COOPENAE",
+    "COOPEUCHA", "COOPESANRAMON", "COOPESERVIDORES", "COOPEUNA", "CREDECOOP"
+), 
+Telefono Entidad Financiera
+Fecha de la prealerta, 
+Nombre del Asesor Bancario, 
+Hora de la Prealerta, 
+Número de la prealerta
+Fecha prealertada desde hasta.
+
+
+SEPARADOR  LUGARES A VISITAR
+
+Agregar un nuevo lugar  con un + 
+que cada opción agregada tenga un número consecutivo
+Select (Volcan, montaña, Playa, Ciudad, Parque Nacional, Camino, Otros),
+Nombre de Sitio
+Precio de Entrada,
+fecha Reserva datapicker (Fecha Costa rica)  
+Guía Local(Si, No), 
+Nombre Gúia,
+Teléfono del Lugar, 
+Telefono del contacto, 
+Whatsapp del Contacto,
+Enlaces
+Nota: 
+Email,
+-----------------------------------------------
+TOTAL DE ATRACCIONES (Suma cada campo del precio del transporte creado)
+
+
+
+SEPARADOR TRANSPORTES
+
+Agregar un transporte con un + 
+que cada opción agregada tenga un número consecutivo
+Select (Buseta, Bus, Táxi, Uber, Auto, Lancha, Avión)
+Nombre del Transporte
+Conductor del transporte
+Precio del Transporte, 
+Nombre Conductor,
+fecha Contratación datapicker (Fecha Costa rica) 
+Teléfono del Lugar, 
+Telefono del contacto, 
+Whatsapp del Contacto, 
+Email,
+Enlaces
+Nota:
+
+ 
+-----------------------------------------------
+TOTAL DE TRANSPORTE (Suma cada campo del precio del transporte creado)
+
+
+
+SEPARADOR LLAMADO GUÍAS
+
+Agregar un guía con un + 
+que cada opción agregada tenga un número consecutivo
+Nombre 
+Teléfono 
+Operador 
+Email, 
+whatsapp 
+Precio Guía PP, 
+CPL, 
+fecha disponible, 
+Reserva, 
+Precio acarreo
+Enlaces
+Nota:
+fecha Reserva datapicker (Fecha Costa rica)
+-----------------------------------------------
+TOTAL DE GUÍAS POR PERSONA (Suma Precio acarreo +  precio Guia)
+
+
+
+SEPARADOR LLAMADO ESTADÍAS
+
+Estadía ir Agregando una nueva estádía con un +
+que cada opción agregada tenga un número consecutivo
+Nombre, 
+Contacto, 
+Teléfono, 
+Whatsapp, 
+Email, 
+Precio PP x  
+CPL(si,no), 
+fecha disponible Reserva, 
+Alimentación Incluido (Si, NO), 
+Cantidad de Noches
+Enlaces
+Nota:
+fecha datapicker (Fecha Costa rica) Entrada
+fecha datapicker (Fecha Costa rica) Salida 
+-----------------------------------------------
+TOTAL DE ESTADÍA POR PERSONA (Suma cada de Precio por persona * Cantidad de Noches)
+
+
+SEPARADOR LLAMADO AEROLINEA
+
+Aerolíneas
+Agregando una nueva aerolínea con un +
+Tipo de Transporte(Bus, Buseta, Auto, Moto, Barco, Avión) Si es en avión habilitar Las opciones aerolineas sino dejarlo bloqueado
+AEROLINEA_OPTIONS = sorted([ # Ordenar alfabéticamente
+    "Avianca", "American Airlines", "Copa", "Volaris", "Jetblue", "Sansa", "Spirit", "United", "Wingo", "KLM", "Iberia", "Lufthansa", "Latam Airlines", "IberoJet", "Delta", "AirFrance", "Alaska", "AeroMéxico", "Arajet", "Air Canadá", "Airtransat", "Green Airways", "Southwest", "Edelweiss", "Frontier", "GOL"
+]),  
+Teléfono Aerolínea, 
+Email, 
+Whatsapp, 
+Teléfono de pre-alertar fecha datapicker (Fecha Costa rica), T
+Enlace para prealertar, 
+Número de Vuelo, 
+Horario de Salida, 
+Horario de Llegada,  
+Nombre del Aeropuerto, 
+Teléfono del Aeropuerto, 
+Precio Asientos, 
+Precio Maletas Documentado, 
+Equipaje de Mano, 
+Precio Estandar, 
+Precio Mas equipo, 
+Precio Salida rápida, 
+Precio Premium, 
+Precio VIP, 
+Precio Basic, 
+Precio Classic, 
+Precio FlexIBLE) 
+Precio Impuestos, 
+Descripción #1
+Otros Costos #1
+cantidad
+Descripción #2
+Otros Costos #2
+cantidad
+Descripción #3
+Otros Costos #3
+cantidad
+Descripción #4
+Otros Costos #4
+cantidad
+fecha de Compra datapicker (Fecha Costa rica)
+
+-----------------------------------------------
+TOTAL DE AEROLINEA POR PERSONA (Suma todos los campos que dicen Precio Y OTROS COSTOS)
+
+
+Ahora suma absolutamente todos los totales en un CampoS llamadoS 
+TOTAL INDIVIDUAL CRC / El campo llamado Tipo de cambio
+TOTAL INDIVIDUAL USD == TOTAL INDIVIDUAL CRC / El campo llamado Tipo de Cambio
+
+
+
+
+
+Creame una calculadora
+que me permita seleccionar  Dolares, Quetzales, Lempira, cordoba, Balboa , USD  a colones y de colones a Dolares, Quetzales, Lempira, cordoba, Balboa y hacer la conversión
+
+
+editar_intern.html
+Permitir editar absolutamente todo lo que se ingresó por medio de crear_intern.html
+
+detalle_intern.html
+Permite que vea toda la información detallada ingresada  por medio de crear_intern.html
+
+
+ver_intern.html.html
+Permite ver la tarjeta con el País,  nombre del viaje, Flyer, precio y fecha
+

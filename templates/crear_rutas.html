@@ -106,6 +106,19 @@
                 {% endfor %}
             </select>
         </div>
+        
+        <!-- ***** NUEVO: Campo de selección para Dificultad ***** -->
+        <div class="form-group mb-3">
+            <label for="dificultad">Dificultad:</label>
+            <select class="form-control" id="dificultad" name="dificultad" required>
+                <option value="" disabled selected>Selecciona una dificultad</option>
+                {% for dificultad in dificultades %}
+                    <option value="{{ dificultad }}">{{ dificultad }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- ***** FIN DEL NUEVO CAMPO ***** -->
+
         <div class="form-group mb-3">
             <label for="fecha">Fecha:</label>
             <input type="date" class="form-control" id="fecha" name="fecha"> {# Fecha no obligatoria #}
