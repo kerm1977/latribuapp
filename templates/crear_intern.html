@@ -363,6 +363,12 @@
                     <input type="number" step="0.01" name="lugar_total_individual[]" class="form-control price-atraccion-individual" value="" oninput="handleAtraccionInput(this.closest('.dynamic-item'), event)">
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Costo Calculado (USD)</label>
+                    <span class="form-control-plaintext" id="costo-calculado-atraccion-${lugarCount}">0.00</span>
+                </div>
+            </div>
             <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#lugar-details-${lugarCount}">
                 Más Detalles <i class="fas fa-chevron-down"></i>
             </button>
@@ -608,7 +614,7 @@
                 </div>
                 <div class="row">
                     <div class="col-md-12 mb-3">
-                        <label class="form-label">Nota</label>
+                        <label class="form-label">Notas</label>
                         <textarea name="guia_nota[]" class="form-control" rows="2"></textarea>
                     </div>
                 </div>
@@ -702,7 +708,7 @@
                 </div>
                 <div class="row">
                     <div class="col-md-12 mb-3">
-                        <label class="form-label">Nota</label>
+                        <label class="form-label">Notas</label>
                         <textarea name="estadia_nota[]" class="form-control" rows="2"></textarea>
                     </div>
                 </div>
@@ -913,61 +919,80 @@
         const cantCGuiasInput = item.querySelector('.cant-c-guias');
         const cantSGuiasInput = item.querySelector('.cant-s-guias');
         const individualInput = item.querySelector('.price-atraccion-individual');
+        const costoCalculadoAtraccionDisplay = item.querySelector(`#costo-calculado-atraccion-${item.id.split('-')[1]}`);
 
-        const precioEntrada = parseFloat(precioEntradaInput.value) || 0;
-        const cantCGuias = parseInt(cantCGuiasInput.value) || 0;
-        const cantSGuias = parseInt(cantSGuiasInput.value) || 0;
-        const individualValue = parseFloat(individualInput.value);
+        let precioEntrada = parseFloat(precioEntradaInput.value) || 0;
+        let cantCGuias = parseInt(cantCGuiasInput.value) || 0;
+        let cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+        let individualValue = parseFloat(individualInput.value) || 0;
 
         const changedInput = event.target;
 
+        // --- Lógica para Individual (USD) y estados de los campos relacionados ---
         if (changedInput === individualInput) {
-            // If individual input was changed manually
-            if (individualInput.value !== "" && individualValue !== 0) {
-                // If individual has a value, disable and clear formula inputs
+            if (individualInput.value.trim() !== "" && individualValue !== 0) {
+                // Si el campo Individual se modificó manualmente y tiene un valor
+                // Deshabilitar y limpiar los campos de la fórmula
                 precioEntradaInput.disabled = true;
                 cantCGuiasInput.disabled = true;
                 cantSGuiasInput.disabled = true;
-                precioEntradaInput.value = "0"; // Set to "0" for price input
-                cantCGuiasInput.value = ""; // Set to "" for quantity input
-                cantSGuiasInput.value = ""; // Set to "" for quantity input
+                precioEntradaInput.value = "0"; // Limpiar para fuentes de cálculo
+                cantCGuiasInput.value = "";
+                cantSGuiasInput.value = "";
+                // El campo Individual se mantiene habilitado y reflejando su valor manual
             } else {
-                // Individual input is cleared or 0, re-enable formula inputs
+                // El campo Individual se limpió o se puso a 0, re-habilitar los campos de la fórmula
                 precioEntradaInput.disabled = false;
                 cantCGuiasInput.disabled = false;
                 cantSGuiasInput.disabled = false;
-                // Now, re-evaluate based on formula inputs (if they have values)
+                
+                // Volver a leer los valores actuales para el cálculo si los inputs están habilitados
+                precioEntrada = parseFloat(precioEntradaInput.value) || 0;
+                cantCGuias = parseInt(cantCGuiasInput.value) || 0;
+                cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+
                 if (precioEntrada !== 0 || cantCGuias !== 0 || cantSGuias !== 0) {
-                    const calculatedValue = precioEntrada * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
-                    individualInput.value = calculatedValue.toFixed(2);
-                    individualInput.disabled = true;
+                    // Calcular Individual (USD) basado en la fórmula
+                    individualValue = (precioEntrada * cantCGuias) / (cantSGuias === 0 ? 1 : cantSGuias);
+                    individualInput.value = individualValue.toFixed(2);
+                    individualInput.disabled = true; // Deshabilitar ya que es calculado
                 } else {
-                    // All fields are empty/0, ensure individual is enabled and clear
-                    individualInput.value = "";
-                    individualInput.disabled = false;
+                    individualInput.value = ""; // Limpiar si ningún campo de fórmula tiene valores
+                    individualInput.disabled = false; // Mantener habilitado para entrada manual
                 }
             }
         } else {
-            // If a formula input (precioEntrada, cantCGuias, cantSGuias) was changed
+            // Si un campo de la fórmula (Precio Entrada, Cant. C/GUIAS, Cant. S/GUIAS) fue modificado
+            // Asegurarse de que los campos de la fórmula estén habilitados
+            precioEntradaInput.disabled = false;
+            cantCGuiasInput.disabled = false;
+            cantSGuiasInput.disabled = false;
+
+            // Volver a leer los valores actuales de los inputs
+            precioEntrada = parseFloat(precioEntradaInput.value) || 0;
+            cantCGuias = parseInt(cantCGuiasInput.value) || 0;
+            cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+
             if (precioEntrada !== 0 || cantCGuias !== 0 || cantSGuias !== 0) {
-                // If any formula input has a value, calculate individual and disable it
-                const calculatedValue = precioEntrada * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
-                individualInput.value = calculatedValue.toFixed(2);
-                individualInput.disabled = true;
-                // Ensure formula inputs are enabled
-                precioEntradaInput.disabled = false;
-                cantCGuiasInput.disabled = false;
-                cantSGuiasInput.disabled = false;
+                // Calcular Individual (USD) basado en la fórmula
+                individualValue = (precioEntrada * cantCGuias) / (cantSGuias === 0 ? 1 : cantSGuias);
+                individualInput.value = individualValue.toFixed(2);
+                individualInput.disabled = true; // Deshabilitar ya que es calculado
             } else {
-                // All formula inputs are empty/0, clear individual and enable it
-                individualInput.value = "";
-                individualInput.disabled = false;
-                // Ensure formula inputs are enabled
-                precioEntradaInput.disabled = false;
-                cantCGuiasInput.disabled = false;
-                cantSGuiasInput.disabled = false;
+                individualInput.value = ""; // Limpiar si ningún campo de fórmula tiene valores
+                individualInput.disabled = false; // Mantener habilitado para entrada manual
             }
         }
+
+        // --- Lógica para Costo Calculado (USD) ---
+        // Esto siempre usa los valores *actuales* de Precio Entrada y Cant. C/GUIAS
+        // lo que podría ser 0 si 'Individual (USD)' se configuró manualmente y los limpió.
+        const currentPrecioEntradaForCosto = parseFloat(precioEntradaInput.value) || 0;
+        const currentCantCGuiasForCosto = parseInt(cantCGuiasInput.value) || 0;
+        
+        calculatedCosto = currentPrecioEntradaForCosto * currentCantCGuiasForCosto;
+        costoCalculadoAtraccionDisplay.textContent = calculatedCosto.toFixed(2);
+
         updateTotalAtracciones();
     }
 
@@ -1003,7 +1028,6 @@
         // Reset calculated fields before new calculations
         let calculatedPrecioTransporte = 0;
         let calculatedTotalTC = 0;
-        let calculatedIndividual = 0;
         let isIndividualCalculated = false;
 
         // Lógica principal: Individual (USD) tiene la máxima prioridad
@@ -1043,41 +1067,26 @@
                     individualTransporteInput.disabled = true; // Disable as it's calculated
                     isIndividualCalculated = true;
 
-                    // Disable other primary inputs if this path is taken
-                    cantCGuiasInput.disabled = false; // Keep these enabled as they are part of the formula
-                    cantSGuiasInput.disabled = false; // Keep these enabled as they are part of the formula
+                    // Ensure formula inputs for this path are enabled
+                    tipoCambioTransporteInput.disabled = false;
+                    colonesTransporteInput.disabled = false;
+                    cantCGuiasInput.disabled = false;
+                    cantSGuiasInput.disabled = false;
 
-                } else if (precioTransporteInput.value !== "" && (cantCGuias !== 0 || cantSGuias !== 0)) { // Fallback if TC/Colones not used
-                    // This path is now less likely if precioTransporteInput is always calculated.
-                    // Re-think this part: if precioTransporteInput is always calculated, this branch is unreachable.
-                    // The only way precioTransporteInput has a value *not* from TC/Colones is if it was manually set (which it shouldn't be now).
-                    // So, if colones/TC are empty, then individual should be empty too.
-                    individualTransporteInput.value = "";
-                    individualTransporteInput.disabled = false;
-                    totalTCDisplay.value = "";
-                    precioTransporteInput.value = "0"; // Ensure it's reset if no calculation applies
-                    precioTransporteInput.disabled = false; // Re-enable if no calculation applies
-                    cantCGuiasInput.value = "";
-                    cantSGuiasInput.value = "";
                 } else {
-                    // Si no hay valores para calcular, Individual se habilita para entrada manual
-                    individualTransporteInput.value = "";
-                    individualTransporteInput.disabled = false;
+                    // If Colones/TC are not used, clear their calculated outputs and enable inputs
                     totalTCDisplay.value = "";
                     precioTransporteInput.value = "0";
-                    precioTransporteInput.disabled = false;
-                    cantCGuiasInput.value = "";
-                    cantSGuiasInput.value = "";
+                    precioTransporteInput.disabled = false; // Re-enable if not calculated
+                    
+                    // If no calculation path is active, ensure Individual is empty and enabled
+                    individualTransporteInput.value = "";
+                    individualTransporteInput.disabled = false;
                 }
             }
         } else {
             // Si un campo de cálculo (no Individual) fue modificado
             // Habilitar todos los campos de cálculo primero, luego deshabilitar según la lógica
-            precioTransporteInput.disabled = false;
-            cantCGuiasInput.disabled = false;
-            cantSGuiasInput.disabled = false;
-            tipoCambioTransporteInput.disabled = false;
-            colonesTransporteInput.disabled = false;
             individualTransporteInput.disabled = false; // Temporarily enable individual
 
             if (colonesTransporte !== 0 && tipoCambioTransporte !== 0) {
@@ -1090,29 +1099,22 @@
                 
                 individualTransporteInput.value = calculatedPrecioTransporte.toFixed(2);
                 individualTransporteInput.disabled = true; // Disable as it's calculated
-                isIndividualCalculated = true;
 
-                // Disable the alternative calculation path inputs
-                // No need to disable cantCGuias/cantSGuias as they are part of the formula for precioTransporteInput
-                // Keep tipoCambioTransporteInput and colonesTransporteInput enabled as they are inputs for this path
+                // Ensure inputs for this path are enabled
+                tipoCambioTransporteInput.disabled = false;
+                colonesTransporteInput.disabled = false;
+                cantCGuiasInput.disabled = false;
+                cantSGuiasInput.disabled = false;
+
             } else {
                 // If Colones/TC are not used, clear their calculated outputs
                 totalTCDisplay.value = "";
-                precioTransporteInput.value = "0"; // Reset calculated price
-                precioTransporteInput.disabled = false; // Re-enable if no calculation applies
+                precioTransporteInput.value = "0";
+                precioTransporteInput.disabled = false; // Re-enable if not calculated
 
-                // Now, check if cantCGuias or cantSGuias have values to calculate individual
-                if (cantCGuias !== 0 || cantSGuias !== 0) {
-                    // This scenario is now only if precioTransporteInput is manually entered (which it shouldn't be)
-                    // Or if precioTransporteInput was calculated by a previous step and now colones/TC are cleared.
-                    // Let's assume if colones/TC are empty, then individual should be empty.
-                    // This means the only way individual gets a value is through colones/TC.
-                    individualTransporteInput.value = "";
-                    individualTransporteInput.disabled = false;
-                } else {
-                    individualTransporteInput.value = "";
-                    individualTransporteInput.disabled = false;
-                }
+                // If no calculation path is active, ensure Individual is empty and enabled
+                individualTransporteInput.value = "";
+                individualTransporteInput.disabled = false;
             }
         }
         updateTotalTransporte();
@@ -1140,10 +1142,12 @@
 
         const changedInput = event.target;
 
+        const isIndividualManuallySet = individualGuiaInput.value.trim() !== '' && individualGuiaValue !== 0;
+        const areFormulaInputsSet = precioGuiaPP !== 0 || precioAcarreo !== 0;
+
         if (changedInput === individualGuiaInput) {
             // If individual input was changed manually
-            if (individualGuiaInput.value !== "" && individualGuiaValue !== 0) {
-                // If individual has a value, disable and clear formula inputs
+            if (isIndividualManuallySet) {
                 precioGuiaPPInput.disabled = true;
                 precioAcarreoInput.disabled = true;
                 precioGuiaPPInput.value = "0"; // Set to "0" for price input
@@ -1152,32 +1156,29 @@
                 // Individual input is cleared or 0, re-enable formula inputs
                 precioGuiaPPInput.disabled = false;
                 precioAcarreoInput.disabled = false;
-                // Now, re-evaluate based on formula inputs (if they have values)
-                if (precioGuiaPP !== 0 || precioAcarreo !== 0) {
+
+                if (areFormulaInputsSet) {
                     const calculatedValue = precioGuiaPP + precioAcarreo;
                     individualGuiaInput.value = calculatedValue.toFixed(2);
                     individualGuiaInput.disabled = true;
                 } else {
-                    // All fields are empty/0, ensure individual is enabled and clear
                     individualGuiaInput.value = "";
                     individualGuiaInput.disabled = false;
                 }
             }
         } else {
             // If a formula input (precioGuiaPP, precioAcarreo) was changed
-            if (precioGuiaPP !== 0 || precioAcarreo !== 0) {
-                // If any formula input has a value, calculate individual and disable it
+            if (areFormulaInputsSet) {
                 const calculatedValue = precioGuiaPP + precioAcarreo;
                 individualGuiaInput.value = calculatedValue.toFixed(2);
                 individualGuiaInput.disabled = true;
-                // Ensure formula inputs are enabled
+
                 precioGuiaPPInput.disabled = false;
                 precioAcarreoInput.disabled = false;
             } else {
-                // All formula inputs are empty/0, clear individual and enable it
                 individualGuiaInput.value = "";
                 individualGuiaInput.disabled = false;
-                // Ensure formula inputs are enabled
+
                 precioGuiaPPInput.disabled = false;
                 precioAcarreoInput.disabled = false;
             }
