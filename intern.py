@@ -37,6 +37,7 @@ class Intern(db.Model):
     guias = relationship('Guia', backref='intern', cascade="all, delete-orphan")
     estadias = relationship('Estadia', backref='intern', cascade="all, delete-orphan")
     aerolineas = relationship('Aerolinea', backref='intern', cascade="all, delete-orphan")
+    otros = relationship('Otro', backref='intern', cascade="all, delete-orphan") # New relationship for "Otros"
 
 class PreAlerta(db.Model):
     __tablename__ = 'pre_alerta'
@@ -67,6 +68,9 @@ class LugarVisitar(db.Model):
     email = Column(String(120))
     enlaces = Column(Text)
     nota = Column(Text)
+    # Add new fields for Cant. C/GUIAS and Cant. S/GUIAS if needed for storage
+    # cant_c_guias = Column(Integer, default=0)
+    # cant_s_guias = Column(Integer, default=0)
 
 class Transporte(db.Model):
     __tablename__ = 'transporte'
@@ -83,6 +87,11 @@ class Transporte(db.Model):
     email = Column(String(120))
     enlaces = Column(Text)
     nota = Column(Text)
+    # Add new fields for Cant. C/GUIAS and Cant. S/GUIAS if needed for storage
+    # cant_c_guias = Column(Integer, default=0)
+    # cant_s_guias = Column(Integer, default=0)
+    # tipo_cambio = Column(Float, default=0.0)
+    # colones = Column(Float, default=0.0)
 
 class Guia(db.Model):
     __tablename__ = 'guia'
@@ -94,10 +103,13 @@ class Guia(db.Model):
     email = Column(String(120))
     whatsapp = Column(String(20))
     precio_guia_pp = Column(Float, default=0.0)
+    cant_guias = Column(Integer, default=0) # New field
+    cant_s_guias = Column(Integer, default=0) # New field
     cpl = Column(String(10))
     fecha_disponible = Column(Date)
     reserva = Column(String(50))
     precio_acarreo = Column(Float, default=0.0)
+    cant_acarreo = Column(Integer, default=0) # New field
     enlaces = Column(Text)
     nota = Column(Text)
     fecha_reserva = Column(Date)
@@ -112,6 +124,8 @@ class Estadia(db.Model):
     whatsapp = Column(String(20))
     email = Column(String(120))
     precio_pp = Column(Float, default=0.0)
+    cant_c_guias = Column(Integer, default=0) # New field
+    cant_s_guias = Column(Integer, default=0) # New field
     cpl = Column(Boolean, default=False)
     fecha_disponible = Column(Date)
     alimentacion_incluida = Column(Boolean, default=False)
@@ -152,6 +166,17 @@ class Aerolinea(db.Model):
     otros_costos = Column(Text)
     fecha_compra = Column(Date)
 
+class Otro(db.Model): # New Model for "Otros" section
+    __tablename__ = 'otro'
+    id = Column(Integer, primary_key=True)
+    intern_id = Column(Integer, ForeignKey('intern.id'), nullable=False)
+    nuevo_pago = Column(String(150))
+    descripcion_pago = Column(Text)
+    precio_usd = Column(Float, default=0.0)
+    cant_c_guias = Column(Integer, default=0)
+    cant_s_guias = Column(Integer, default=0)
+
+
 # --- FUNCIONES AUXILIARES ---
 def allowed_file(filename):
     return '.' in filename and \
@@ -170,12 +195,18 @@ def save_flyer(file):
 
 def safe_float(value, default=0.0):
     try:
+        # Handle empty strings or None by returning default
+        if value is None or value == '':
+            return default
         return float(value)
     except (ValueError, TypeError):
         return default
 
 def safe_int(value, default=0):
     try:
+        # Handle empty strings or None by returning default
+        if value is None or value == '':
+            return default
         return int(value)
     except (ValueError, TypeError):
         return default
@@ -220,7 +251,7 @@ def crear_intern():
                 pais=request.form.get('pais'),
             )
             db.session.add(nuevo_viaje)
-            db.session.flush()
+            db.session.flush() # Flush to get nuevo_viaje.id
 
             # --- GUARDAR PRE-ALERTAS ---
             bancos = request.form.getlist('prealerta_banco[]')
@@ -232,18 +263,20 @@ def crear_intern():
             fechas_desde = request.form.getlist('prealerta_desde[]')
             fechas_hasta = request.form.getlist('prealerta_hasta[]')
 
-            for i in range(len(bancos)):
-                if bancos[i]:
+            # Use zip to handle potentially different lengths and ensure safe iteration
+            for banco, telefono, fecha_pa, asesor, hora_pa, numero_pa, fecha_de, fecha_ha in \
+                zip(bancos, telefonos_entidad, fechas_prealerta, asesores, horas_prealerta, numeros_prealerta, fechas_desde, fechas_hasta):
+                if banco: # Only add if the main field (banco) is not empty
                     prealerta = PreAlerta(
                         intern_id=nuevo_viaje.id,
-                        banco=bancos[i],
-                        telefono_entidad=telefonos_entidad[i],
-                        fecha_prealerta=to_date(fechas_prealerta[i]),
-                        asesor=asesores[i],
-                        hora_prealerta=to_time(horas_prealerta[i]),
-                        numero_prealerta=numeros_prealerta[i],
-                        fecha_desde=to_date(fechas_desde[i]),
-                        fecha_hasta=to_date(fechas_hasta[i])
+                        banco=banco,
+                        telefono_entidad=telefono,
+                        fecha_prealerta=to_date(fecha_pa),
+                        asesor=asesor,
+                        hora_prealerta=to_time(hora_pa),
+                        numero_prealerta=numero_pa,
+                        fecha_desde=to_date(fecha_de),
+                        fecha_hasta=to_date(fecha_ha)
                     )
                     db.session.add(prealerta)
 
@@ -252,7 +285,8 @@ def crear_intern():
             tipos_lugar = request.form.getlist('lugar_tipo[]')
             precios_entrada = request.form.getlist('lugar_precio[]')
             fechas_reserva = request.form.getlist('lugar_fecha_reserva[]')
-            guias_locales = request.form.getlist('lugar_guia_local[]')
+            # guias_locales is a list of checkbox values, e.g., ['lugar-1-guia-local', 'lugar-3-guia-local']
+            guias_locales_checked = request.form.getlist('lugar_guia_local_checkbox') 
             nombres_guia_local = request.form.getlist('lugar_nombre_guia[]')
             telefonos_lugar = request.form.getlist('lugar_telefono_lugar[]')
             telefonos_contacto = request.form.getlist('lugar_telefono_contacto[]')
@@ -260,23 +294,28 @@ def crear_intern():
             emails = request.form.getlist('lugar_email[]')
             enlaces = request.form.getlist('lugar_enlaces[]')
             notas = request.form.getlist('lugar_nota[]')
+            # Assuming cant_c_guias and cant_s_guias are not directly stored in LugarVisitar model
+            # If they need to be stored, add them to the LugarVisitar model and retrieve them here.
 
-            for i in range(len(nombres_sitio)):
-                if nombres_sitio[i]:
+            for i, (nombre_sitio, tipo_lugar, precio_entrada, fecha_reserva, nombre_guia, tel_lugar, tel_contacto, whatsapp_contacto, email, enlace, nota) in \
+                enumerate(zip(nombres_sitio, tipos_lugar, precios_entrada, fechas_reserva, nombres_guia_local, telefonos_lugar, telefonos_contacto, whatsapps_contacto, emails, enlaces, notas)):
+                if nombre_sitio:
+                    # Check if the specific checkbox for this item was checked
+                    is_guia_local_checked = f'guia-local-check-{i+1}' in guias_locales_checked # Adjusted ID for checkbox
                     lugar = LugarVisitar(
                         intern_id=nuevo_viaje.id,
-                        tipo_lugar=tipos_lugar[i],
-                        nombre_sitio=nombres_sitio[i],
-                        precio_entrada=safe_float(precios_entrada[i]),
-                        fecha_reserva=to_date(fechas_reserva[i]),
-                        guia_local=(f'lugar-{i+1}' in guias_locales), # Check if checkbox was sent
-                        nombre_guia=nombres_guia_local[i],
-                        telefono_lugar=telefonos_lugar[i],
-                        telefono_contacto=telefonos_contacto[i],
-                        whatsapp_contacto=whatsapps_contacto[i],
-                        email=emails[i],
-                        enlaces=enlaces[i],
-                        nota=notas[i]
+                        tipo_lugar=tipo_lugar,
+                        nombre_sitio=nombre_sitio,
+                        precio_entrada=safe_float(precio_entrada),
+                        fecha_reserva=to_date(fecha_reserva),
+                        guia_local=is_guia_local_checked, 
+                        nombre_guia=nombre_guia,
+                        telefono_lugar=tel_lugar,
+                        telefono_contacto=tel_contacto,
+                        whatsapp_contacto=whatsapp_contacto,
+                        email=email,
+                        enlaces=enlace,
+                        nota=nota
                     )
                     db.session.add(lugar)
             
@@ -284,13 +323,19 @@ def crear_intern():
             nombres_transporte = request.form.getlist('transporte_nombre[]')
             tipos_transporte = request.form.getlist('transporte_tipo[]')
             precios_transporte = request.form.getlist('transporte_precio[]')
-            for i in range(len(nombres_transporte)):
-                if nombres_transporte[i]:
+            # Add other transport fields if they are sent and need to be stored
+            # cant_c_guias = request.form.getlist('transporte_cant_c_guias[]')
+            # cant_s_guias = request.form.getlist('transporte_cant_s_guias[]')
+            # tipo_cambio_transporte = request.form.getlist('transporte_tipo_cambio[]')
+            # colones_transporte = request.form.getlist('transporte_colones[]')
+
+            for nombre_transporte, tipo_transporte, precio_transporte in zip(nombres_transporte, tipos_transporte, precios_transporte):
+                if nombre_transporte:
                     transporte = Transporte(
                         intern_id=nuevo_viaje.id,
-                        tipo_transporte=tipos_transporte[i],
-                        nombre_transporte=nombres_transporte[i],
-                        precio=safe_float(precios_transporte[i])
+                        tipo_transporte=tipo_transporte,
+                        nombre_transporte=nombre_transporte,
+                        precio=safe_float(precio_transporte)
                     )
                     db.session.add(transporte)
 
@@ -298,15 +343,23 @@ def crear_intern():
             nombres_guia = request.form.getlist('guia_nombre[]')
             operadores_guia = request.form.getlist('guia_operador[]')
             precios_guia_pp = request.form.getlist('guia_precio_pp[]')
+            cant_guias = request.form.getlist('guia_cant_guias[]') # New field
             precios_acarreo = request.form.getlist('guia_acarreo[]')
-            for i in range(len(nombres_guia)):
-                if nombres_guia[i]:
+            cant_acarreo = request.form.getlist('guia_cant_acarreo[]') # New field
+            cant_s_guias_guia = request.form.getlist('guia_cant_s_guias[]') # New field
+
+            for nombre_guia, operador_guia, precio_guia_pp_val, cant_guia_val, precio_acarreo_val, cant_acarreo_val, cant_s_guia_val in \
+                zip(nombres_guia, operadores_guia, precios_guia_pp, cant_guias, precios_acarreo, cant_acarreo, cant_s_guias_guia):
+                if nombre_guia:
                     guia = Guia(
                         intern_id=nuevo_viaje.id,
-                        nombre=nombres_guia[i],
-                        operador=operadores_guia[i],
-                        precio_guia_pp=safe_float(precios_guia_pp[i]),
-                        precio_acarreo=safe_float(precios_acarreo[i])
+                        nombre=nombre_guia,
+                        operador=operador_guia,
+                        precio_guia_pp=safe_float(precio_guia_pp_val),
+                        cant_guias=safe_int(cant_guia_val), # Store new field
+                        precio_acarreo=safe_float(precio_acarreo_val),
+                        cant_acarreo=safe_int(cant_acarreo_val), # Store new field
+                        cant_s_guias=safe_int(cant_s_guia_val) # Store new field
                     )
                     db.session.add(guia)
 
@@ -314,13 +367,19 @@ def crear_intern():
             nombres_estadia = request.form.getlist('estadia_nombre[]')
             precios_pp_estadia = request.form.getlist('estadia_precio_pp[]')
             noches_estadia = request.form.getlist('estadia_noches[]')
-            for i in range(len(nombres_estadia)):
-                if nombres_estadia[i]:
+            cant_c_guias_estadia = request.form.getlist('estadia_cant_c_guias[]') # New field
+            cant_s_guias_estadia = request.form.getlist('estadia_cant_s_guias[]') # New field
+
+            for nombre_estadia, precio_pp_estadia_val, noches_estadia_val, cant_c_guias_estadia_val, cant_s_guias_estadia_val in \
+                zip(nombres_estadia, precios_pp_estadia, noches_estadia, cant_c_guias_estadia, cant_s_guias_estadia):
+                if nombre_estadia:
                     estadia = Estadia(
                         intern_id=nuevo_viaje.id,
-                        nombre=nombres_estadia[i],
-                        precio_pp=safe_float(precios_pp_estadia[i]),
-                        cantidad_noches=safe_int(noches_estadia[i], 1)
+                        nombre=nombre_estadia,
+                        precio_pp=safe_float(precio_pp_estadia_val),
+                        cantidad_noches=safe_int(noches_estadia_val, 1),
+                        cant_c_guias=safe_int(cant_c_guias_estadia_val), # Store new field
+                        cant_s_guias=safe_int(cant_s_guias_estadia_val) # Store new field
                     )
                     db.session.add(estadia)
 
@@ -331,18 +390,41 @@ def crear_intern():
             precios_maletas = request.form.getlist('aerolinea_precio_maletas[]')
             equipajes_mano = request.form.getlist('aerolinea_equipaje_mano[]')
             precios_impuestos = request.form.getlist('aerolinea_impuestos[]')
-            for i in range(len(tipos_transporte_aerolinea)):
-                if nombres_aerolinea[i]:
+            # Add other aerolinea fields if they are sent and need to be stored
+
+            for tipo_transporte_aerolinea, nombre_aerolinea, precio_asientos, precio_maletas, equipaje_mano, precio_impuestos in \
+                zip(tipos_transporte_aerolinea, nombres_aerolinea, precios_asientos, precios_maletas, equipajes_mano, precios_impuestos):
+                if nombre_aerolinea:
                     aerolinea = Aerolinea(
                         intern_id=nuevo_viaje.id,
-                        tipo_transporte=tipos_transporte_aerolinea[i],
-                        nombre_aerolinea=nombres_aerolinea[i],
-                        precio_asientos=safe_float(precios_asientos[i]),
-                        precio_maletas_documentado=safe_float(precios_maletas[i]),
-                        equipaje_mano=safe_float(equipajes_mano[i]),
-                        precio_impuestos=safe_float(precios_impuestos[i])
+                        tipo_transporte=tipo_transporte_aerolinea,
+                        nombre_aerolinea=nombre_aerolinea,
+                        precio_asientos=safe_float(precio_asientos),
+                        precio_maletas_documentado=safe_float(precio_maletas),
+                        equipaje_mano=safe_float(equipaje_mano),
+                        precio_impuestos=safe_float(precio_impuestos)
                     )
                     db.session.add(aerolinea)
+
+            # --- GUARDAR OTROS ---
+            nuevo_pagos = request.form.getlist('otro_nuevo_pago[]')
+            descripciones_pago = request.form.getlist('otro_descripcion_pago[]')
+            precios_usd_otros = request.form.getlist('otro_precio_usd[]')
+            cant_c_guias_otros = request.form.getlist('otro_cant_c_guias[]')
+            cant_s_guias_otros = request.form.getlist('otro_cant_s_guias[]')
+
+            for nuevo_pago, descripcion_pago, precio_usd_otro, cant_c_guias_otro, cant_s_guias_otro in \
+                zip(nuevo_pagos, descripciones_pago, precios_usd_otros, cant_c_guias_otros, cant_s_guias_otros):
+                if nuevo_pago: # Only add if the main field (nuevo_pago) is not empty
+                    otro = Otro(
+                        intern_id=nuevo_viaje.id,
+                        nuevo_pago=nuevo_pago,
+                        descripcion_pago=descripcion_pago,
+                        precio_usd=safe_float(precio_usd_otro),
+                        cant_c_guias=safe_int(cant_c_guias_otro),
+                        cant_s_guias=safe_int(cant_s_guias_otro)
+                    )
+                    db.session.add(otro)
 
             db.session.commit()
             flash('Plan de viaje creado exitosamente.', 'success')
@@ -424,17 +506,18 @@ def editar_intern(id):
             fechas_desde = request.form.getlist('prealerta_desde[]')
             fechas_hasta = request.form.getlist('prealerta_hasta[]')
 
-            for i in range(len(bancos)):
-                if bancos[i]:
+            for i, (prealerta_id, banco, telefono, fecha_pa, asesor, hora_pa, numero_pa, fecha_de, fecha_ha) in \
+                enumerate(zip(prealerta_ids, bancos, telefonos, fechas_prealerta, asesores, horas_prealerta, numeros_prealerta, fechas_desde, fechas_hasta)):
+                if banco:
                     prealerta_data.append({
-                        'id': prealerta_ids[i], 'intern_id': viaje.id,
-                        'banco': bancos[i], 'telefono_entidad': telefonos[i],
-                        'fecha_prealerta': to_date(fechas_prealerta[i]),
-                        'asesor': asesores[i],
-                        'hora_prealerta': to_time(horas_prealerta[i]),
-                        'numero_prealerta': numeros_prealerta[i],
-                        'fecha_desde': to_date(fechas_desde[i]),
-                        'fecha_hasta': to_date(fechas_hasta[i])
+                        'id': prealerta_id, 'intern_id': viaje.id,
+                        'banco': banco, 'telefono_entidad': telefono,
+                        'fecha_prealerta': to_date(fecha_pa),
+                        'asesor': asesor,
+                        'hora_prealerta': to_time(hora_pa),
+                        'numero_prealerta': numero_pa,
+                        'fecha_desde': to_date(fecha_de),
+                        'fecha_hasta': to_date(fecha_ha)
                     })
             update_dynamic_items(PreAlerta, viaje.prealertas, prealerta_data)
 
@@ -454,24 +537,25 @@ def editar_intern(id):
             enlaces = request.form.getlist('lugar_enlaces[]')
             notas = request.form.getlist('lugar_nota[]')
 
-            for i in range(len(nombres_sitio)):
-                if nombres_sitio[i]:
-                    checkbox_value = f'lugar-{i+1}-guia-local' 
-                    is_guia_local_checked = checkbox_value in guias_locales_checked
+            for i, (lugar_id, nombre_sitio, tipo_lugar, precio_entrada, fecha_reserva, nombre_guia, tel_lugar, tel_contacto, whatsapp_contacto, email, enlace, nota) in \
+                enumerate(zip(lugar_ids, nombres_sitio, tipos_lugar, precios_entrada, fechas_reserva, nombres_guia_local, telefonos_lugar, telefonos_contacto, whatsapps_contacto, emails, enlaces, notas)):
+                if nombre_sitio:
+                    checkbox_id = f'guia-local-check-{i+1}' # Reconstruct the ID based on current index
+                    is_guia_local_checked = checkbox_id in guias_locales_checked
 
                     lugar_data.append({
-                        'id': lugar_ids[i], 'intern_id': viaje.id,
-                        'nombre_sitio': nombres_sitio[i], 'tipo_lugar': tipos_lugar[i],
-                        'precio_entrada': safe_float(precios_entrada[i]),
-                        'fecha_reserva': to_date(fechas_reserva[i]),
+                        'id': lugar_id, 'intern_id': viaje.id,
+                        'nombre_sitio': nombre_sitio, 'tipo_lugar': tipo_lugar,
+                        'precio_entrada': safe_float(precio_entrada),
+                        'fecha_reserva': to_date(fecha_reserva),
                         'guia_local': is_guia_local_checked,
-                        'nombre_guia': nombres_guia_local[i],
-                        'telefono_lugar': telefonos_lugar[i],
-                        'telefono_contacto': telefonos_contacto[i],
-                        'whatsapp_contacto': whatsapps_contacto[i],
-                        'email': emails[i],
-                        'enlaces': enlaces[i],
-                        'nota': notas[i]
+                        'nombre_guia': nombre_guia,
+                        'telefono_lugar': tel_lugar,
+                        'telefono_contacto': tel_contacto,
+                        'whatsapp_contacto': whatsapp_contacto,
+                        'email': email,
+                        'enlaces': enlace,
+                        'nota': nota
                     })
             update_dynamic_items(LugarVisitar, viaje.lugares, lugar_data)
 
@@ -481,12 +565,12 @@ def editar_intern(id):
             nombres_transporte = request.form.getlist('transporte_nombre[]')
             tipos_transporte = request.form.getlist('transporte_tipo[]')
             precios_transporte = request.form.getlist('transporte_precio[]')
-            for i in range(len(nombres_transporte)):
-                if nombres_transporte[i]:
+            for transporte_id, nombre_transporte, tipo_transporte, precio_transporte in zip(transporte_ids, nombres_transporte, tipos_transporte, precios_transporte):
+                if nombre_transporte:
                     transporte_data.append({
-                        'id': transporte_ids[i], 'intern_id': viaje.id,
-                        'nombre_transporte': nombres_transporte[i], 'tipo_transporte': tipos_transporte[i],
-                        'precio': safe_float(precios_transporte[i])
+                        'id': transporte_id, 'intern_id': viaje.id,
+                        'nombre_transporte': nombre_transporte, 'tipo_transporte': tipo_transporte,
+                        'precio': safe_float(precio_transporte)
                     })
             update_dynamic_items(Transporte, viaje.transportes, transporte_data)
             
@@ -496,14 +580,22 @@ def editar_intern(id):
             nombres_guia = request.form.getlist('guia_nombre[]')
             operadores_guia = request.form.getlist('guia_operador[]')
             precios_guia_pp = request.form.getlist('guia_precio_pp[]')
+            cant_guias = request.form.getlist('guia_cant_guias[]') # New field
             precios_acarreo = request.form.getlist('guia_acarreo[]')
-            for i in range(len(nombres_guia)):
-                if nombres_guia[i]:
+            cant_acarreo = request.form.getlist('guia_cant_acarreo[]') # New field
+            cant_s_guias_guia = request.form.getlist('guia_cant_s_guias[]') # New field
+
+            for guia_id, nombre_guia, operador_guia, precio_guia_pp_val, cant_guia_val, precio_acarreo_val, cant_acarreo_val, cant_s_guia_val in \
+                zip(guia_ids, nombres_guia, operadores_guia, precios_guia_pp, cant_guias, precios_acarreo, cant_acarreo, cant_s_guias_guia):
+                if nombre_guia:
                     guia_data.append({
-                        'id': guia_ids[i], 'intern_id': viaje.id,
-                        'nombre': nombres_guia[i], 'operador': operadores_guia[i],
-                        'precio_guia_pp': safe_float(precios_guia_pp[i]),
-                        'precio_acarreo': safe_float(precios_acarreo[i])
+                        'id': guia_id, 'intern_id': viaje.id,
+                        'nombre': nombre_guia, 'operador': operador_guia,
+                        'precio_guia_pp': safe_float(precio_guia_pp_val),
+                        'cant_guias': safe_int(cant_guia_val),
+                        'precio_acarreo': safe_float(precio_acarreo_val),
+                        'cant_acarreo': safe_int(cant_acarreo_val),
+                        'cant_s_guias': safe_int(cant_s_guia_val)
                     })
             update_dynamic_items(Guia, viaje.guias, guia_data)
 
@@ -513,13 +605,19 @@ def editar_intern(id):
             nombres_estadia = request.form.getlist('estadia_nombre[]')
             precios_pp_estadia = request.form.getlist('estadia_precio_pp[]')
             noches_estadia = request.form.getlist('estadia_noches[]')
-            for i in range(len(nombres_estadia)):
-                if nombres_estadia[i]:
+            cant_c_guias_estadia = request.form.getlist('estadia_cant_c_guias[]') # New field
+            cant_s_guias_estadia = request.form.getlist('estadia_cant_s_guias[]') # New field
+
+            for estadia_id, nombre_estadia, precio_pp_estadia_val, noches_estadia_val, cant_c_guias_estadia_val, cant_s_guias_estadia_val in \
+                zip(estadia_ids, nombres_estadia, precios_pp_estadia, noches_estadia, cant_c_guias_estadia, cant_s_guias_estadia):
+                if nombre_estadia:
                     estadia_data.append({
-                        'id': estadia_ids[i], 'intern_id': viaje.id,
-                        'nombre': nombres_estadia[i],
-                        'precio_pp': safe_float(precios_pp_estadia[i]),
-                        'cantidad_noches': safe_int(noches_estadia[i], 1)
+                        'id': estadia_id, 'intern_id': viaje.id,
+                        'nombre': nombre_estadia,
+                        'precio_pp': safe_float(precio_pp_estadia_val),
+                        'cantidad_noches': safe_int(noches_estadia_val, 1),
+                        'cant_c_guias': safe_int(cant_c_guias_estadia_val),
+                        'cant_s_guias': safe_int(cant_s_guias_estadia_val)
                     })
             update_dynamic_items(Estadia, viaje.estadias, estadia_data)
 
@@ -532,18 +630,42 @@ def editar_intern(id):
             precios_maletas = request.form.getlist('aerolinea_precio_maletas[]')
             equipajes_mano = request.form.getlist('aerolinea_equipaje_mano[]')
             precios_impuestos = request.form.getlist('aerolinea_impuestos[]')
-            for i in range(len(tipos_transporte_aerolinea)):
-                if nombres_aerolinea[i]:
+            for aerolinea_id, tipo_transporte_aerolinea, nombre_aerolinea, precio_asientos, precio_maletas, equipaje_mano, precio_impuestos in \
+                zip(aerolinea_ids, tipos_transporte_aerolinea, nombres_aerolinea, precios_asientos, precios_maletas, equipajes_mano, precios_impuestos):
+                if nombre_aerolinea:
                     aerolinea_data.append({
-                        'id': aerolinea_ids[i], 'intern_id': viaje.id,
-                        'tipo_transporte': tipos_transporte_aerolinea[i],
-                        'nombre_aerolinea': nombres_aerolinea[i],
-                        'precio_asientos': safe_float(precios_asientos[i]),
-                        'precio_maletas_documentado': safe_float(precios_maletas[i]),
-                        'equipaje_mano': safe_float(equipajes_mano[i]),
-                        'precio_impuestos': safe_float(precios_impuestos[i])
+                        'id': aerolinea_id, 'intern_id': viaje.id,
+                        'tipo_transporte': tipo_transporte_aerolinea,
+                        'nombre_aerolinea': nombre_aerolinea,
+                        'precio_asientos': safe_float(precio_asientos),
+                        'precio_maletas_documentado': safe_float(precio_maletas),
+                        'equipaje_mano': safe_float(equipaje_mano),
+                        'precio_impuestos': safe_float(precio_impuestos)
                     })
             update_dynamic_items(Aerolinea, viaje.aerolineas, aerolinea_data)
+
+            # 8. Procesar Otros
+            otro_data = []
+            otro_ids = request.form.getlist('otro_id[]') # Assuming you'll add hidden ID fields for editing
+            nuevo_pagos = request.form.getlist('otro_nuevo_pago[]')
+            descripciones_pago = request.form.getlist('otro_descripcion_pago[]')
+            precios_usd_otros = request.form.getlist('otro_precio_usd[]')
+            cant_c_guias_otros = request.form.getlist('otro_cant_c_guias[]')
+            cant_s_guias_otros = request.form.getlist('otro_cant_s_guias[]')
+
+            for otro_id, nuevo_pago, descripcion_pago, precio_usd_otro, cant_c_guias_otro, cant_s_guias_otro in \
+                zip(otro_ids, nuevo_pagos, descripciones_pago, precios_usd_otros, cant_c_guias_otros, cant_s_guias_otros):
+                if nuevo_pago:
+                    otro_data.append({
+                        'id': otro_id, 'intern_id': viaje.id,
+                        'nuevo_pago': nuevo_pago,
+                        'descripcion_pago': descripcion_pago,
+                        'precio_usd': safe_float(precio_usd_otro),
+                        'cant_c_guias': safe_int(cant_c_guias_otro),
+                        'cant_s_guias': safe_int(cant_s_guias_otro)
+                    })
+            update_dynamic_items(Otro, viaje.otros, otro_data)
+
 
             db.session.commit()
             flash('Plan de viaje actualizado correctamente.', 'success')
@@ -565,35 +687,17 @@ def editar_intern(id):
 
 @intern_bp.route('/ver/<int:id>')
 def detalle_intern(id):
-    viaje = Intern.query.get_or_404(id)
-    
-    # --- CORREGIDO: Los costos de atracciones y transportes ahora son por persona ---
-    total_atracciones_pp = sum(lugar.precio_entrada for lugar in viaje.lugares if lugar.precio_entrada)
-    total_transporte_pp = sum(transporte.precio for transporte in viaje.transportes if transporte.precio)
-    
-    total_guias_pp = sum((guia.precio_guia_pp or 0) + (guia.precio_acarreo or 0) for guia in viaje.guias)
-    total_estadia_pp = sum((estadia.precio_pp or 0) * (estadia.cantidad_noches or 1) for estadia in viaje.estadias)
-    
-    total_aerolinea_pp = 0
-    capacidad = viaje.capacidad if viaje.capacidad and viaje.capacidad > 0 else 1
-    for aero in viaje.aerolineas:
-        if aero.tipo_transporte == 'Avión':
-            total_aerolinea_pp += (aero.precio_asientos or 0) + (aero.precio_maletas_documentado or 0) + (aero.equipaje_mano or 0) + (aero.precio_impuestos or 0)
-        else:
-            total_aerolinea_pp += (aero.precio_asientos or 0) / capacidad
-
-    total_individual_crc = (viaje.precio_paquete or 0) + total_atracciones_pp + total_transporte_pp + total_guias_pp + total_estadia_pp + total_aerolinea_pp
-    total_individual_usd = total_individual_crc / viaje.tipo_cambio if viaje.tipo_cambio and viaje.tipo_cambio > 0 else 0
-
+    viaje, totals = get_trip_data(id) # Call get_trip_data to get calculated totals
     return render_template('detalle_intern.html', 
                            viaje=viaje,
-                           total_atracciones_pp=total_atracciones_pp,
-                           total_transporte_pp=total_transporte_pp,
-                           total_guias_pp=total_guias_pp,
-                           total_estadia_pp=total_estadia_pp,
-                           total_aerolinea_pp=total_aerolinea_pp,
-                           total_individual_crc=total_individual_crc,
-                           total_individual_usd=total_individual_usd)
+                           total_atracciones_pp=totals['atracciones_pp'],
+                           total_transporte_pp=totals['transporte_pp'],
+                           total_guias_pp=totals['guias_pp'],
+                           total_estadia_pp=totals['estadia_pp'],
+                           total_aerolinea_pp=totals['aerolinea_pp'],
+                           total_otros_pp=totals['otros_pp'], # Pass new total
+                           total_individual_crc=totals['total_crc'],
+                           total_individual_usd=totals['total_usd'])
 
 
 @intern_bp.route('/eliminar/<int:id>', methods=['POST'])
@@ -620,29 +724,91 @@ def get_trip_data(id):
     viaje = Intern.query.get_or_404(id)
     
     # --- CORREGIDO: Los costos de atracciones y transportes ahora son por persona ---
+    # Note: The HTML calculates Individual USD for each item.
+    # To accurately reflect that, you might need to store those calculated
+    # individual values in the DB or re-calculate them here using the same logic.
+    # For now, I'll use the existing fields and add the new ones.
+
     total_atracciones_pp = sum(l.precio_entrada for l in viaje.lugares if l.precio_entrada)
     total_transporte_pp = sum(t.precio for t in viaje.transportes if t.precio)
     
-    total_guias_pp = sum((g.precio_guia_pp or 0) + (g.precio_acarreo or 0) for g in viaje.guias)
-    total_estadia_pp = sum((e.precio_pp or 0) * (e.cantidad_noches or 1) for e in viaje.estadias)
-    
+    total_guias_pp = 0
+    for g in viaje.guias:
+        precio_guia_pp = g.precio_guia_pp or 0
+        cant_guias = g.cant_guias or 0
+        precio_acarreo = g.precio_acarreo or 0
+        cant_acarreo = g.cant_acarreo or 0
+        cant_s_guias = g.cant_s_guias or 0
+        
+        divisor = 1 if cant_s_guias == 0 else cant_s_guias
+        
+        total_guia_calculated = (precio_guia_pp * cant_guias) / divisor
+        total_acarreo_calculated = (precio_acarreo * cant_acarreo) / divisor
+        
+        total_guias_pp += total_guia_calculated + total_acarreo_calculated
+
+    total_estadia_pp = 0
+    for e in viaje.estadias:
+        precio_pp_noche = e.precio_pp or 0
+        noches = e.cantidad_noches or 0
+        cant_c_guias = e.cant_c_guias or 0
+        cant_s_guias = e.cant_s_guias or 0
+
+        base_individual_cost = precio_pp_noche * noches
+        
+        final_individual_value = 0
+        if cant_c_guias > 0 and cant_s_guias > 0:
+            final_individual_value = (base_individual_cost * cant_c_guias) / cant_s_guias
+        elif cant_c_guias > 0 and cant_s_guias == 0:
+            final_individual_value = base_individual_cost * cant_c_guias
+        else:
+            final_individual_value = base_individual_cost
+        total_estadia_pp += final_individual_value
+
     total_aerolinea_pp = 0
     capacidad = viaje.capacidad if viaje.capacidad and viaje.capacidad > 0 else 1
     for aero in viaje.aerolineas:
         if aero.tipo_transporte == 'Avión':
-            total_aerolinea_pp += (aero.precio_asientos or 0) + (aero.precio_maletas_documentado or 0) + (aero.equipaje_mano or 0) + (aero.precio_impuestos or 0)
+            total_aerolinea_pp += (aero.precio_asientos or 0) + \
+                                   (aero.precio_maletas_documentado or 0) + \
+                                   (aero.equipaje_mano or 0) + \
+                                   (aero.precio_impuestos or 0) + \
+                                   (safe_float(aero.precio_estandar) or 0) + \
+                                   (safe_float(aero.precio_mas_equipo) or 0) + \
+                                   (safe_float(aero.precio_salida_rapida) or 0) + \
+                                   (safe_float(aero.precio_premium) or 0) + \
+                                   (safe_float(aero.precio_vip) or 0) + \
+                                   (safe_float(aero.precio_basic) or 0) + \
+                                   (safe_float(aero.precio_classic) or 0) + \
+                                   (safe_float(aero.precio_flexible) or 0)
+            # Note: 'otros_costos' is Text, you'd need to parse it if it contains structured data
+            # For now, it's not included in the sum.
         else:
-            total_aerolinea_pp += (aero.precio_asientos or 0) / capacidad
+            # Assuming 'precio_asientos' might be used for non-plane transport cost
+            total_aerolinea_pp += (aero.precio_asientos or 0) / capacidad if capacidad > 0 else (aero.precio_asientos or 0)
+
+    total_otros_pp = 0 # New total for "Otros" section
+    for o in viaje.otros:
+        precio_usd_otro = o.precio_usd or 0
+        cant_c_guias_otro = o.cant_c_guias or 0
+        cant_s_guias_otro = o.cant_s_guias or 0
+
+        divisor_otro = 1 if cant_s_guias_otro == 0 else cant_s_guias_otro
+        total_otros_pp += (precio_usd_otro * cant_c_guias_otro) / divisor_otro
+
+
+    total_individual_usd_calculated = total_atracciones_pp + total_transporte_pp + total_guias_pp + total_estadia_pp + total_aerolinea_pp + total_otros_pp
     
-    total_individual_crc = (viaje.precio_paquete or 0) + total_atracciones_pp + total_transporte_pp + total_guias_pp + total_estadia_pp + total_aerolinea_pp
-    total_individual_usd = total_individual_crc / viaje.tipo_cambio if viaje.tipo_cambio and viaje.tipo_cambio > 0 else 0
-    
+    total_individual_crc = total_individual_usd_calculated * viaje.tipo_cambio if viaje.tipo_cambio and viaje.tipo_cambio > 0 else total_individual_usd_calculated
+    total_individual_usd = total_individual_usd_calculated # This is already in USD
+
     totals = {
         "atracciones_pp": total_atracciones_pp,
         "transporte_pp": total_transporte_pp,
         "guias_pp": total_guias_pp,
         "estadia_pp": total_estadia_pp,
         "aerolinea_pp": total_aerolinea_pp,
+        "otros_pp": total_otros_pp, # Add to totals dictionary
         "total_crc": total_individual_crc,
         "total_usd": total_individual_usd
     }
@@ -682,7 +848,9 @@ def exportar_txt(id):
     content += write_section_txt("Estadías", viaje.estadias, 
         lambda e: f"{e.nombre} ({e.cantidad_noches} noches): {(e.precio_pp or 0) * (e.cantidad_noches or 1):.2f} {viaje.tipo_moneda} (pp)")
     content += write_section_txt("Aerolíneas", viaje.aerolineas, 
-        lambda a: f"{a.nombre_aerolinea}: Costo (pp) {((a.precio_asientos or 0) + (a.precio_maletas_documentado or 0) + (a.equipaje_mano or 0) + (a.precio_impuestos or 0)):.2f} {viaje.tipo_moneda}")
+        lambda a: f"{a.nombre_aerolinea}: Costo (pp) {totals['aerolinea_pp']:.2f} {viaje.tipo_moneda}")
+    content += write_section_txt("Otros Pagos", viaje.otros, # New section for TXT export
+        lambda o: f"{o.nuevo_pago}: {o.precio_usd or 0:.2f} USD (pp)")
 
     content += "="*40 + "\n"
     content += "TOTALES GENERALES POR PERSONA\n"
@@ -763,7 +931,19 @@ def exportar_pdf(id):
         pdf.chapter_title('GUÍAS')
         body = ""
         for g in viaje.guias:
-            costo_guia = (g.precio_guia_pp or 0) + (g.precio_acarreo or 0)
+            # Recalculate based on stored values, similar to get_trip_data
+            precio_guia_pp = g.precio_guia_pp or 0
+            cant_guias = g.cant_guias or 0
+            precio_acarreo = g.precio_acarreo or 0
+            cant_acarreo = g.cant_acarreo or 0
+            cant_s_guias = g.cant_s_guias or 0
+            
+            divisor = 1 if cant_s_guias == 0 else cant_s_guias
+            
+            total_guia_calculated = (precio_guia_pp * cant_guias) / divisor
+            total_acarreo_calculated = (precio_acarreo * cant_acarreo) / divisor
+            costo_guia = total_guia_calculated + total_acarreo_calculated
+
             body += f"- {g.nombre} (Operador: {g.operador or 'N/A'}): {costo_guia:.2f} {viaje.tipo_moneda} (pp)\n"
         pdf.chapter_body(body)
 
@@ -771,7 +951,22 @@ def exportar_pdf(id):
         pdf.chapter_title('ESTADÍAS')
         body = ""
         for e in viaje.estadias:
-            costo_estadia = (e.precio_pp or 0) * (e.cantidad_noches or 1)
+            # Recalculate based on stored values, similar to get_trip_data
+            precio_pp_noche = e.precio_pp or 0
+            noches = e.cantidad_noches or 0
+            cant_c_guias = e.cant_c_guias or 0
+            cant_s_guias = e.cant_s_guias or 0
+
+            base_individual_cost = precio_pp_noche * noches
+            
+            costo_estadia = 0
+            if cant_c_guias > 0 and cant_s_guias > 0:
+                costo_estadia = (base_individual_cost * cant_c_guias) / cant_s_guias
+            elif cant_c_guias > 0 and cant_s_guias == 0:
+                costo_estadia = base_individual_cost * cant_c_guias
+            else:
+                costo_estadia = base_individual_cost
+
             body += f"- {e.nombre} ({e.cantidad_noches} noches): {costo_estadia:.2f} {viaje.tipo_moneda} (pp)\n"
         pdf.chapter_body(body)
 
@@ -779,10 +974,24 @@ def exportar_pdf(id):
         pdf.chapter_title('AEROLÍNEAS / TRANSPORTE PRINCIPAL')
         body = ""
         for a in viaje.aerolineas:
+            # The total_aerolinea_pp is already calculated in totals, so use that
             costo_aerolinea_pp = totals['aerolinea_pp']
             body += f"- {a.nombre_aerolinea}: {costo_aerolinea_pp:.2f} {viaje.tipo_moneda} (pp)\n"
         pdf.chapter_body(body)
     
+    if viaje.otros: # New section for PDF export
+        pdf.chapter_title('OTROS PAGOS')
+        body = ""
+        for o in viaje.otros:
+            precio_usd_otro = o.precio_usd or 0
+            cant_c_guias_otro = o.cant_c_guias or 0
+            cant_s_guias_otro = o.cant_s_guias or 0
+
+            divisor_otro = 1 if cant_s_guias_otro == 0 else cant_s_guias_otro
+            costo_otro = (precio_usd_otro * cant_c_guias_otro) / divisor_otro
+            body += f"- {o.nuevo_pago}: {costo_otro:.2f} USD (pp)\n"
+        pdf.chapter_body(body)
+
     pdf.chapter_title('TOTALES GENERALES POR PERSONA')
     pdf.chapter_body(
         f"Total Individual ({viaje.tipo_moneda}): {totals['total_crc']:.2f}\n"
@@ -823,6 +1032,7 @@ def exportar_jpg(id):
     add_section_lines("Guías", viaje.guias, lambda g: f"{g.nombre}: {((g.precio_guia_pp or 0) + (g.precio_acarreo or 0)):.2f} {viaje.tipo_moneda} (pp)")
     add_section_lines("Estadías", viaje.estadias, lambda e: f"{e.nombre} ({e.cantidad_noches} noches): {(e.precio_pp or 0) * (e.cantidad_noches or 1):.2f} {viaje.tipo_moneda} (pp)")
     add_section_lines("Aerolíneas", viaje.aerolineas, lambda a: f"{a.nombre_aerolinea}: Costo (pp) {totals['aerolinea_pp']:.2f} {viaje.tipo_moneda}")
+    add_section_lines("Otros Pagos", viaje.otros, lambda o: f"{o.nuevo_pago}: {o.precio_usd or 0:.2f} USD (pp)") # New section for JPG export
 
     lines.append(("TOTALES GENERALES POR PERSONA", 'bold'))
     lines.append((f"  Total ({viaje.tipo_moneda}): {totals['total_crc']:.2f}", 'normal'))
@@ -830,10 +1040,13 @@ def exportar_jpg(id):
         lines.append((f"  Total (USD): {totals['total_usd']:.2f}", 'normal'))
 
     try:
-        font_title = ImageFont.truetype("arial.ttf", 32)
-        font_bold = ImageFont.truetype("arialbd.ttf", 22)
-        font_normal = ImageFont.truetype("arial.ttf", 20)
+        font_path = os.path.join(os.path.dirname(__file__), 'static', 'fonts', 'arial.ttf') # Assuming arial.ttf exists in static/fonts
+        font_bold_path = os.path.join(os.path.dirname(__file__), 'static', 'fonts', 'arialbd.ttf') # Assuming arialbd.ttf exists in static/fonts
+        font_title = ImageFont.truetype(font_path, 32)
+        font_bold = ImageFont.truetype(font_bold_path, 22)
+        font_normal = ImageFont.truetype(font_path, 20)
     except IOError:
+        # Fallback to default font if custom fonts are not found
         font_title = ImageFont.load_default()
         font_bold = ImageFont.load_default()
         font_normal = ImageFont.load_default()
@@ -932,6 +1145,9 @@ def exportar_excel(id):
         lambda e: [e.nombre, e.cantidad_noches, (e.precio_pp or 0) * (e.cantidad_noches or 1)])
     add_section("Aerolíneas", ["Aerolínea", f"Costo PP ({viaje.tipo_moneda})"], viaje.aerolineas,
         lambda a: [a.nombre_aerolinea, totals['aerolinea_pp']])
+    add_section("Otros Pagos", ["Nuevo Pago", "Descripción", f"Precio USD ({viaje.tipo_moneda})"], viaje.otros, # New section for Excel export
+        lambda o: [o.nuevo_pago, o.descripcion_pago, o.precio_usd or 0])
+
 
     ws[f'A{current_row}'] = "TOTALES POR PERSONA"
     ws[f'A{current_row}'].font = bold_font

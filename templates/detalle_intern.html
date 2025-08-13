@@ -20,7 +20,7 @@
     }
     .header-card h1 {
         font-weight: 700;
-        color: #212529;
+        color: #212540;
     }
     .flyer-img {
         max-width: 100%;
@@ -77,6 +77,9 @@
         bottom: 20px;
         right: 20px;
         z-index: 1000;
+        display: flex; /* Added for column layout of multiple buttons */
+        flex-direction: column; /* Added for column layout of multiple buttons */
+        gap: 10px; /* Space between buttons */
     }
     .fab-button {
         width: 60px;
@@ -94,6 +97,7 @@
     }
     .fab-edit { background-color: #ffc107; color: #000; } /* Botón editar amarillo */
     .fab-back { background-color: #6c757d; } /* Botón volver gris */
+    .fab-delete { background-color: #dc3545; color: white; } /* Botón eliminar rojo */
     .fab-button:hover {
         transform: scale(1.05);
         box-shadow: 0 6px 12px rgba(0,0,0,0.3);
@@ -105,49 +109,45 @@
         padding-top: 1rem;
         margin-top: 1rem;
         border-top: 1px solid #dee2e6;
-        color: #212529;
+        color: #212540;
     }
     .card-within-section {
         border: 1px dashed #ccc;
         background-color: #f8f9fa;
+    }
+
+    /* Modal styles - Copied from detalle_pagos.html */
+    .modal-content {
+        border-radius: 15px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+    }
+    .modal-header {
+        background-color: #dc3545; /* Danger red */
+        color: white;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+    }
+    .modal-footer .btn {
+        border-radius: 8px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 {# --- LÓGICA PARA CALCULAR SUBTOTALES Y TOTALES --- #}
-{% set subtotal_lugares = viaje.lugares | sum(attribute='precio_entrada') %}
-{% set subtotal_transportes = viaje.transportes | sum(attribute='precio') %}
+{# These calculations should ideally come from the backend's get_trip_data function #}
+{# For now, keeping them here as they were in the original template, but ideally, #}
+{# `total_atracciones_pp`, `total_transportes_pp`, etc. would be passed directly #}
+{# from the Flask route to avoid duplicating logic. #}
 
-{% set subtotal_guias = {'total': 0} %}
-{% for item in viaje.guias %}{% set _ = subtotal_guias.update({'total': subtotal_guias.total + (item.precio_guia_pp or 0) + (item.precio_acarreo or 0)}) %}{% endfor %}
-{% set subtotal_guias = subtotal_guias.total %}
+{% set subtotal_lugares = total_atracciones_pp %}
+{% set subtotal_transportes = total_transporte_pp %}
+{% set subtotal_guias = total_guias_pp %}
+{% set subtotal_estadias = total_estadia_pp %}
+{% set subtotal_aerolineas = total_aerolinea_pp %}
+{% set subtotal_otros = total_otros_pp %} {# New subtotal for "Otros" #}
 
-{% set subtotal_estadias = {'total': 0} %}
-{% for item in viaje.estadias %}{% set _ = subtotal_estadias.update({'total': subtotal_estadias.total + ((item.precio_pp or 0) * (item.cantidad_noches or 1))}) %}{% endfor %}
-{% set subtotal_estadias = subtotal_estadias.total %}
-
-{% set subtotal_aerolineas = {'total': 0} %}
-{% for item in viaje.aerolineas %}
-    {% set _ = subtotal_aerolineas.update({'total': subtotal_aerolineas.total + (item.precio_asientos or 0) + (item.precio_maletas_documentado or 0) + (item.equipaje_mano or 0) + (item.precio_impuestos or 0) + (item.precio_estandar or 0) + (item.precio_equipo or 0) + (item.precio_salida_rapida or 0) + (item.precio_premium or 0) + (item.precio_vip or 0) + (item.precio_basic or 0) + (item.precio_classic or 0) + (item.precio_flexible or 0)}) %}
-    {% for i in range(1, 5) %}
-        {% set costo = item['otro_costo_valor_' ~ i] or 0 %}
-        {% set cant = item['otro_costo_cant_' ~ i] or 1 %}
-        {% if costo %}{% set _ = subtotal_aerolineas.update({'total': subtotal_aerolineas.total + (costo * cant)}) %}{% endif %}
-    {% endfor %}
-{% endfor %}
-{% set subtotal_aerolineas = subtotal_aerolineas.total %}
-
-{% set total_individual = (viaje.precio_paquete or 0) + subtotal_lugares + subtotal_transportes + subtotal_guias + subtotal_estadias + subtotal_aerolineas %}
-
-{% if viaje.tipo_moneda == 'USD' %}
-    {% set total_usd = total_individual %}
-    {% set total_crc = total_individual * (viaje.tipo_cambio or 1) %}
-{% else %}
-    {% set total_crc = total_individual %}
-    {% set total_usd = total_individual / (viaje.tipo_cambio or 1) %}
-{% endif %}
-{# --- FIN DE LA LÓGICA --- #}
+{# total_individual, total_usd, total_crc are now passed directly from Flask #}
 
 <div class="container main-container">
     
@@ -174,8 +174,8 @@
         <ul class="list-group list-group-flush">
             <li class="list-group-item detail-item"><strong>Capacidad:</strong> <span>{{ viaje.capacidad }} personas</span></li>
             <li class="list-group-item detail-item"><strong>Precio Base del Paquete (PP):</strong> <span>{{ "{:,.2f}".format(viaje.precio_paquete or 0) }} USD</span></li>
-            <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (USD):</strong> <span class="fw-bold fs-5">${{ "{:,.2f}".format(total_usd or 0) }}</span></li>
-            <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (CRC):</strong> <span class="fw-bold fs-5">₡{{ "{:,.2f}".format(total_crc or 0) }}</span></li>
+            <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (USD):</strong> <span class="fw-bold fs-5">${{ "{:,.2f}".format(total_individual_usd or 0) }}</span></li>
+            <li class="list-group-item detail-item bg-light"><strong>TOTAL INDIVIDUAL (CRC):</strong> <span class="fw-bold fs-5">₡{{ "{:,.2f}".format(total_individual_crc or 0) }}</span></li>
              {% if viaje.tipo_moneda == 'CRC' %}
             <li class="list-group-item detail-item"><small>Tipo de Cambio Usado:</small> <small>1 USD = {{ viaje.tipo_cambio }} CRC</small></li>
             {% endif %}
@@ -280,7 +280,10 @@
             <div class="card-body">
                <ul>
                     <li class="detail-item"><strong>Precio Guía (PP):</strong> <span>{{ "{:,.2f}".format(guia.precio_guia_pp or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Cant. Guías:</strong> <span>{{ guia.cant_guias or 0 }}</span></li>
                     <li class="detail-item"><strong>Precio Acarreo:</strong> <span>{{ "{:,.2f}".format(guia.precio_acarreo or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Cant. Acarreo:</strong> <span>{{ guia.cant_acarreo or 0 }}</span></li>
+                    <li class="detail-item"><strong>Cant. S/GUIAS:</strong> <span>{{ guia.cant_s_guias or 0 }}</span></li>
                     <hr>
                     <li class="detail-item"><strong>Operador:</strong> <span>{{ guia.operador or 'N/A' }}</span></li>
                     <li class="detail-item"><strong>Teléfono:</strong> <span>{{ guia.telefono or 'N/A' }}</span></li>
@@ -314,6 +317,8 @@
             <div class="card-body">
                <ul>
                     <li class="detail-item"><strong>Precio (PP por noche):</strong> <span>{{ "{:,.2f}".format(estadia.precio_pp or 0) }} USD x {{ estadia.cantidad_noches }} noches</span></li>
+                    <li class="detail-item"><strong>Cant. C/GUIAS:</strong> <span>{{ estadia.cant_c_guias or 0 }}</span></li>
+                    <li class="detail-item"><strong>Cant. S/GUIAS:</strong> <span>{{ estadia.cant_s_guias or 0 }}</span></li>
                     <hr>
                     <li class="detail-item"><strong>Check-in:</strong> <span>{{ estadia.fecha_checkin.strftime('%d/%m/%Y') if estadia.fecha_checkin else 'N/A' }}</span></li>
                     <li class="detail-item"><strong>Check-out:</strong> <span>{{ estadia.fecha_checkout.strftime('%d/%m/%Y') if estadia.fecha_checkout else 'N/A' }}</span></li>
@@ -371,11 +376,12 @@
                     <li class="detail-item"><strong>Precio Basic:</strong> <span>{{ "{:,.2f}".format(item.precio_basic or 0) }} USD</span></li>
                     <li class="detail-item"><strong>Precio Classic:</strong> <span>{{ "{:,.2f}".format(item.precio_classic or 0) }} USD</span></li>
                     <li class="detail-item"><strong>Precio Flexible:</strong> <span>{{ "{:,.2f}".format(item.precio_flexible or 0) }} USD</span></li>
+                    {# Assuming other_costo_desc_ and otro_costo_valor_ are attributes of Aerolinea model #}
                     {% for i in range(1, 5) %}
-                        {% set desc = item['otro_costo_desc_' ~ i] %}
-                        {% set costo = item['otro_costo_valor_' ~ i] %}
-                        {% if desc and costo %}
-                        <li class="detail-item"><strong>{{ desc }}:</strong> <span>{{ "{:,.2f}".format(costo) }} USD</span></li>
+                        {% set desc_attr = 'otro_costo_desc_' ~ i %}
+                        {% set valor_attr = 'otro_costo_valor_' ~ i %}
+                        {% if item[desc_attr] and item[valor_attr] %}
+                        <li class="detail-item"><strong>{{ item[desc_attr] }}:</strong> <span>{{ "{:,.2f}".format(item[valor_attr]) }} USD</span></li>
                         {% endif %}
                     {% endfor %}
                </ul>
@@ -384,6 +390,31 @@
         {% endfor %}
         <div class="subtotal-footer">
             SUBTOTAL: {{ "{:,.2f}".format(subtotal_aerolineas) }} USD
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Otros Pagos -->
+    {% if viaje.otros %}
+    <div class="section-container">
+        <div class="section-header">
+            <span><i class="fas fa-money-bill-wave me-2"></i> Otros Pagos ({{ viaje.otros|length }})</span>
+        </div>
+        {% for item in viaje.otros %}
+        <div class="card mb-3 card-within-section">
+            <div class="card-header bg-light"><strong>{{ item.nuevo_pago or 'Pago sin nombre' }}</strong></div>
+            <div class="card-body">
+               <ul>
+                    <li class="detail-item"><strong>Descripción:</strong> <span>{{ item.descripcion_pago or 'N/A' }}</span></li>
+                    <li class="detail-item"><strong>Precio USD:</strong> <span>{{ "{:,.2f}".format(item.precio_usd or 0) }} USD</span></li>
+                    <li class="detail-item"><strong>Cant. C/GUIAS:</strong> <span>{{ item.cant_c_guias or 0 }}</span></li>
+                    <li class="detail-item"><strong>Cant. S/GUIAS:</strong> <span>{{ item.cant_s_guias or 0 }}</span></li>
+               </ul>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="subtotal-footer">
+            SUBTOTAL: {{ "{:,.2f}".format(subtotal_otros) }} USD
         </div>
     </div>
     {% endif %}
@@ -401,5 +432,29 @@
      <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="fab-button fab-edit" title="Editar Viaje">
         <i class="fas fa-pencil-alt"></i>
     </a>
+    <a href="#" class="fab-button fab-delete" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+        <i class="fas fa-trash-alt"></i>
+    </a>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar el plan de viaje "{{ viaje.nombre_viaje }}"? Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('intern.eliminar_intern', id=viaje.id) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

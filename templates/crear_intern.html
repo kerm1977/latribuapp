@@ -154,7 +154,7 @@
         <div class="section-container">
             <div class="section-header bg-warning">
                 <span>Atracciones</span>
-                 <button type="button" class="btn btn-sm btn-dark" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar</button>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addLugar()"><i class="fas fa-plus"></i> Agregar</button>
             </div>
             <div id="lugares-container"></div>
             <div class="total-field">TOTAL DE ATRACCIONES POR PERSONA: <span class="currency-label">USD</span> <span id="total-atracciones">0.00</span></div>
@@ -200,6 +200,16 @@
             <div class="total-field">TOTAL DE TRANSPORTE PRINCIPAL POR PERSONA: <span class="currency-label">USD</span> <span id="total-aerolinea">0.00</span></div>
         </div>
 
+        <!-- SECCIÓN OTROS -->
+        <div class="section-container">
+            <div class="section-header bg-warning">
+                <span>Otros</span>
+                <button type="button" class="btn btn-sm btn-dark" onclick="addOtro()"><i class="fas fa-plus"></i> Agregar</button>
+            </div>
+            <div id="otros-container"></div>
+            <div class="total-field">TOTAL OTROS PAGOS POR PERSONA: <span class="currency-label">USD</span> <span id="total-otros">0.00</span></div>
+        </div>
+
         <!-- SECCIÓN DE TOTALES GENERALES -->
         <div class="section-container text-center">
             <div class="section-header bg-warning justify-content-center">TOTALES GENERALES POR PERSONA</div>
@@ -237,6 +247,7 @@
     let guiaCount = 0;
     let estadiaCount = 0;
     let aerolineaCount = 0;
+    let otroCount = 0; // New counter for "Otros"
     
     // Asumiendo que AEROLINEA_OPTIONS se pasa desde el backend (Flask)
     // Asegúrate de que tu ruta Flask en intern.py que renderiza crear_intern.html
@@ -397,7 +408,7 @@
                         <input type="email" name="lugar_email[]" class="form-control">
                     </div>
                 </div>
-                 <div class="row">
+                <div class="row">
                     <div class="col-md-12 mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="lugar_guia_local_checkbox" value="lugar-${lugarCount}-guia-local" id="guia-local-check-${lugarCount}" onchange="toggleGuiaLocal(this, 'guia-local-nombre-${lugarCount}')">
@@ -557,7 +568,7 @@
                     <label class="form-label">Cant. Guías</label>
                     <input type="number" step="1" name="guia_cant_guias[]" class="form-control cant-guias-guia" value="" min="0" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
                 </div>
-                 <div class="col-md-3 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Cant. S/GUIAS</label>
                     <input type="number" step="1" name="guia_cant_s_guias[]" class="form-control cant-s-guias-guia" value="" min="0" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
                 </div>
@@ -831,6 +842,50 @@
         toggleAerolineaFields(newItem.querySelector('.tipo-transporte-aerolinea'));
     }
 
+    // --- New function for adding "Otro" dynamic items ---
+    function addOtro() {
+        otroCount++;
+        const container = document.getElementById('otros-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'dynamic-item';
+        newItem.id = `otro-${otroCount}`;
+        const currency = "USD";
+        newItem.innerHTML = `
+            <span class="item-counter">${otroCount}</span>
+            <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('otro-${otroCount}', updateTotalOtros)"></button>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nuevo Pago</label>
+                    <input type="text" name="otro_nuevo_pago[]" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Descripción de Pago</label>
+                    <input type="text" name="otro_descripcion_pago[]" class="form-control">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label price-label">Precio USD (${currency})</label>
+                    <input type="number" step="0.01" name="otro_precio_usd[]" class="form-control price-otro-usd" value="" oninput="handleOtroInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. C/GUIAS</label>
+                    <input type="number" step="1" name="otro_cant_c_guias[]" class="form-control cant-c-guias-otro" value="" min="0" oninput="handleOtroInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. S/GUIAS</label>
+                    <input type="number" step="1" name="otro_cant_s_guias[]" class="form-control cant-s-guias-otro" value="" min="0" oninput="handleOtroInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Individual (${currency})</label>
+                    <input type="number" step="0.01" name="otro_total_individual[]" class="form-control price-otro-individual" value="" oninput="handleOtroInput(this.closest('.dynamic-item'), event)">
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+        handleOtroInput(newItem, {target: newItem.querySelector('.price-otro-individual')}); // Initial calculation
+    }
+
     // Función para eliminar elementos dinámicos
     function removeItem(id, callback) {
         const item = document.getElementById(id);
@@ -854,6 +909,7 @@
             else if (section.querySelector('#guias-container')) currentSectionId = 'guia';
             else if (section.querySelector('#estadias-container')) currentSectionId = 'estadia';
             else if (section.querySelector('#aerolineas-container')) currentSectionId = 'aerolinea';
+            else if (section.querySelector('#otros-container')) currentSectionId = 'otro'; // New section
             
             if (currentSectionId) {
                 let index = 1;
@@ -889,6 +945,7 @@
                 else if (currentSectionId === 'guia') guiaCount = index - 1;
                 else if (currentSectionId === 'estadia') estadiaCount = index - 1;
                 else if (currentSectionId === 'aerolinea') aerolineaCount = index - 1;
+                else if (currentSectionId === 'otro') otroCount = index - 1; // Update new counter
             }
         });
     }
@@ -931,6 +988,7 @@
         updateTotalGuias();
         updateTotalEstadia();
         updateTotalAerolinea();
+        updateTotalOtros(); // Call new total function
     }
 
     // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada atracción
@@ -1310,6 +1368,67 @@
         document.getElementById('total-aerolinea').textContent = total.toFixed(2);
         updateGrandTotals();
     }
+
+    // --- New function for "Otros" calculation ---
+    function handleOtroInput(item, event) {
+        const precioUSDInput = item.querySelector('.price-otro-usd');
+        const cantCGuiasInput = item.querySelector('.cant-c-guias-otro');
+        const cantSGuiasInput = item.querySelector('.cant-s-guias-otro');
+        const individualOtroInput = item.querySelector('.price-otro-individual');
+
+        let precioUSD = parseFloat(precioUSDInput.value) || 0;
+        let cantCGuias = parseInt(cantCGuiasInput.value) || 0;
+        let cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+        let individualOtroValue = parseFloat(individualOtroInput.value);
+
+        const changedInput = event.target;
+
+        let finalIndividualValue;
+
+        // Determine if the 'Individual (USD)' field was manually edited
+        const isIndividualManuallyEdited = (changedInput === individualOtroInput && individualOtroInput.value.trim() !== "");
+
+        if (isIndividualManuallyEdited && individualOtroValue !== 0) {
+            finalIndividualValue = individualOtroValue;
+            precioUSDInput.disabled = true;
+            cantCGuiasInput.disabled = true;
+            cantSGuiasInput.disabled = true;
+            
+            // Limpiar valores para no interferir con futuras habilitaciones
+            precioUSDInput.value = "0"; 
+            cantCGuiasInput.value = "";
+            cantSGuiasInput.value = "";
+
+        } else {
+            // If 'Individual (USD)' was not manually edited or was cleared, proceed with formula calculation.
+            precioUSDInput.disabled = false;
+            cantCGuiasInput.disabled = false;
+            cantSGuiasInput.disabled = false;
+
+            const divisor = (cantSGuias === 0) ? 1 : cantSGuias; // Avoid division by zero
+
+            if (precioUSD !== 0 || cantCGuias !== 0 || cantSGuias !== 0) {
+                finalIndividualValue = (precioUSD * cantCGuias) / divisor;
+                individualOtroInput.disabled = true; // Disable if calculated
+            } else {
+                finalIndividualValue = 0; // If all source inputs are empty/zero, result is zero
+                individualOtroInput.disabled = false; // Enable for manual entry
+            }
+        }
+        
+        individualOtroInput.value = finalIndividualValue.toFixed(2);
+        updateTotalOtros();
+    }
+
+    function updateTotalOtros() {
+        let total = 0;
+        document.querySelectorAll('.dynamic-item[id^="otro-"]').forEach(item => {
+            const individualOtroInput = item.querySelector('.price-otro-individual');
+            total += parseFloat(individualOtroInput.value) || 0;
+        });
+        document.getElementById('total-otros').textContent = total.toFixed(2);
+        updateGrandTotals();
+    }
     
     function updateGrandTotals() {
         // Precio Paquete (por persona) no se incluye en el TOTAL INDIVIDUAL (USD) según la nueva especificación.
@@ -1319,9 +1438,10 @@
         const totalGuias = parseFloat(document.getElementById('total-guias').textContent) || 0;
         const totalEstadia = parseFloat(document.getElementById('total-estadia').textContent) || 0;
         const totalAerolinea = parseFloat(document.getElementById('total-aerolinea').textContent) || 0;
-        
+        const totalOtros = parseFloat(document.getElementById('total-otros').textContent) || 0; // Get new total
+
         // Calcular el TOTAL INDIVIDUAL (USD) sumando los campos especificados
-        const totalUSDCalculated = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
+        const totalUSDCalculated = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea + totalOtros; // Add new total
         
         const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
         
