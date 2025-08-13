@@ -545,21 +545,33 @@
             <span class="item-counter">${guiaCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('guia-${guiaCount}', updateTotalGuias)"></button>
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Nombre</label>
                     <input type="text" name="guia_nombre[]" class="form-control">
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label price-label">Precio Guía PP (${currency})</label>
                     <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" value="" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label price-label">Precio Acarreo (${currency})</label>
-                    <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" value="" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. Guías</label>
+                    <input type="number" step="1" name="guia_cant_guias[]" class="form-control cant-guias-guia" value="" min="0" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
+                </div>
+                 <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. S/GUIAS</label>
+                    <input type="number" step="1" name="guia_cant_s_guias[]" class="form-control cant-s-guias-guia" value="" min="0" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-12 mb-3">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label price-label">Precio Acarreo (${currency})</label>
+                    <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" value="" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. Acarreo</label>
+                    <input type="number" step="1" name="guia_cant_acarreo[]" class="form-control cant-acarreo-guia" value="" min="0" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Individual (${currency})</label>
                     <input type="number" step="0.01" name="guia_total_individual[]" class="form-control price-guia-individual" value="" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
                 </div>
@@ -655,7 +667,15 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-12 mb-3">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. C/GUIAS</label>
+                    <input type="number" step="1" name="estadia_cant_c_guias[]" class="form-control cant-c-guias-estadia" value="" min="0" oninput="handleEstadiaInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. S/GUIAS</label>
+                    <input type="number" step="1" name="estadia_cant_s_guias[]" class="form-control cant-s-guias-estadia" value="" min="0" oninput="handleEstadiaInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Individual (${currency})</label>
                     <input type="number" step="0.01" name="estadia_total_individual[]" class="form-control price-estadia-individual" value="" oninput="handleEstadiaInput(this.closest('.dynamic-item'), event)">
                 </div>
@@ -1101,59 +1121,73 @@
         updateGrandTotals();
     }
 
-    // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada guía
+    // Función actualizada para manejar la lógica de habilitación/deshabilitación y cálculo de cada guía
     function handleGuiaInput(item, event) {
         const precioGuiaPPInput = item.querySelector('.price-guia-pp');
+        const cantGuiasInput = item.querySelector('.cant-guias-guia'); // Nuevo campo Cant. Guías
         const precioAcarreoInput = item.querySelector('.price-guia-acarreo');
+        const cantAcarreoInput = item.querySelector('.cant-acarreo-guia'); // Nuevo campo Cant. Acarreo
+        const cantSGuiasInput = item.querySelector('.cant-s-guias-guia'); // Nuevo campo Cant. S/GUIAS para guías
         const individualGuiaInput = item.querySelector('.price-guia-individual');
 
-        const precioGuiaPP = parseFloat(precioGuiaPPInput.value) || 0;
-        const precioAcarreo = parseFloat(precioAcarreoInput.value) || 0;
-        const individualGuiaValue = parseFloat(individualGuiaInput.value);
+        let precioGuiaPP = parseFloat(precioGuiaPPInput.value) || 0;
+        let cantGuias = parseInt(cantGuiasInput.value) || 0;
+        let precioAcarreo = parseFloat(precioAcarreoInput.value) || 0;
+        let cantAcarreo = parseInt(cantAcarreoInput.value) || 0;
+        let cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+        let individualGuiaValue = parseFloat(individualGuiaInput.value);
 
         const changedInput = event.target;
 
-        const isIndividualManuallySet = individualGuiaInput.value.trim() !== '' && individualGuiaValue !== 0;
-        const areFormulaInputsSet = precioGuiaPP !== 0 || precioAcarreo !== 0;
+        let totalGuiasCalculated = 0;
+        let totalAcarreoCalculated = 0;
+        let finalIndividualValue = 0;
 
-        if (changedInput === individualGuiaInput) {
-            // If individual input was changed manually
-            if (isIndividualManuallySet) {
-                precioGuiaPPInput.disabled = true;
-                precioAcarreoInput.disabled = true;
-                precioGuiaPPInput.value = "0"; // Set to "0" for price input
-                precioAcarreoInput.value = "0"; // Set to "0" for price input
-            } else {
-                // Individual input is cleared or 0, re-enable formula inputs
-                precioGuiaPPInput.disabled = false;
-                precioAcarreoInput.disabled = false;
+        // Determinar si el campo 'Individual (USD)' fue editado manualmente
+        const isIndividualManuallyEdited = (changedInput === individualGuiaInput && individualGuiaInput.value.trim() !== "");
 
-                if (areFormulaInputsSet) {
-                    const calculatedValue = precioGuiaPP + precioAcarreo;
-                    individualGuiaInput.value = calculatedValue.toFixed(2);
-                    individualGuiaInput.disabled = true;
-                } else {
-                    individualGuiaInput.value = "";
-                    individualGuiaInput.disabled = false;
-                }
-            }
+        // Si 'Individual (USD)' fue editado manualmente y tiene un valor, se prioriza ese valor.
+        // Los campos de la fórmula se deshabilitan y se limpian para indicar que no son la fuente de cálculo.
+        if (isIndividualManuallyEdited && individualGuiaValue !== 0) {
+            finalIndividualValue = individualGuiaValue;
+            precioGuiaPPInput.disabled = true;
+            cantGuiasInput.disabled = true;
+            precioAcarreoInput.disabled = true;
+            cantAcarreoInput.disabled = true;
+            cantSGuiasInput.disabled = true;
+            
+            // Limpiar valores para no interferir con futuras habilitaciones
+            precioGuiaPPInput.value = "0"; 
+            cantGuiasInput.value = "";
+            precioAcarreoInput.value = "0";
+            cantAcarreoInput.value = "";
+            cantSGuiasInput.value = "";
+
         } else {
-            // If a formula input (precioGuiaPP, precioAcarreo) was changed
-            if (areFormulaInputsSet) {
-                const calculatedValue = precioGuiaPP + precioAcarreo;
-                individualGuiaInput.value = calculatedValue.toFixed(2);
-                individualGuiaInput.disabled = true;
+            // Si 'Individual (USD)' no fue editado manualmente o fue vaciado,
+            // se procede con el cálculo basado en los campos de la fórmula.
+            precioGuiaPPInput.disabled = false;
+            cantGuiasInput.disabled = false;
+            precioAcarreoInput.disabled = false;
+            cantAcarreoInput.disabled = false;
+            cantSGuiasInput.disabled = false;
 
-                precioGuiaPPInput.disabled = false;
-                precioAcarreoInput.disabled = false;
-            } else {
-                individualGuiaInput.value = "";
-                individualGuiaInput.disabled = false;
+            const divisor = (cantSGuias === 0) ? 1 : cantSGuias; // Evita división por cero
 
-                precioGuiaPPInput.disabled = false;
-                precioAcarreoInput.disabled = false;
-            }
+            // Calcular Total de Guías
+            totalGuiasCalculated = (precioGuiaPP * cantGuias) / divisor;
+
+            // Calcular Total de Acarreo
+            totalAcarreoCalculated = (precioAcarreo * cantAcarreo) / divisor;
+
+            // Calcular Total Individual de Guías
+            finalIndividualValue = totalGuiasCalculated + totalAcarreoCalculated;
+
+            // Deshabilitar 'Individual (USD)' si hay valores en los campos de la fórmula
+            individualGuiaInput.disabled = (precioGuiaPP !== 0 || cantGuias !== 0 || precioAcarreo !== 0 || cantAcarreo !== 0 || cantSGuias !== 0);
         }
+        
+        individualGuiaInput.value = finalIndividualValue.toFixed(2);
         updateTotalGuias();
     }
 
@@ -1167,61 +1201,83 @@
         updateGrandTotals();
     }
 
-    // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada estadía
+    // Función actualizada para manejar la lógica de habilitación/deshabilitación y cálculo de cada estadía
     function handleEstadiaInput(item, event) {
         const precioPPNocheInput = item.querySelector('.price-estadia-pp');
         const nochesInput = item.querySelector('.noches-estadia');
+        const cantCGuiasInput = item.querySelector('.cant-c-guias-estadia');
+        const cantSGuiasInput = item.querySelector('.cant-s-guias-estadia');
         const individualEstadiaInput = item.querySelector('.price-estadia-individual');
 
-        const precioPPNoche = parseFloat(precioPPNocheInput.value) || 0;
-        const noches = parseInt(nochesInput.value) || 0;
-        const individualEstadiaValue = parseFloat(individualEstadiaInput.value);
+        let precioPPNoche = parseFloat(precioPPNocheInput.value) || 0;
+        let noches = parseInt(nochesInput.value) || 0;
+        let cantCGuias = parseInt(cantCGuiasInput.value) || 0;
+        let cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+        let individualEstadiaValue = parseFloat(individualEstadiaInput.value);
 
         const changedInput = event.target;
 
-        if (changedInput === individualEstadiaInput) {
-            // If individual input was changed manually
-            if (individualEstadiaInput.value !== "" && individualEstadiaValue !== 0) {
-                // If individual has a value, disable and clear formula inputs
-                precioPPNocheInput.disabled = true;
-                nochesInput.disabled = true;
-                precioPPNocheInput.value = "0"; // Set to "0" for price input
-                nochesInput.value = ""; // Set to "" for quantity input
-            } else {
-                // Individual input is cleared or 0, re-enable formula inputs
-                precioPPNocheInput.disabled = false;
-                nochesInput.disabled = false;
-                // Now, re-evaluate based on formula inputs (if they have values)
-                if (precioPPNoche !== 0 || noches !== 0) {
-                    const calculatedValue = precioPPNoche * noches;
-                    individualEstadiaInput.value = calculatedValue.toFixed(2);
-                    individualEstadiaInput.disabled = true;
-                } else {
-                    // All fields are empty/0, ensure individual is enabled and clear
-                    individualEstadiaInput.value = "";
-                    individualEstadiaInput.disabled = false;
-                }
-            }
+        // Calcular el costo individual base (Precio PP Noche * # Noches)
+        let baseIndividualCost = precioPPNoche * noches;
+
+        let finalIndividualValue;
+
+        // Determinar si el campo 'Individual (USD)' fue editado manualmente
+        const isIndividualManuallyEdited = (changedInput === individualEstadiaInput && individualEstadiaInput.value.trim() !== "");
+
+        // Si 'Individual (USD)' fue editado manualmente y tiene un valor, se prioriza ese valor.
+        // Los campos de la fórmula se deshabilitan y se limpian para indicar que no son la fuente de cálculo.
+        if (isIndividualManuallyEdited && individualEstadiaValue !== 0) {
+            finalIndividualValue = individualEstadiaValue;
+            precioPPNocheInput.disabled = true;
+            nochesInput.disabled = true;
+            cantCGuiasInput.disabled = true;
+            cantSGuiasInput.disabled = true;
+            
+            // Limpiar valores para no interferir con futuras habilitaciones
+            precioPPNocheInput.value = "0"; 
+            nochesInput.value = "";
+            cantCGuiasInput.value = "";
+            cantSGuiasInput.value = "";
+
         } else {
-            // If a formula input (precioPPNoche, noches) was changed
-            if (precioPPNoche !== 0 || noches !== 0) {
-                // If any formula input has a value, calculate individual and disable it
-                const calculatedValue = precioPPNoche * noches;
-                individualEstadiaInput.value = calculatedValue.toFixed(2);
-                individualEstadiaInput.disabled = true;
-                // Ensure formula inputs are enabled
-                precioPPNocheInput.disabled = false;
-                nochesInput.disabled = false;
+            // Si 'Individual (USD)' no fue editado manualmente o fue vaciado,
+            // se procede con el cálculo basado en los campos de la fórmula.
+            precioPPNocheInput.disabled = false;
+            nochesInput.disabled = false;
+            cantCGuiasInput.disabled = false;
+            cantSGuiasInput.disabled = false;
+
+            // Aplicar la nueva fórmula si ambos Cant. C/GUIAS y Cant. S/GUIAS tienen valores válidos
+            if (cantCGuias > 0 && cantSGuias > 0) {
+                finalIndividualValue = (baseIndividualCost * cantCGuias) / cantSGuias;
+                individualEstadiaInput.disabled = true; // Deshabilitado porque es calculado
+            } else if (cantCGuias > 0 && cantSGuias === 0) {
+                // Si Cant. C/GUIAS tiene valor pero Cant. S/GUIAS es cero,
+                // se multiplica por Cant. C/GUIAS.
+                finalIndividualValue = baseIndividualCost * cantCGuias;
+                individualEstadiaInput.disabled = true; // Deshabilitado porque es calculado
             } else {
-                // All formula inputs are empty/0, clear individual and enable it
-                individualEstadiaInput.value = "";
-                individualEstadiaInput.disabled = false;
-                // Ensure formula inputs are enabled
-                precioPPNocheInput.disabled = false;
-                nochesInput.disabled = false;
+                // En cualquier otro caso (ej. Cant. C/GUIAS es 0, o ambos son 0/vacíos),
+                // el total individual es solo el costo base.
+                finalIndividualValue = baseIndividualCost;
+                // Habilitar 'Individual (USD)' si el costo base es 0 para permitir entrada manual.
+                individualEstadiaInput.disabled = (baseIndividualCost !== 0);
             }
         }
+        
+        individualEstadiaInput.value = finalIndividualValue.toFixed(2);
         updateTotalEstadia();
+    }
+
+    function updateTotalEstadia() {
+        let total = 0;
+        document.querySelectorAll('.dynamic-item[id^="estadia-"]').forEach(item => {
+            const individualEstadiaInput = item.querySelector('.price-estadia-individual');
+            total += parseFloat(individualEstadiaInput.value) || 0;
+        });
+        document.getElementById('total-estadia').textContent = total.toFixed(2);
+        updateGrandTotals();
     }
 
     function updateTotalAerolinea() {
