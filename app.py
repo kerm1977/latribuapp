@@ -20,7 +20,7 @@ from contactos import contactos_bp
 from perfil import perfil_bp
 from proyecto import proyecto_bp
 from notas import notas_bp
-from intern import intern_bp
+# from intern import intern_bp  #Volver Activar
 from caminatas import caminatas_bp
 from pagos import pagos_bp
 from calendario import calendario_bp
@@ -557,7 +557,7 @@ app.register_blueprint(contactos_bp)
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
 app.register_blueprint(proyecto_bp)
 app.register_blueprint(notas_bp)
-app.register_blueprint(intern_bp, url_prefix='/intern')
+#app.register_blueprint(intern_bp, url_prefix='/intern') #Volver Activar
 app.register_blueprint(caminatas_bp, url_prefix='/caminatas')
 app.register_blueprint(pagos_bp, url_prefix='/pagos')
 app.register_blueprint(calendario_bp, url_prefix='/calendario')
