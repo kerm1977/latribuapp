@@ -119,23 +119,12 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-3 mb-3">
+                <div class="col-md-6 mb-3">
                     <label for="precio_paquete" class="form-label">Precio Paquete (por persona)</label>
                     <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="0" oninput="updateGrandTotals()">
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label for="capacidad" class="form-label">Capacidad</label>
-                    <input type="number" class="form-control" id="capacidad" name="capacidad" value="1">
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
-                    <select class="form-select" id="tipo_moneda" name="tipo_moneda">
-                        <option value="CRC">Colones (CRC)</option>
-                        <option value="USD" selected>Dólares (USD)</option>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3" id="tipo-cambio-wrapper">
-                    <label for="tipo_cambio" class="form-label">Tipo de Cambio (a CRC)</label>
+                <div class="col-md-6 mb-3" id="tipo-cambio-wrapper">
+                    <label for="tipo_cambio" class="form-label">Tipo de Cambio (USD a CRC)</label>
                     <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="500" oninput="updateGrandTotals()">
                 </div>
             </div>
@@ -259,44 +248,22 @@
     const AEROLINEA_OPTIONS = ["Avianca", "American Airlines", "Copa", "Volaris", "Jetblue", "Sansa", "Spirit", "United", "Wingo", "KLM", "Iberia", "Lufthansa", "Latam Airlines", "IberoJet", "Delta", "AirFrance", "Alaska", "AeroMéxico", "Arajet", "Air Canadá", "Airtransat", "Green Airways", "Southwest", "Edelweiss", "Frontier", "GOL"];
 
 
-    // --- LÓGICA DE MONEDA ---
-    const tipoMonedaSelect = document.getElementById('tipo_moneda');
-    const tipoCambioWrapper = document.getElementById('tipo-cambio-wrapper');
+    // --- LÓGICA DE MONEDA (Simplificada a USD como base) ---
+    const tipoCambioInput = document.getElementById('tipo_cambio');
     const totalCRCWrapper = document.getElementById('total-crc-wrapper');
     const totalUSDWrapper = document.getElementById('total-usd-wrapper');
 
-    function handleCurrencyChange() {
-        const selectedCurrency = tipoMonedaSelect.value;
-        const priceLabels = document.querySelectorAll('.price-label');
-        const currencyLabels = document.querySelectorAll('.currency-label');
-        
-        if (selectedCurrency === 'USD') {
-            tipoCambioWrapper.style.display = 'none';
-            totalCRCWrapper.style.display = 'none';
-            totalUSDWrapper.classList.remove('col-md-6');
-            totalUSDWrapper.classList.add('col-md-12');
-        } else {
-            tipoCambioWrapper.style.display = 'block';
-            totalCRCWrapper.style.display = 'block';
-            totalUSDWrapper.classList.add('col-md-6');
-            totalUSDWrapper.classList.remove('col-md-12');
-        }
-
-        priceLabels.forEach(label => {
-            const text = label.innerText.split('(')[0];
-            label.innerText = `${text.trim()} (${selectedCurrency})`;
-        });
-        currencyLabels.forEach(label => label.textContent = selectedCurrency);
-        
-        updateGrandTotals();
-    }
-
-    tipoMonedaSelect.addEventListener('change', handleCurrencyChange);
+    // La función handleCurrencyChange ya no es necesaria ya que la moneda base es fija (USD)
+    // y solo se ajusta el tipo de cambio.
+    // Se mantiene la lógica de visibilidad de los totales en updateGrandTotals.
     
-    // --- INICIALIZAR TOTALES Y MONEDA AL CARGAR LA PÁGINA ---
+    // --- INICIALIZAR TOTALES AL CARGAR LA PÁGINA ---
     document.addEventListener('DOMContentLoaded', function() {
         recalculateAllTotals();
-        handleCurrencyChange();
+        // Ajustar la visibilidad de los totales al cargar la página
+        totalCRCWrapper.style.display = 'block'; // Siempre visible si hay conversión
+        totalUSDWrapper.classList.remove('col-md-12');
+        totalUSDWrapper.classList.add('col-md-6');
     });
 
     // --- FUNCIONES PARA AÑADIR ELEMENTOS ---
@@ -362,24 +329,38 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `lugar-${lugarCount}`;
-        const currency = tipoMonedaSelect.value;
+        const currency = "USD"; // Moneda base fija
         newItem.innerHTML = `
             <span class="item-counter">${lugarCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('lugar-${lugarCount}', updateTotalAtracciones)"></button>
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Tipo de Lugar</label>
                     <select name="lugar_tipo[]" class="form-select">
                         <option>Volcán</option><option>Montaña</option><option>Playa</option><option>Ciudad</option><option>Parque Nacional</option><option>Camino</option><option>Otros</option>
                     </select>
                 </div>
-                <div class="col-md-5 mb-3">
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Nombre de Sitio</label>
                     <input type="text" name="lugar_nombre[]" class="form-control">
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-md-3 mb-3">
-                    <label class="form-label price-label">Precio Entrada (por persona) (${currency})</label>
-                    <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion" value="0" oninput="updateTotalAtracciones()">
+                    <label class="form-label price-label">Precio Entrada (${currency})</label>
+                    <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-atraccion-base" value="0" oninput="handleAtraccionInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. C/GUIAS</label>
+                    <input type="number" step="1" name="lugar_cant_c_guias[]" class="form-control cant-c-guias" value="" min="0" oninput="handleAtraccionInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. S/GUIAS</label>
+                    <input type="number" step="1" name="lugar_cant_s_guias[]" class="form-control cant-s-guias" value="" min="0" oninput="handleAtraccionInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Individual (${currency})</label>
+                    <input type="number" step="0.01" name="lugar_total_individual[]" class="form-control price-atraccion-individual" value="" oninput="handleAtraccionInput(this.closest('.dynamic-item'), event)">
                 </div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#lugar-details-${lugarCount}">
@@ -437,6 +418,8 @@
             </div>
         `;
         container.appendChild(newItem);
+        // Recalcular para que el campo individual se inicialice correctamente
+        handleAtraccionInput(newItem, {target: newItem.querySelector('.price-atraccion-individual')}); 
     }
     
     function addTransporte() {
@@ -445,24 +428,38 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `transporte-${transporteCount}`;
-        const currency = tipoMonedaSelect.value;
+        const currency = "USD"; // Moneda base fija
         newItem.innerHTML = `
             <span class="item-counter">${transporteCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('transporte-${transporteCount}', updateTotalTransporte)"></button>
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Tipo</label>
                     <select name="transporte_tipo[]" class="form-select">
                         <option>Buseta</option><option>Bus</option><option>Taxi</option><option>Uber</option><option>Auto</option><option>Lancha</option><option>Avión</option>
                     </select>
                 </div>
-                <div class="col-md-5 mb-3">
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Nombre del Transporte</label>
                     <input type="text" name="transporte_nombre[]" class="form-control">
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-md-3 mb-3">
-                    <label class="form-label price-label">Precio Transporte (por persona) (${currency})</label>
-                    <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte" value="0" oninput="updateTotalTransporte()">
+                    <label class="form-label price-label">Precio Transporte (${currency})</label>
+                    <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-transporte-base" value="0" oninput="handleTransporteInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. C/GUIAS</label>
+                    <input type="number" step="1" name="transporte_cant_c_guias[]" class="form-control cant-c-guias" value="" min="0" oninput="handleTransporteInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cant. S/GUIAS</label>
+                    <input type="number" step="1" name="transporte_cant_s_guias[]" class="form-control cant-s-guias" value="" min="0" oninput="handleTransporteInput(this.closest('.dynamic-item'), event)">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Individual (${currency})</label>
+                    <input type="number" step="0.01" name="transporte_total_individual[]" class="form-control price-transporte-individual" value="" oninput="handleTransporteInput(this.closest('.dynamic-item'), event)">
                 </div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#transporte-details-${transporteCount}">
@@ -485,7 +482,7 @@
                         <input type="text" name="transporte_telefono_lugar[]" class="form-control">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Teléfono del Contacto</label>
+                        <label class="form-label">Teléfono de Contacto</label>
                         <input type="text" name="transporte_telefono_contacto[]" class="form-control">
                     </div>
                 </div>
@@ -514,6 +511,7 @@
             </div>
         `;
         container.appendChild(newItem);
+        handleTransporteInput(newItem, {target: newItem.querySelector('.price-transporte-individual')});
     }
 
     function addGuia() {
@@ -522,22 +520,28 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `guia-${guiaCount}`;
-        const currency = tipoMonedaSelect.value;
+        const currency = "USD"; // Moneda base fija
         newItem.innerHTML = `
             <span class="item-counter">${guiaCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('guia-${guiaCount}', updateTotalGuias)"></button>
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Nombre</label>
                     <input type="text" name="guia_nombre[]" class="form-control">
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label price-label">Precio Guía PP (${currency})</label>
-                    <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" value="0" oninput="updateTotalGuias()">
+                    <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-guia-pp" value="" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label price-label">Precio Acarreo (${currency})</label>
-                    <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" value="0" oninput="updateTotalGuias()">
+                    <input type="number" step="0.01" name="guia_acarreo[]" class="form-control price-guia-acarreo" value="" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Individual (${currency})</label>
+                    <input type="number" step="0.01" name="guia_total_individual[]" class="form-control price-guia-individual" value="" oninput="handleGuiaInput(this.closest('.dynamic-item'), event)">
                 </div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#guia-details-${guiaCount}">
@@ -597,6 +601,7 @@
             </div>
         `;
         container.appendChild(newItem);
+        handleGuiaInput(newItem, {target: newItem.querySelector('.price-guia-individual')});
     }
 
     function addEstadia() {
@@ -605,7 +610,7 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `estadia-${estadiaCount}`;
-        const currency = tipoMonedaSelect.value;
+        const currency = "USD"; // Moneda base fija
         newItem.innerHTML = `
             <span class="item-counter">${estadiaCount}</span>
             <button type="button" class="btn-close btn-remove-item" aria-label="Close" onclick="removeItem('estadia-${estadiaCount}', updateTotalEstadia)"></button>
@@ -622,11 +627,17 @@
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label price-label">Precio PP Noche (${currency})</label>
-                    <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-estadia-pp" value="0" oninput="updateTotalEstadia()">
+                    <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-estadia-pp" value="" oninput="handleEstadiaInput(this.closest('.dynamic-item'), event)">
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label"># Noches</label>
-                    <input type="number" name="estadia_noches[]" class="form-control noches-estadia" value="1" oninput="updateTotalEstadia()">
+                    <input type="number" step="1" name="estadia_noches[]" class="form-control noches-estadia" value="" min="1" oninput="handleEstadiaInput(this.closest('.dynamic-item'), event)">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Individual (${currency})</label>
+                    <input type="number" step="0.01" name="estadia_total_individual[]" class="form-control price-estadia-individual" value="" oninput="handleEstadiaInput(this.closest('.dynamic-item'), event)">
                 </div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary details-toggle" data-bs-toggle="collapse" data-bs-target="#estadia-details-${estadiaCount}">
@@ -684,6 +695,7 @@
             </div>
         `;
         container.appendChild(newItem);
+        handleEstadiaInput(newItem, {target: newItem.querySelector('.price-estadia-individual')});
     }
 
     function addAerolinea() {
@@ -692,7 +704,7 @@
         const newItem = document.createElement('div');
         newItem.className = 'dynamic-item';
         newItem.id = `aerolinea-${aerolineaCount}`;
-        const currency = tipoMonedaSelect.value;
+        const currency = "USD"; // Moneda base fija
 
         // Create options for the airline select
         let aerolineaOptions = AEROLINEA_OPTIONS.map(name => `<option value="${name}">${name}</option>`).join('');
@@ -745,35 +757,6 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Enlace para Pre-alertar</label>
                         <input type="text" name="aerolinea_enlace_prealerta[]" class="form-control">
-                    </div>
-                </div>
-                <hr>
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Número de Vuelo</label>
-                        <input type="text" name="aerolinea_vuelo[]" class="form-control">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Horario de Salida</label>
-                        <input type="datetime-local" name="aerolinea_salida[]" class="form-control">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Horario de Llegada</label>
-                        <input type="datetime-local" name="aerolinea_llegada[]" class="form-control">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Fecha de Compra</label>
-                        <input type="date" name="aerolinea_fecha_compra[]" class="form-control">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nombre del Aeropuerto</label>
-                        <input type="text" name="aerolinea_aeropuerto[]" class="form-control">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Teléfono del Aeropuerto</label>
-                        <input type="text" name="aerolinea_tel_aeropuerto[]" class="form-control">
                     </div>
                 </div>
                 <hr>
@@ -910,44 +893,277 @@
         updateTotalAerolinea();
     }
 
+    // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada atracción
+    function handleAtraccionInput(item, event) {
+        const precioEntradaInput = item.querySelector('.price-atraccion-base');
+        const cantCGuiasInput = item.querySelector('.cant-c-guias');
+        const cantSGuiasInput = item.querySelector('.cant-s-guias');
+        const individualInput = item.querySelector('.price-atraccion-individual');
+
+        const precioEntrada = parseFloat(precioEntradaInput.value) || 0;
+        const cantCGuias = parseInt(cantCGuiasInput.value) || 0;
+        const cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+        const individualValue = parseFloat(individualInput.value);
+
+        const changedInput = event.target;
+
+        if (changedInput === individualInput) {
+            // If individual input was changed manually
+            if (individualInput.value !== "" && individualValue !== 0) {
+                // If individual has a value, disable and clear formula inputs
+                precioEntradaInput.disabled = true;
+                cantCGuiasInput.disabled = true;
+                cantSGuiasInput.disabled = true;
+                precioEntradaInput.value = "0"; // Set to "0" for price input
+                cantCGuiasInput.value = ""; // Set to "" for quantity input
+                cantSGuiasInput.value = ""; // Set to "" for quantity input
+            } else {
+                // Individual input is cleared or 0, re-enable formula inputs
+                precioEntradaInput.disabled = false;
+                cantCGuiasInput.disabled = false;
+                cantSGuiasInput.disabled = false;
+                // Now, re-evaluate based on formula inputs (if they have values)
+                if (precioEntrada !== 0 || cantCGuias !== 0 || cantSGuias !== 0) {
+                    const calculatedValue = precioEntrada * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
+                    individualInput.value = calculatedValue.toFixed(2);
+                    individualInput.disabled = true;
+                } else {
+                    // All fields are empty/0, ensure individual is enabled and clear
+                    individualInput.value = "";
+                    individualInput.disabled = false;
+                }
+            }
+        } else {
+            // If a formula input (precioEntrada, cantCGuias, cantSGuias) was changed
+            if (precioEntrada !== 0 || cantCGuias !== 0 || cantSGuias !== 0) {
+                // If any formula input has a value, calculate individual and disable it
+                const calculatedValue = precioEntrada * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
+                individualInput.value = calculatedValue.toFixed(2);
+                individualInput.disabled = true;
+                // Ensure formula inputs are enabled
+                precioEntradaInput.disabled = false;
+                cantCGuiasInput.disabled = false;
+                cantSGuiasInput.disabled = false;
+            } else {
+                // All formula inputs are empty/0, clear individual and enable it
+                individualInput.value = "";
+                individualInput.disabled = false;
+                // Ensure formula inputs are enabled
+                precioEntradaInput.disabled = false;
+                cantCGuiasInput.disabled = false;
+                cantSGuiasInput.disabled = false;
+            }
+        }
+        updateTotalAtracciones();
+    }
+
+
     function updateTotalAtracciones() {
         let total = 0;
-        document.querySelectorAll('.price-atraccion').forEach(input => {
-            total += parseFloat(input.value) || 0;
+        document.querySelectorAll('.dynamic-item[id^="lugar-"]').forEach(item => {
+            const individualInput = item.querySelector('.price-atraccion-individual');
+            total += parseFloat(individualInput.value) || 0;
         });
         document.getElementById('total-atracciones').textContent = total.toFixed(2);
         updateGrandTotals();
     }
     
+    // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada transporte
+    function handleTransporteInput(item, event) {
+        const precioTransporteInput = item.querySelector('.price-transporte-base');
+        const cantCGuiasInput = item.querySelector('.cant-c-guias'); 
+        const cantSGuiasInput = item.querySelector('.cant-s-guias'); 
+        const individualTransporteInput = item.querySelector('.price-transporte-individual');
+
+        const precioTransporte = parseFloat(precioTransporteInput.value) || 0;
+        const cantCGuias = parseInt(cantCGuiasInput.value) || 0; 
+        const cantSGuias = parseInt(cantSGuiasInput.value) || 0; 
+        const individualTransporteValue = parseFloat(individualTransporteInput.value);
+
+        const changedInput = event.target;
+
+        if (changedInput === individualTransporteInput) {
+            // If individual input was changed manually
+            if (individualTransporteInput.value !== "" && individualTransporteValue !== 0) {
+                // If individual has a value, disable and clear formula inputs
+                precioTransporteInput.disabled = true;
+                cantCGuiasInput.disabled = true;
+                cantSGuiasInput.disabled = true;
+                precioTransporteInput.value = "0";
+                cantCGuiasInput.value = "";
+                cantSGuiasInput.value = "";
+            } else {
+                // Individual input is cleared or 0, re-enable formula inputs
+                precioTransporteInput.disabled = false;
+                cantCGuiasInput.disabled = false;
+                cantSGuiasInput.disabled = false;
+                // Now, re-evaluate based on formula inputs (if they have values)
+                if (precioTransporte !== 0 || cantCGuias !== 0 || cantSGuias !== 0) {
+                    const calculatedValue = precioTransporte * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
+                    individualTransporteInput.value = calculatedValue.toFixed(2);
+                    individualTransporteInput.disabled = true;
+                } else {
+                    // All fields are empty/0, ensure individual is enabled and clear
+                    individualTransporteInput.value = "";
+                    individualTransporteInput.disabled = false;
+                }
+            }
+        } else {
+            // If a formula input (precioTransporte, cantCGuias, cantSGuias) was changed
+            if (precioTransporte !== 0 || cantCGuias !== 0 || cantSGuias !== 0) {
+                // If any formula input has a value, calculate individual and disable it
+                const calculatedValue = precioTransporte * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
+                individualTransporteInput.value = calculatedValue.toFixed(2);
+                individualTransporteInput.disabled = true;
+                // Ensure formula inputs are enabled
+                precioTransporteInput.disabled = false;
+                cantCGuiasInput.disabled = false;
+                cantSGuiasInput.disabled = false;
+            } else {
+                // All formula inputs are empty/0, clear individual and enable it
+                individualTransporteInput.value = "";
+                individualTransporteInput.disabled = false;
+                // Ensure formula inputs are enabled
+                precioTransporteInput.disabled = false;
+                cantCGuiasInput.disabled = false;
+                cantSGuiasInput.disabled = false;
+            }
+        }
+        updateTotalTransporte();
+    }
+
     function updateTotalTransporte() {
         let total = 0;
-        document.querySelectorAll('.price-transporte').forEach(input => {
-            total += parseFloat(input.value) || 0;
+        document.querySelectorAll('.dynamic-item[id^="transporte-"]').forEach(item => {
+            const individualTransporteInput = item.querySelector('.price-transporte-individual');
+            total += parseFloat(individualTransporteInput.value) || 0;
         });
         document.getElementById('total-transporte').textContent = total.toFixed(2);
         updateGrandTotals();
     }
 
+    // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada guía
+    function handleGuiaInput(item, event) {
+        const precioGuiaPPInput = item.querySelector('.price-guia-pp');
+        const precioAcarreoInput = item.querySelector('.price-guia-acarreo');
+        const individualGuiaInput = item.querySelector('.price-guia-individual');
+
+        const precioGuiaPP = parseFloat(precioGuiaPPInput.value) || 0;
+        const precioAcarreo = parseFloat(precioAcarreoInput.value) || 0;
+        const individualGuiaValue = parseFloat(individualGuiaInput.value);
+
+        const changedInput = event.target;
+
+        if (changedInput === individualGuiaInput) {
+            // If individual input was changed manually
+            if (individualGuiaInput.value !== "" && individualGuiaValue !== 0) {
+                // If individual has a value, disable and clear formula inputs
+                precioGuiaPPInput.disabled = true;
+                precioAcarreoInput.disabled = true;
+                precioGuiaPPInput.value = "0"; // Set to "0" for price input
+                precioAcarreoInput.value = "0"; // Set to "0" for price input
+            } else {
+                // Individual input is cleared or 0, re-enable formula inputs
+                precioGuiaPPInput.disabled = false;
+                precioAcarreoInput.disabled = false;
+                // Now, re-evaluate based on formula inputs (if they have values)
+                if (precioGuiaPP !== 0 || precioAcarreo !== 0) {
+                    const calculatedValue = precioGuiaPP + precioAcarreo;
+                    individualGuiaInput.value = calculatedValue.toFixed(2);
+                    individualGuiaInput.disabled = true;
+                } else {
+                    // All fields are empty/0, ensure individual is enabled and clear
+                    individualGuiaInput.value = "";
+                    individualGuiaInput.disabled = false;
+                }
+            }
+        } else {
+            // If a formula input (precioGuiaPP, precioAcarreo) was changed
+            if (precioGuiaPP !== 0 || precioAcarreo !== 0) {
+                // If any formula input has a value, calculate individual and disable it
+                const calculatedValue = precioGuiaPP + precioAcarreo;
+                individualGuiaInput.value = calculatedValue.toFixed(2);
+                individualGuiaInput.disabled = true;
+                // Ensure formula inputs are enabled
+                precioGuiaPPInput.disabled = false;
+                precioAcarreoInput.disabled = false;
+            } else {
+                // All formula inputs are empty/0, clear individual and enable it
+                individualGuiaInput.value = "";
+                individualGuiaInput.disabled = false;
+                // Ensure formula inputs are enabled
+                precioGuiaPPInput.disabled = false;
+                precioAcarreoInput.disabled = false;
+            }
+        }
+        updateTotalGuias();
+    }
+
     function updateTotalGuias() {
         let total = 0;
         document.querySelectorAll('.dynamic-item[id^="guia-"]').forEach(item => {
-            const precioPP = parseFloat(item.querySelector('.price-guia-pp').value) || 0;
-            const acarreo = parseFloat(item.querySelector('.price-guia-acarreo').value) || 0;
-            total += precioPP + acarreo;
+            const individualGuiaInput = item.querySelector('.price-guia-individual');
+            total += parseFloat(individualGuiaInput.value) || 0;
         });
         document.getElementById('total-guias').textContent = total.toFixed(2);
         updateGrandTotals();
     }
 
-    function updateTotalEstadia() {
-        let total = 0;
-        document.querySelectorAll('.dynamic-item[id^="estadia-"]').forEach(item => {
-            const precioPP = parseFloat(item.querySelector('.price-estadia-pp').value) || 0;
-            const noches = parseInt(item.querySelector('.noches-estadia').value) || 1;
-            total += precioPP * noches;
-        });
-        document.getElementById('total-estadia').textContent = total.toFixed(2);
-        updateGrandTotals();
+    // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada estadía
+    function handleEstadiaInput(item, event) {
+        const precioPPNocheInput = item.querySelector('.price-estadia-pp');
+        const nochesInput = item.querySelector('.noches-estadia');
+        const individualEstadiaInput = item.querySelector('.price-estadia-individual');
+
+        const precioPPNoche = parseFloat(precioPPNocheInput.value) || 0;
+        const noches = parseInt(nochesInput.value) || 0;
+        const individualEstadiaValue = parseFloat(individualEstadiaInput.value);
+
+        const changedInput = event.target;
+
+        if (changedInput === individualEstadiaInput) {
+            // If individual input was changed manually
+            if (individualEstadiaInput.value !== "" && individualEstadiaValue !== 0) {
+                // If individual has a value, disable and clear formula inputs
+                precioPPNocheInput.disabled = true;
+                nochesInput.disabled = true;
+                precioPPNocheInput.value = "0"; // Set to "0" for price input
+                nochesInput.value = ""; // Set to "" for quantity input
+            } else {
+                // Individual input is cleared or 0, re-enable formula inputs
+                precioPPNocheInput.disabled = false;
+                nochesInput.disabled = false;
+                // Now, re-evaluate based on formula inputs (if they have values)
+                if (precioPPNoche !== 0 || noches !== 0) {
+                    const calculatedValue = precioPPNoche * noches;
+                    individualEstadiaInput.value = calculatedValue.toFixed(2);
+                    individualEstadiaInput.disabled = true;
+                } else {
+                    // All fields are empty/0, ensure individual is enabled and clear
+                    individualEstadiaInput.value = "";
+                    individualEstadiaInput.disabled = false;
+                }
+            }
+        } else {
+            // If a formula input (precioPPNoche, noches) was changed
+            if (precioPPNoche !== 0 || noches !== 0) {
+                // If any formula input has a value, calculate individual and disable it
+                const calculatedValue = precioPPNoche * noches;
+                individualEstadiaInput.value = calculatedValue.toFixed(2);
+                individualEstadiaInput.disabled = true;
+                // Ensure formula inputs are enabled
+                precioPPNocheInput.disabled = false;
+                nochesInput.disabled = false;
+            } else {
+                // All formula inputs are empty/0, clear individual and enable it
+                individualEstadiaInput.value = "";
+                individualEstadiaInput.disabled = false;
+                // Ensure formula inputs are enabled
+                precioPPNocheInput.disabled = false;
+                nochesInput.disabled = false;
+            }
+        }
+        updateTotalEstadia();
     }
 
     function updateTotalAerolinea() {
@@ -982,24 +1198,24 @@
     }
     
     function updateGrandTotals() {
-        const precioPaquete = parseFloat(document.getElementById('precio_paquete').value) || 0;
+        // Precio Paquete (por persona) no se incluye en el TOTAL INDIVIDUAL (USD) según la nueva especificación.
+        // const precioPaquete = parseFloat(document.getElementById('precio_paquete').value) || 0; 
         const totalAtracciones = parseFloat(document.getElementById('total-atracciones').textContent) || 0;
         const totalTransporte = parseFloat(document.getElementById('total-transporte').textContent) || 0;
         const totalGuias = parseFloat(document.getElementById('total-guias').textContent) || 0;
         const totalEstadia = parseFloat(document.getElementById('total-estadia').textContent) || 0;
         const totalAerolinea = parseFloat(document.getElementById('total-aerolinea').textContent) || 0;
         
-        const total = precioPaquete + totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
+        // Calcular el TOTAL INDIVIDUAL (USD) sumando los campos especificados
+        const totalUSDCalculated = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
+        
         const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
         
-        if (tipoMonedaSelect.value === 'USD') {
-            document.getElementById('total-crc').textContent = (total * tipoCambio).toFixed(2);
-            document.getElementById('total-usd').textContent = total.toFixed(2);
-        } else { // CRC
-            const totalUSD = total / tipoCambio;
-            document.getElementById('total-crc').textContent = total.toFixed(2);
-            document.getElementById('total-usd').textContent = totalUSD.toFixed(2);
-        }
+        // Actualizar el campo TOTAL INDIVIDUAL (USD)
+        document.getElementById('total-usd').textContent = totalUSDCalculated.toFixed(2);
+        
+        // Calcular y actualizar el campo TOTAL INDIVIDUAL (CRC)
+        document.getElementById('total-crc').textContent = (totalUSDCalculated * tipoCambio).toFixed(2);
     }
 </script>
 {% endblock %}
