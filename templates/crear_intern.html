@@ -1009,112 +1009,83 @@
     
     // Nueva función para manejar la lógica de habilitación/deshabilitación y cálculo de cada transporte
     function handleTransporteInput(item, event) {
-        const precioTransporteInput = item.querySelector('.price-transporte-base'); // This is now a calculated field
-        const cantCGuiasInput = item.querySelector('.cant-c-guias'); 
-        const cantSGuiasInput = item.querySelector('.cant-s-guias'); 
+        const precioTransporteInput = item.querySelector('.price-transporte-base');
+        const cantCGuiasInput = item.querySelector('.cant-c-guias'); // Keep for potential future use or if it needs to be cleared
+        const cantSGuiasInput = item.querySelector('.cant-s-guias');
         const tipoCambioTransporteInput = item.querySelector('.transporte-tipo-cambio');
         const colonesTransporteInput = item.querySelector('.transporte-colones');
-        const totalTCDisplay = item.querySelector('.transporte-total-tc'); // Read-only
+        const totalTCDisplay = item.querySelector('.transporte-total-tc');
         const individualTransporteInput = item.querySelector('.price-transporte-individual');
 
-        const cantCGuias = parseInt(cantCGuiasInput.value) || 0; 
-        const cantSGuias = parseInt(cantSGuiasInput.value) || 0; 
-        const tipoCambioTransporte = parseFloat(tipoCambioTransporteInput.value) || 0;
-        const colonesTransporte = parseFloat(colonesTransporteInput.value) || 0;
-        const individualTransporteValue = parseFloat(individualTransporteInput.value);
+        let colonesTransporte = parseFloat(colonesTransporteInput.value) || 0;
+        let tipoCambioTransporte = parseFloat(tipoCambioTransporteInput.value) || 0;
+        let cantSGuias = parseInt(cantSGuiasInput.value) || 0;
+        let individualValue = parseFloat(individualTransporteInput.value) || 0;
 
         const changedInput = event.target;
 
-        // Reset calculated fields before new calculations
-        let calculatedPrecioTransporte = 0;
         let calculatedTotalTC = 0;
-        let isIndividualCalculated = false;
+        let calculatedPrecioTransporte = 0;
+        let calculatedIndividual = 0;
 
-        // Lógica principal: Individual (USD) tiene la máxima prioridad
-        if (changedInput === individualTransporteInput) {
-            if (individualTransporteInput.value !== "" && individualTransporteValue !== 0) {
-                // Si Individual se modificó manualmente y tiene valor, deshabilitar y limpiar todo lo demás
-                precioTransporteInput.disabled = true;
-                cantCGuiasInput.disabled = true;
-                cantSGuiasInput.disabled = true;
-                tipoCambioTransporteInput.disabled = true;
-                colonesTransporteInput.disabled = true;
+        // Reset all inputs to enabled first, then selectively disable
+        precioTransporteInput.disabled = false;
+        cantCGuiasInput.disabled = false; // Keep enabled for now, might be needed for clearing.
+        cantSGuiasInput.disabled = false;
+        tipoCambioTransporteInput.disabled = false;
+        colonesTransporteInput.disabled = false;
+        individualTransporteInput.disabled = false;
 
-                precioTransporteInput.value = "0";
-                cantCGuiasInput.value = "";
-                cantSGuiasInput.value = "";
-                tipoCambioTransporteInput.value = "";
-                colonesTransporteInput.value = "";
-                totalTCDisplay.value = "";
-            } else {
-                // Individual se borró o es 0, re-habilitar campos de cálculo y re-evaluar
-                precioTransporteInput.disabled = false; // Will be set readonly later if calculated
-                cantCGuiasInput.disabled = false;
-                cantSGuiasInput.disabled = false;
-                tipoCambioTransporteInput.disabled = false;
-                colonesTransporteInput.disabled = false;
 
-                // Re-evaluar los cálculos
-                if (colonesTransporte !== 0 && tipoCambioTransporte !== 0) {
-                    calculatedTotalTC = colonesTransporte / tipoCambioTransporte;
-                    totalTCDisplay.value = calculatedTotalTC.toFixed(2);
-                    
-                    calculatedPrecioTransporte = calculatedTotalTC * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
-                    precioTransporteInput.value = calculatedPrecioTransporte.toFixed(2);
-                    precioTransporteInput.disabled = true; // Disable as it's calculated
-                    
-                    individualTransporteInput.value = calculatedPrecioTransporte.toFixed(2);
-                    individualTransporteInput.disabled = true; // Disable as it's calculated
-                    isIndividualCalculated = true;
+        // Lógica: Si Individual (USD) es ingresado manualmente, toma precedencia.
+        // Todos los demás inputs se deshabilitan y se limpian para reflejar esto.
+        if (changedInput === individualTransporteInput && individualTransporteInput.value.trim() !== "" && individualValue !== 0) {
+            // Individual fue establecido manualmente. Deshabilitar y limpiar otros inputs.
+            precioTransporteInput.disabled = true;
+            cantCGuiasInput.disabled = true;
+            cantSGuiasInput.disabled = true;
+            tipoCambioTransporteInput.disabled = true;
+            colonesTransporteInput.disabled = true;
 
-                    // Ensure formula inputs for this path are enabled
-                    tipoCambioTransporteInput.disabled = false;
-                    colonesTransporteInput.disabled = false;
-                    cantCGuiasInput.disabled = false;
-                    cantSGuiasInput.disabled = false;
+            precioTransporteInput.value = "0"; // Limpiar para fuentes de cálculo
+            cantCGuiasInput.value = "";
+            cantSGuiasInput.value = "";
+            tipoCambioTransporteInput.value = "";
+            colonesTransporteInput.value = "";
+            totalTCDisplay.value = "";
 
-                } else {
-                    // If Colones/TC are not used, clear their calculated outputs and enable inputs
-                    totalTCDisplay.value = "";
-                    precioTransporteInput.value = "0";
-                    precioTransporteInput.disabled = false; // Re-enable if not calculated
-                    
-                    // If no calculation path is active, ensure Individual is empty and enabled
-                    individualTransporteInput.value = "";
-                    individualTransporteInput.disabled = false;
-                }
-            }
+            // El 'individualValue' ya es el valor ingresado manualmente.
+            // No se realizan otros cálculos en esta rama.
+
         } else {
-            // Si un campo de cálculo (no Individual) fue modificado
-            // Habilitar todos los campos de cálculo primero, luego deshabilitar según la lógica
-            individualTransporteInput.disabled = false; // Temporarily enable individual
+            // Individual (USD) no fue el input modificado, o fue limpiado.
+            // Proceder con la cadena de cálculo: Colones -> Total TC -> Precio Transporte -> Individual
 
+            // 1. Calcular Total TC
             if (colonesTransporte !== 0 && tipoCambioTransporte !== 0) {
                 calculatedTotalTC = colonesTransporte / tipoCambioTransporte;
                 totalTCDisplay.value = calculatedTotalTC.toFixed(2);
-                
-                calculatedPrecioTransporte = calculatedTotalTC * cantCGuias / (cantSGuias === 0 ? 1 : cantSGuias);
-                precioTransporteInput.value = calculatedPrecioTransporte.toFixed(2);
-                precioTransporteInput.disabled = true; // Disable as it's calculated
-                
-                individualTransporteInput.value = calculatedPrecioTransporte.toFixed(2);
-                individualTransporteInput.disabled = true; // Disable as it's calculated
-
-                // Ensure inputs for this path are enabled
-                tipoCambioTransporteInput.disabled = false;
-                colonesTransporteInput.disabled = false;
-                cantCGuiasInput.disabled = false;
-                cantSGuiasInput.disabled = false;
-
             } else {
-                // If Colones/TC are not used, clear their calculated outputs
-                totalTCDisplay.value = "";
-                precioTransporteInput.value = "0";
-                precioTransporteInput.disabled = false; // Re-enable if not calculated
+                calculatedTotalTC = 0;
+                totalTCDisplay.value = "0.00";
+            }
 
-                // If no calculation path is active, ensure Individual is empty and enabled
-                individualTransporteInput.value = "";
-                individualTransporteInput.disabled = false;
+            // 2. Calcular Precio Transporte (USD) == Total TC
+            calculatedPrecioTransporte = calculatedTotalTC;
+            precioTransporteInput.value = calculatedPrecioTransporte.toFixed(2);
+            precioTransporteInput.disabled = true; // Deshabilitar ya que es calculado
+
+            // 3. Calcular Individual (USD) == Precio Transporte (USD) / Cant. S/GUIAS
+            // Usar el calculatedPrecioTransporte (que es Total TC)
+            if (calculatedPrecioTransporte !== 0 || cantSGuias !== 0) {
+                // Asegurarse de no dividir por cero para cantSGuias
+                const divisor = (cantSGuias === 0) ? 1 : cantSGuias; // Evita división por cero
+                calculatedIndividual = calculatedPrecioTransporte / divisor;
+                individualTransporteInput.value = calculatedIndividual.toFixed(2);
+                individualTransporteInput.disabled = true; // Deshabilitar ya que es calculado
+            } else {
+                individualTransporteInput.value = ""; // Limpiar si no hay valores fuente
+                individualTransporteInput.disabled = false; // Re-habilitar si no hay cálculo
             }
         }
         updateTotalTransporte();
