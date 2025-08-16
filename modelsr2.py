@@ -33,8 +33,12 @@ playlist_songs = db.Table('playlist_songs',
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    # --- INICIO: CAMBIOS PARA SOLUCIONAR ERROR DE MIGRACIÓN ---
+    # Se mueven las restricciones 'unique' a __table_args__ para darles un nombre.
     username = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), nullable=False)
+    # --- FIN: CAMBIOS PARA SOLUCIONAR ERROR DE MIGRACIÓN ---
+    
     password = db.Column(db.String(200), nullable=True) 
     nombre = db.Column(db.String(100), nullable=False)
     primer_apellido = db.Column(db.String(100), nullable=False)
@@ -57,11 +61,15 @@ class User(db.Model):
     enfermedades_cronicas = db.Column(db.Text, nullable=True)
     role = db.Column(db.String(50), nullable=False, default='Usuario Regular')
     last_login_at = db.Column(db.DateTime, nullable=True)
+
     oauth_logins = db.relationship('OAuthSignIn', backref='user', lazy=True, cascade="all, delete-orphan")
+
+    # --- INICIO: RESTRICCIONES NOMBRADAS ---
     __table_args__ = (
         UniqueConstraint('username', name='uq_user_username'),
         UniqueConstraint('email', name='uq_user_email'),
     )
+    # --- FIN: RESTRICCIONES NOMBRADAS ---
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -84,7 +92,9 @@ class OAuthSignIn(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     provider = db.Column(db.String(50), nullable=False)
     provider_user_id = db.Column(db.String(255), nullable=False)
+    
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+
     __table_args__ = (
         UniqueConstraint('provider', 'provider_user_id', name='uq_oauth_signin_provider_user_id'),
     )
@@ -143,14 +153,21 @@ class Note(db.Model):
     def __repr__(self):
         return f"Note('{self.title}', Creator ID: {self.creator_id}, Public: {self.is_public}, Color: {self.background_color})"
 
+
+
 class Caminata(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
     finalizada = db.Column(db.Boolean, nullable=False, server_default='0')
     imagen_caminata_url = db.Column(db.String(255), nullable=True)
     actividad = db.Column(db.String(100), nullable=False)
     etapa = db.Column(db.String(255), nullable=True)
     nombre = db.Column(db.String(255), nullable=False)
+    
+    # --- INICIO DE LA CORRECCIÓN ---
     moneda = db.Column(db.String(10), nullable=False, server_default='CRC', default='CRC')
+    # --- FIN DE LA CORRECCIÓN ---
+    
     precio = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.Date, nullable=False)
     hora = db.Column(db.Time, nullable=True)
@@ -182,6 +199,7 @@ class Caminata(db.Model):
     altura_negativa = db.Column(db.Float, nullable=True)
     otros_datos = db.Column(db.Text, nullable=True)
     duracion_horas = db.Column(db.Float, nullable=True)
+
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     fecha_modificacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
     participantes = db.relationship(
@@ -197,7 +215,6 @@ class Caminata(db.Model):
         db.Index('idx_caminata_fecha_desc', fecha.desc()),
         db.Index('idx_caminata_actividad', actividad),
     )
-
 class AbonoCaminata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     caminata_id = db.Column(db.Integer, db.ForeignKey('caminata.id'), nullable=False)
@@ -213,7 +230,9 @@ class AbonoCaminata(db.Model):
     periodo_cancela = db.Column(db.Date, nullable=True)
 
     def __repr__(self):
+        # Se actualiza la representación para reflejar los nuevos campos si existen
         return f"AbonoCaminata(Caminata: {self.caminata_id}, User: {self.user_id}, CRC: {self.monto_abono_crc}, USD: {self.monto_abono_usd})"
+
 
 class Pagos(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -442,32 +461,45 @@ class SiteStats(db.Model):
     def __repr__(self):
         return f"<SiteStats (ID: {self.id}, Visits: {self.visits})>"
 
+# NUEVOS MODELOS PARA PÓLIZAS
 class Poliza(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    
+    # Datos del coordinador y aseguradora (visto por Superusuarios)
     coordinador_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     coordinador = db.relationship('User', foreign_keys=[coordinador_id])
+    
     aseguradora_nombre = db.Column(db.String(150), nullable=True)
     asesor_nombre = db.Column(db.String(150), nullable=True)
     aseguradora_telefono = db.Column(db.String(20), nullable=True)
     aseguradora_email = db.Column(db.String(120), nullable=True)
     asesor_telefono = db.Column(db.String(20), nullable=True)
+    
+    # Datos del Asegurado
     asegurado_registrado_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     asegurado_registrado = db.relationship('User', foreign_keys=[asegurado_registrado_id], backref='polizas_asegurado')
-    asegurado_nombre_manual = db.Column(db.String(150), nullable=True)
+    
+    asegurado_nombre_manual = db.Column(db.String(150), nullable=True) # Para no registrados
     asegurado_primer_apellido = db.Column(db.String(100), nullable=True)
     asegurado_segundo_apellido = db.Column(db.String(100), nullable=True)
     asegurado_telefono = db.Column(db.String(20), nullable=True)
     asegurado_email = db.Column(db.String(120), nullable=True)
     genero = db.Column(db.String(50), nullable=True)
+
+    # Detalles de la Póliza
     costo_tramite = db.Column(db.Float, default=1000.0, nullable=True)
     otros_detalles = db.Column(db.Text, nullable=True)
     fecha_registro = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+    # --- NUEVOS CAMPOS ---
     fecha_vencimiento = db.Column(db.Date, nullable=True)
     precio_poliza = db.Column(db.Float, nullable=True)
     monto_cancelacion = db.Column(db.Float, nullable=True)
     banco = db.Column(db.String(100), nullable=True)
     cuenta_deposito = db.Column(db.String(100), nullable=True)
     sinpe_deposito = db.Column(db.String(20), nullable=True)
+
+    # Relación con Beneficiarios
     beneficiarios = db.relationship('Beneficiario', backref='poliza', lazy=True, cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -477,6 +509,7 @@ class Poliza(db.Model):
 class Beneficiario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     poliza_id = db.Column(db.Integer, db.ForeignKey('poliza.id', ondelete='CASCADE'), nullable=False)
+    
     nombre = db.Column(db.String(100), nullable=False)
     primer_apellido = db.Column(db.String(100), nullable=True)
     segundo_apellido = db.Column(db.String(100), nullable=True)
