@@ -203,12 +203,21 @@ def crear_intern():
         
         # Lugares a Visitar
         for i in range(len(request.form.getlist('lugar_nombre[]'))):
-             if request.form.getlist('lugar_nombre[]')[i]:
+            if request.form.getlist('lugar_nombre[]')[i]:
                 db.session.add(LugarVisitar(
                     travel_id=nuevo_viaje.id,
                     tipo_lugar=request.form.getlist('lugar_tipo[]')[i],
                     nombre_sitio=request.form.getlist('lugar_nombre[]')[i],
-                    precio_entrada=float(request.form.getlist('lugar_precio[]')[i] or 0.0)
+                    precio_entrada=float(request.form.getlist('lugar_precio[]')[i] or 0.0),
+                    fecha_reserva=to_date(request.form.getlist('lugar_fecha_reserva[]')[i]),
+                    guia_local=request.form.getlist('lugar_guia_local[]')[i],
+                    nombre_guia=request.form.getlist('lugar_nombre_guia[]')[i],
+                    telefono_lugar=request.form.getlist('lugar_telefono_lugar[]')[i],
+                    telefono_contacto=request.form.getlist('lugar_telefono_contacto[]')[i],
+                    whatsapp_contacto=request.form.getlist('lugar_whatsapp_contacto[]')[i],
+                    email=request.form.getlist('lugar_email[]')[i],
+                    enlaces=request.form.getlist('lugar_enlaces[]')[i],
+                    nota=request.form.getlist('lugar_nota[]')[i]
                 ))
 
         # Transportes
@@ -218,7 +227,15 @@ def crear_intern():
                     travel_id=nuevo_viaje.id,
                     tipo_transporte=request.form.getlist('transporte_tipo[]')[i],
                     nombre_transporte=request.form.getlist('transporte_nombre[]')[i],
-                    precio=float(request.form.getlist('transporte_precio[]')[i] or 0.0)
+                    precio=float(request.form.getlist('transporte_precio[]')[i] or 0.0),
+                    conductor=request.form.getlist('transporte_conductor[]')[i],
+                    fecha_contratacion=to_date(request.form.getlist('transporte_fecha_contratacion[]')[i]),
+                    telefono_lugar=request.form.getlist('transporte_telefono_lugar[]')[i],
+                    telefono_contacto=request.form.getlist('transporte_telefono_contacto[]')[i],
+                    whatsapp_contacto=request.form.getlist('transporte_whatsapp_contacto[]')[i],
+                    email=request.form.getlist('transporte_email[]')[i],
+                    enlaces=request.form.getlist('transporte_enlaces[]')[i],
+                    nota=request.form.getlist('transporte_nota[]')[i]
                 ))
 
         # Guías
@@ -227,8 +244,18 @@ def crear_intern():
                 db.session.add(Guia(
                     travel_id=nuevo_viaje.id,
                     nombre=request.form.getlist('guia_nombre[]')[i],
+                    telefono=request.form.getlist('guia_telefono[]')[i],
+                    operador=request.form.getlist('guia_operador[]')[i],
+                    email=request.form.getlist('guia_email[]')[i],
+                    whatsapp=request.form.getlist('guia_whatsapp[]')[i],
                     precio_guia_pp=float(request.form.getlist('guia_precio_pp[]')[i] or 0.0),
-                    precio_acarreo=float(request.form.getlist('guia_precio_acarreo[]')[i] or 0.0)
+                    cpl=request.form.getlist('guia_cpl[]')[i],
+                    fecha_disponible=to_date(request.form.getlist('guia_fecha_disponible[]')[i]),
+                    reserva=request.form.getlist('guia_reserva[]')[i],
+                    precio_acarreo=float(request.form.getlist('guia_precio_acarreo[]')[i] or 0.0),
+                    enlaces=request.form.getlist('guia_enlaces[]')[i],
+                    nota=request.form.getlist('guia_nota[]')[i],
+                    fecha_reserva=to_date(request.form.getlist('guia_fecha_reserva[]')[i])
                 ))
 
         # Estadías
@@ -237,8 +264,19 @@ def crear_intern():
                 db.session.add(Estadia(
                     travel_id=nuevo_viaje.id,
                     nombre=request.form.getlist('estadia_nombre[]')[i],
+                    contacto=request.form.getlist('estadia_contacto[]')[i],
+                    telefono=request.form.getlist('estadia_telefono[]')[i],
+                    whatsapp=request.form.getlist('estadia_whatsapp[]')[i],
+                    email=request.form.getlist('estadia_email[]')[i],
                     precio_pp=float(request.form.getlist('estadia_precio_pp[]')[i] or 0.0),
-                    cantidad_noches=int(request.form.getlist('estadia_noches[]')[i] or 1)
+                    cpl=request.form.getlist('estadia_cpl[]')[i],
+                    fecha_disponible_reserva=to_date(request.form.getlist('estadia_fecha_disponible[]')[i]),
+                    alimentacion_incluida=request.form.getlist('estadia_alimentacion[]')[i],
+                    cantidad_noches=int(request.form.getlist('estadia_noches[]')[i] or 1),
+                    enlaces=request.form.getlist('estadia_enlaces[]')[i],
+                    nota=request.form.getlist('estadia_nota[]')[i],
+                    fecha_entrada=to_date(request.form.getlist('estadia_fecha_entrada[]')[i]),
+                    fecha_salida=to_date(request.form.getlist('estadia_fecha_salida[]')[i])
                 ))
         
         # Aerolíneas
@@ -326,25 +364,83 @@ def editar_intern(id):
         for item in viaje.lugares: db.session.delete(item)
         for i in range(len(request.form.getlist('lugar_nombre[]'))):
             if request.form.getlist('lugar_nombre[]')[i]:
-                db.session.add(LugarVisitar(travel_id=viaje.id, tipo_lugar=request.form.getlist('lugar_tipo[]')[i], nombre_sitio=request.form.getlist('lugar_nombre[]')[i], precio_entrada=float(request.form.getlist('lugar_precio[]')[i] or 0.0)))
+                db.session.add(LugarVisitar(
+                    travel_id=viaje.id,
+                    tipo_lugar=request.form.getlist('lugar_tipo[]')[i],
+                    nombre_sitio=request.form.getlist('lugar_nombre[]')[i],
+                    precio_entrada=float(request.form.getlist('lugar_precio[]')[i] or 0.0),
+                    fecha_reserva=to_date(request.form.getlist('lugar_fecha_reserva[]')[i]),
+                    guia_local=request.form.getlist('lugar_guia_local[]')[i],
+                    nombre_guia=request.form.getlist('lugar_nombre_guia[]')[i],
+                    telefono_lugar=request.form.getlist('lugar_telefono_lugar[]')[i],
+                    telefono_contacto=request.form.getlist('lugar_telefono_contacto[]')[i],
+                    whatsapp_contacto=request.form.getlist('lugar_whatsapp_contacto[]')[i],
+                    email=request.form.getlist('lugar_email[]')[i],
+                    enlaces=request.form.getlist('lugar_enlaces[]')[i],
+                    nota=request.form.getlist('lugar_nota[]')[i]
+                ))
 
         # Transportes
         for item in viaje.transportes: db.session.delete(item)
         for i in range(len(request.form.getlist('transporte_nombre[]'))):
             if request.form.getlist('transporte_nombre[]')[i]:
-                db.session.add(Transporte(travel_id=viaje.id, tipo_transporte=request.form.getlist('transporte_tipo[]')[i], nombre_transporte=request.form.getlist('transporte_nombre[]')[i], precio=float(request.form.getlist('transporte_precio[]')[i] or 0.0)))
+                db.session.add(Transporte(
+                    travel_id=viaje.id,
+                    tipo_transporte=request.form.getlist('transporte_tipo[]')[i],
+                    nombre_transporte=request.form.getlist('transporte_nombre[]')[i],
+                    precio=float(request.form.getlist('transporte_precio[]')[i] or 0.0),
+                    conductor=request.form.getlist('transporte_conductor[]')[i],
+                    fecha_contratacion=to_date(request.form.getlist('transporte_fecha_contratacion[]')[i]),
+                    telefono_lugar=request.form.getlist('transporte_telefono_lugar[]')[i],
+                    telefono_contacto=request.form.getlist('transporte_telefono_contacto[]')[i],
+                    whatsapp_contacto=request.form.getlist('transporte_whatsapp_contacto[]')[i],
+                    email=request.form.getlist('transporte_email[]')[i],
+                    enlaces=request.form.getlist('transporte_enlaces[]')[i],
+                    nota=request.form.getlist('transporte_nota[]')[i]
+                ))
 
         # Guías
         for item in viaje.guias: db.session.delete(item)
         for i in range(len(request.form.getlist('guia_nombre[]'))):
             if request.form.getlist('guia_nombre[]')[i]:
-                db.session.add(Guia(travel_id=viaje.id, nombre=request.form.getlist('guia_nombre[]')[i], precio_guia_pp=float(request.form.getlist('guia_precio_pp[]')[i] or 0.0), precio_acarreo=float(request.form.getlist('guia_precio_acarreo[]')[i] or 0.0)))
+                db.session.add(Guia(
+                    travel_id=viaje.id,
+                    nombre=request.form.getlist('guia_nombre[]')[i],
+                    telefono=request.form.getlist('guia_telefono[]')[i],
+                    operador=request.form.getlist('guia_operador[]')[i],
+                    email=request.form.getlist('guia_email[]')[i],
+                    whatsapp=request.form.getlist('guia_whatsapp[]')[i],
+                    precio_guia_pp=float(request.form.getlist('guia_precio_pp[]')[i] or 0.0),
+                    cpl=request.form.getlist('guia_cpl[]')[i],
+                    fecha_disponible=to_date(request.form.getlist('guia_fecha_disponible[]')[i]),
+                    reserva=request.form.getlist('guia_reserva[]')[i],
+                    precio_acarreo=float(request.form.getlist('guia_precio_acarreo[]')[i] or 0.0),
+                    enlaces=request.form.getlist('guia_enlaces[]')[i],
+                    nota=request.form.getlist('guia_nota[]')[i],
+                    fecha_reserva=to_date(request.form.getlist('guia_fecha_reserva[]')[i])
+                ))
 
         # Estadías
         for item in viaje.estadias: db.session.delete(item)
         for i in range(len(request.form.getlist('estadia_nombre[]'))):
             if request.form.getlist('estadia_nombre[]')[i]:
-                db.session.add(Estadia(travel_id=viaje.id, nombre=request.form.getlist('estadia_nombre[]')[i], precio_pp=float(request.form.getlist('estadia_precio_pp[]')[i] or 0.0), cantidad_noches=int(request.form.getlist('estadia_noches[]')[i] or 1)))
+                db.session.add(Estadia(
+                    travel_id=viaje.id,
+                    nombre=request.form.getlist('estadia_nombre[]')[i],
+                    contacto=request.form.getlist('estadia_contacto[]')[i],
+                    telefono=request.form.getlist('estadia_telefono[]')[i],
+                    whatsapp=request.form.getlist('estadia_whatsapp[]')[i],
+                    email=request.form.getlist('estadia_email[]')[i],
+                    precio_pp=float(request.form.getlist('estadia_precio_pp[]')[i] or 0.0),
+                    cpl=request.form.getlist('estadia_cpl[]')[i],
+                    fecha_disponible_reserva=to_date(request.form.getlist('estadia_fecha_disponible[]')[i]),
+                    alimentacion_incluida=request.form.getlist('estadia_alimentacion[]')[i],
+                    cantidad_noches=int(request.form.getlist('estadia_noches[]')[i] or 1),
+                    enlaces=request.form.getlist('estadia_enlaces[]')[i],
+                    nota=request.form.getlist('estadia_nota[]')[i],
+                    fecha_entrada=to_date(request.form.getlist('estadia_fecha_entrada[]')[i]),
+                    fecha_salida=to_date(request.form.getlist('estadia_fecha_salida[]')[i])
+                ))
 
         # Aerolíneas
         for item in viaje.aerolineas: db.session.delete(item)
