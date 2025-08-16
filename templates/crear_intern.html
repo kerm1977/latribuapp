@@ -90,7 +90,7 @@
                 </div>
                  <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label for="precio_paquete" class="form-label">Precio del Paquete</label>
+                        <label for="precio_paquete" class="form-label price-label">Precio del Paquete</label>
                         <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="0">
                     </div>
                     <div class="col-md-2 mb-3">
@@ -345,7 +345,7 @@
                 <input type="text" name="lugar_nombre[]" class="form-control">
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">Precio Entrada (CRC)</label>
+                <label class="form-label price-label">Precio Entrada</label>
                 <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
             </div>
             <div class="col-md-3 mb-3">
@@ -409,7 +409,7 @@
                 <input type="text" name="transporte_nombre[]" class="form-control">
             </div>
             <div class="col-md-4 mb-3">
-                <label class="form-label">Precio del Transporte (CRC)</label>
+                <label class="form-label price-label">Precio del Transporte</label>
                 <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
             </div>
             <div class="col-md-4 mb-3">
@@ -476,11 +476,11 @@
                 <input type="tel" name="guia_whatsapp[]" class="form-control">
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">Precio Guía PP (CRC)</label>
+                <label class="form-label price-label">Precio Guía PP</label>
                 <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">Precio Acarreo (CRC)</label>
+                <label class="form-label price-label">Precio Acarreo</label>
                 <input type="number" step="0.01" name="guia_precio_acarreo[]" class="form-control price-field" value="0" oninput="calculateTotals()">
             </div>
             <div class="col-md-3 mb-3">
@@ -542,7 +542,7 @@
                 <input type="email" name="estadia_email[]" class="form-control">
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">Precio PP por Noche (CRC)</label>
+                <label class="form-label price-label">Precio PP por Noche</label>
                 <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
             </div>
             <div class="col-md-3 mb-3">
@@ -650,24 +650,24 @@
             </div>
             <hr>
             <h6 class="text-center">Precios</h6>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Asientos</label><input type="number" name="aerolinea_p_asientos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Maletas Doc.</label><input type="number" name="aerolinea_p_maletas[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Equipaje de Mano</label><input type="number" name="aerolinea_p_equipaje_mano[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Estandar</label><input type="number" name="aerolinea_p_estandar[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Mas equipo</label><input type="number" name="aerolinea_p_mas_equipo[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Salida rápida</label><input type="number" name="aerolinea_p_salida_rapida[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Premium</label><input type="number" name="aerolinea_p_premium[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio VIP</label><input type="number" name="aerolinea_p_vip[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Basic</label><input type="number" name="aerolinea_p_basic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Classic</label><input type="number" name="aerolinea_p_classic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Flexible</label><input type="number" name="aerolinea_p_flexible[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Precio Impuestos</label><input type="number" name="aerolinea_p_impuestos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" name="aerolinea_p_asientos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" name="aerolinea_p_maletas[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" name="aerolinea_p_equipaje_mano[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Estandar</label><input type="number" name="aerolinea_p_estandar[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Mas equipo</label><input type="number" name="aerolinea_p_mas_equipo[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Salida rápida</label><input type="number" name="aerolinea_p_salida_rapida[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Premium</label><input type="number" name="aerolinea_p_premium[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio VIP</label><input type="number" name="aerolinea_p_vip[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Basic</label><input type="number" name="aerolinea_p_basic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Classic</label><input type="number" name="aerolinea_p_classic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Flexible</label><input type="number" name="aerolinea_p_flexible[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" name="aerolinea_p_impuestos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
             <hr>
             <h6 class="text-center">Otros Costos</h6>
             {% for i in range(1, 5) %}
             <div class="col-md-6 mb-3"><label class="form-label">Descripción #{{i}}</label><input type="text" name="aerolinea_desc_{{i}}[]" class="form-control"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Otros Costos #{{i}}</label><input type="number" name="aerolinea_costo_{{i}}[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Cantidad</label><input type="number" name="aerolinea_cant_{{i}}[]" class="form-control" value="1"></div>
+            <div class="col-md-3 mb-3"><label class="form-label price-label">Otros Costos #{{i}}</label><input type="number" name="aerolinea_costo_{{i}}[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Cantidad</label><input type="number" name="aerolinea_cant_{{i}}[]" class="form-control" value="1" oninput="calculateTotals()"></div>
             {% endfor %}
             <hr>
             <div class="col-md-6 mb-3">
@@ -689,76 +689,136 @@
         const itemNumber = container.children.length + 1;
         clone.querySelector('.item-number').textContent = itemNumber;
         container.appendChild(clone);
+        // After adding a new form, update its currency labels
+        updateCurrencyUI();
     }
 
     function toggleAirlineFields(selectElement) {
         const parentItem = selectElement.closest('.dynamic-item');
         const airlineFields = parentItem.querySelector('.airline-fields');
         if (selectElement.value === 'Avión') {
-            airlineFields.style.display = 'flex'; // O 'grid', o lo que corresponda
+            airlineFields.style.display = 'flex';
         } else {
             airlineFields.style.display = 'none';
         }
     }
 
+    function updateCurrencyUI() {
+        const currency = document.getElementById('tipo_moneda').value;
+        const currencySymbol = `(${currency})`;
+
+        document.querySelectorAll('.price-label').forEach(label => {
+            let text = label.textContent.replace(/\s*\((CRC|USD)\)$/, '');
+            label.textContent = `${text} ${currencySymbol}`;
+        });
+    }
+
     function calculateTotals() {
         const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
+        const currency = document.getElementById('tipo_moneda').value;
 
-        // Total Atracciones
-        let totalAtracciones = 0;
-        document.querySelectorAll('#lugar-container .price-field').forEach(input => {
-            totalAtracciones += parseFloat(input.value) || 0;
-        });
-        document.getElementById('total-atracciones-crc').textContent = totalAtracciones.toFixed(2);
-        document.getElementById('total-atracciones-usd').textContent = (totalAtracciones / tipoCambio).toFixed(2);
+        const calculateSectionTotal = (containerId, priceFieldSelector) => {
+            let total = 0;
+            document.querySelectorAll(`#${containerId} .dynamic-item`).forEach(item => {
+                item.querySelectorAll(priceFieldSelector).forEach(input => {
+                    total += parseFloat(input.value) || 0;
+                });
+            });
+            return total;
+        };
 
-        // Total Transporte
-        let totalTransporte = 0;
-        document.querySelectorAll('#transporte-container .price-field').forEach(input => {
-            totalTransporte += parseFloat(input.value) || 0;
-        });
-        document.getElementById('total-transporte-crc').textContent = totalTransporte.toFixed(2);
-        document.getElementById('total-transporte-usd').textContent = (totalTransporte / tipoCambio).toFixed(2);
+        const calculateGuiaTotal = () => {
+             let total = 0;
+             document.querySelectorAll('#guia-container .dynamic-item').forEach(item => {
+                const precioPP = parseFloat(item.querySelector('input[name="guia_precio_pp[]"]').value) || 0;
+                const precioAcarreo = parseFloat(item.querySelector('input[name="guia_precio_acarreo[]"]').value) || 0;
+                total += precioPP + precioAcarreo;
+            });
+            return total;
+        };
+
+        const calculateEstadiaTotal = () => {
+            let total = 0;
+            document.querySelectorAll('#estadia-container .dynamic-item').forEach(item => {
+                const precioPP = parseFloat(item.querySelector('input[name="estadia_precio_pp[]"]').value) || 0;
+                const noches = parseInt(item.querySelector('input[name="estadia_noches[]"]').value) || 1;
+                total += precioPP * noches;
+            });
+            return total;
+        };
+
+        const calculateAerolineaTotal = () => {
+            let total = 0;
+            document.querySelectorAll('#aerolinea-container .dynamic-item').forEach(item => {
+                item.querySelectorAll('.price-field').forEach(input => {
+                    let precio = parseFloat(input.value) || 0;
+                    let cantidad = 1;
+                    if (input.name.startsWith('aerolinea_costo_')) {
+                        const index = input.name.match(/(\d+)/)[0];
+                        const cantInput = item.querySelector(`input[name="aerolinea_cant_${index}[]"]`);
+                        if (cantInput) {
+                            cantidad = parseInt(cantInput.value) || 1;
+                        }
+                    }
+                    total += precio * cantidad;
+                });
+            });
+            return total;
+        };
+
+        let totalAtracciones = calculateSectionTotal('lugar-container', 'input[name="lugar_precio[]"]');
+        let totalTransporte = calculateSectionTotal('transporte-container', 'input[name="transporte_precio[]"]');
+        let totalGuias = calculateGuiaTotal();
+        let totalEstadia = calculateEstadiaTotal();
+        let totalAerolinea = calculateAerolineaTotal();
+
+        let totalInputCurrency = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
         
-        // Total Guías PP
-        let totalGuias = 0;
-        document.querySelectorAll('#guia-container .dynamic-item').forEach(item => {
-            const precioPP = parseFloat(item.querySelector('input[name="guia_precio_pp[]"]').value) || 0;
-            const precioAcarreo = parseFloat(item.querySelector('input[name="guia_precio_acarreo[]"]').value) || 0;
-            totalGuias += precioPP + precioAcarreo;
-        });
-        document.getElementById('total-guias-crc').textContent = totalGuias.toFixed(2);
-        document.getElementById('total-guias-usd').textContent = (totalGuias / tipoCambio).toFixed(2);
+        let totalCRC, totalUSD;
 
-        // Total Estadía PP
-        let totalEstadia = 0;
-        document.querySelectorAll('#estadia-container .dynamic-item').forEach(item => {
-            const precioPP = parseFloat(item.querySelector('input[name="estadia_precio_pp[]"]').value) || 0;
-            const noches = parseInt(item.querySelector('input[name="estadia_noches[]"]').value) || 1;
-            totalEstadia += precioPP * noches;
-        });
-        document.getElementById('total-estadia-crc').textContent = totalEstadia.toFixed(2);
-        document.getElementById('total-estadia-usd').textContent = (totalEstadia / tipoCambio).toFixed(2);
+        if (currency === 'USD') {
+            totalUSD = totalInputCurrency;
+            totalCRC = totalInputCurrency * tipoCambio;
+        } else { // CRC
+            totalCRC = totalInputCurrency;
+            totalUSD = totalInputCurrency / tipoCambio;
+        }
 
-        // Total Aerolínea PP
-        let totalAerolinea = 0;
-        document.querySelectorAll('#aerolinea-container .price-field').forEach(input => {
-            const parentItem = input.closest('.dynamic-item');
-            const cantidadInput = parentItem.querySelector(`input[name="${input.name.replace('costo', 'cant')}"]`);
-            const cantidad = cantidadInput ? (parseInt(cantidadInput.value) || 1) : 1;
-            totalAerolinea += (parseFloat(input.value) || 0) * cantidad;
-        });
-        document.getElementById('total-aerolinea-crc').textContent = totalAerolinea.toFixed(2);
-        document.getElementById('total-aerolinea-usd').textContent = (totalAerolinea / tipoCambio).toFixed(2);
+        const updateSectionDisplay = (sectionPrefix, totalValue) => {
+            let crc, usd;
+            if (currency === 'USD') {
+                usd = totalValue;
+                crc = totalValue * tipoCambio;
+            } else {
+                crc = totalValue;
+                usd = totalValue / tipoCambio;
+            }
+            const crcEl = document.getElementById(`total-${sectionPrefix}-crc`);
+            const usdEl = document.getElementById(`total-${sectionPrefix}-usd`);
+            if (crcEl) crcEl.textContent = crc.toFixed(2);
+            if (usdEl) usdEl.textContent = usd.toFixed(2);
+        };
+
+        updateSectionDisplay('atracciones', totalAtracciones);
+        updateSectionDisplay('transporte', totalTransporte);
+        updateSectionDisplay('guias', totalGuias);
+        updateSectionDisplay('estadia', totalEstadia);
+        updateSectionDisplay('aerolinea', totalAerolinea);
         
-        // Gran Total Individual
-        const totalIndividualCRC = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
-        document.getElementById('total-individual-crc').textContent = totalIndividualCRC.toFixed(2) + ' CRC';
-
-        const totalIndividualUSD = totalIndividualCRC / tipoCambio;
-        document.getElementById('total-individual-usd').textContent = totalIndividualUSD.toFixed(2) + ' USD';
+        document.getElementById('total-individual-crc').textContent = totalCRC.toFixed(2) + ' CRC';
+        document.getElementById('total-individual-usd').textContent = totalUSD.toFixed(2) + ' USD';
     }
     
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCurrencyUI();
+        calculateTotals();
+    });
+
+    document.getElementById('tipo_moneda').addEventListener('change', () => {
+        updateCurrencyUI();
+        calculateTotals();
+    });
     document.getElementById('tipo_cambio').addEventListener('input', calculateTotals);
+
 </script>
 {% endblock %}

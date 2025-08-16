@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, make_response
 from models import db
 from datetime import datetime, time
+import json
 
 # Helper para convertir string a objeto time, manejando strings vacíos
 def to_time(time_str):
@@ -21,6 +22,16 @@ def to_date(date_str):
         return None
 
 intern_bp = Blueprint('intern', __name__, template_folder='templates', url_prefix='/intern')
+
+# Filtro Jinja personalizado para convertir una cadena JSON en un objeto Python
+@intern_bp.app_template_filter('fromjson')
+def from_json_filter(json_string):
+    if not json_string:
+        return []
+    try:
+        return json.loads(json_string)
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 # --- MODELOS DE BASE DE DATOS ---
 
@@ -231,12 +242,49 @@ def crear_intern():
                 ))
         
         # Aerolíneas
-        for i in range(len(request.form.getlist('aerolinea_nombre[]'))):
-            if request.form.getlist('aerolinea_nombre[]')[i]:
+        tipos_transporte = request.form.getlist('aerolinea_tipo_transporte[]')
+        for i in range(len(tipos_transporte)):
+            if tipos_transporte[i]:
+                otros_costos_list = []
+                for j in range(1, 5):
+                    desc = request.form.getlist(f'aerolinea_desc_{j}[]')[i]
+                    costo = request.form.getlist(f'aerolinea_costo_{j}[]')[i]
+                    cant = request.form.getlist(f'aerolinea_cant_{j}[]')[i]
+                    if desc and (costo or cant):
+                        otros_costos_list.append({
+                            'descripcion': desc,
+                            'costo': float(costo or 0.0),
+                            'cantidad': int(cant or 1)
+                        })
+                
                 db.session.add(Aerolinea(
                     travel_id=nuevo_viaje.id,
+                    tipo_transporte=tipos_transporte[i],
                     nombre_aerolinea=request.form.getlist('aerolinea_nombre[]')[i],
-                    precio_estandar=float(request.form.getlist('aerolinea_precio[]')[i] or 0.0)
+                    telefono_aerolinea=request.form.getlist('aerolinea_telefono[]')[i],
+                    email=request.form.getlist('aerolinea_email[]')[i],
+                    whatsapp=request.form.getlist('aerolinea_whatsapp[]')[i],
+                    fecha_prealertar=to_date(request.form.getlist('aerolinea_fecha_prealerta[]')[i]),
+                    enlace_prealertar=request.form.getlist('aerolinea_enlace_prealerta[]')[i],
+                    numero_vuelo=request.form.getlist('aerolinea_num_vuelo[]')[i],
+                    horario_salida=to_time(request.form.getlist('aerolinea_hora_salida[]')[i]),
+                    horario_llegada=to_time(request.form.getlist('aerolinea_hora_llegada[]')[i]),
+                    nombre_aeropuerto=request.form.getlist('aerolinea_aeropuerto[]')[i],
+                    telefono_aeropuerto=request.form.getlist('aerolinea_tel_aeropuerto[]')[i],
+                    precio_asientos=float(request.form.getlist('aerolinea_p_asientos[]')[i] or 0.0),
+                    precio_maletas_doc=float(request.form.getlist('aerolinea_p_maletas[]')[i] or 0.0),
+                    equipaje_mano=float(request.form.getlist('aerolinea_p_equipaje_mano[]')[i] or 0.0),
+                    precio_estandar=float(request.form.getlist('aerolinea_p_estandar[]')[i] or 0.0),
+                    precio_mas_equipo=float(request.form.getlist('aerolinea_p_mas_equipo[]')[i] or 0.0),
+                    precio_salida_rapida=float(request.form.getlist('aerolinea_p_salida_rapida[]')[i] or 0.0),
+                    precio_premium=float(request.form.getlist('aerolinea_p_premium[]')[i] or 0.0),
+                    precio_vip=float(request.form.getlist('aerolinea_p_vip[]')[i] or 0.0),
+                    precio_basic=float(request.form.getlist('aerolinea_p_basic[]')[i] or 0.0),
+                    precio_classic=float(request.form.getlist('aerolinea_p_classic[]')[i] or 0.0),
+                    precio_flexible=float(request.form.getlist('aerolinea_p_flexible[]')[i] or 0.0),
+                    precio_impuestos=float(request.form.getlist('aerolinea_p_impuestos[]')[i] or 0.0),
+                    otros_costos_json=json.dumps(otros_costos_list),
+                    fecha_compra=to_date(request.form.getlist('aerolinea_fecha_compra[]')[i])
                 ))
 
         try:
@@ -300,9 +348,50 @@ def editar_intern(id):
 
         # Aerolíneas
         for item in viaje.aerolineas: db.session.delete(item)
-        for i in range(len(request.form.getlist('aerolinea_nombre[]'))):
-            if request.form.getlist('aerolinea_nombre[]')[i]:
-                db.session.add(Aerolinea(travel_id=viaje.id, nombre_aerolinea=request.form.getlist('aerolinea_nombre[]')[i], precio_estandar=float(request.form.getlist('aerolinea_precio[]')[i] or 0.0)))
+        tipos_transporte = request.form.getlist('aerolinea_tipo_transporte[]')
+        for i in range(len(tipos_transporte)):
+            if tipos_transporte[i]:
+                otros_costos_list = []
+                for j in range(1, 5):
+                    desc = request.form.getlist(f'aerolinea_desc_{j}[]')[i]
+                    costo = request.form.getlist(f'aerolinea_costo_{j}[]')[i]
+                    cant = request.form.getlist(f'aerolinea_cant_{j}[]')[i]
+                    if desc and (costo or cant):
+                        otros_costos_list.append({
+                            'descripcion': desc,
+                            'costo': float(costo or 0.0),
+                            'cantidad': int(cant or 1)
+                        })
+
+                db.session.add(Aerolinea(
+                    travel_id=viaje.id,
+                    tipo_transporte=tipos_transporte[i],
+                    nombre_aerolinea=request.form.getlist('aerolinea_nombre[]')[i],
+                    telefono_aerolinea=request.form.getlist('aerolinea_telefono[]')[i],
+                    email=request.form.getlist('aerolinea_email[]')[i],
+                    whatsapp=request.form.getlist('aerolinea_whatsapp[]')[i],
+                    fecha_prealertar=to_date(request.form.getlist('aerolinea_fecha_prealerta[]')[i]),
+                    enlace_prealertar=request.form.getlist('aerolinea_enlace_prealerta[]')[i],
+                    numero_vuelo=request.form.getlist('aerolinea_num_vuelo[]')[i],
+                    horario_salida=to_time(request.form.getlist('aerolinea_hora_salida[]')[i]),
+                    horario_llegada=to_time(request.form.getlist('aerolinea_hora_llegada[]')[i]),
+                    nombre_aeropuerto=request.form.getlist('aerolinea_aeropuerto[]')[i],
+                    telefono_aeropuerto=request.form.getlist('aerolinea_tel_aeropuerto[]')[i],
+                    precio_asientos=float(request.form.getlist('aerolinea_p_asientos[]')[i] or 0.0),
+                    precio_maletas_doc=float(request.form.getlist('aerolinea_p_maletas[]')[i] or 0.0),
+                    equipaje_mano=float(request.form.getlist('aerolinea_p_equipaje_mano[]')[i] or 0.0),
+                    precio_estandar=float(request.form.getlist('aerolinea_p_estandar[]')[i] or 0.0),
+                    precio_mas_equipo=float(request.form.getlist('aerolinea_p_mas_equipo[]')[i] or 0.0),
+                    precio_salida_rapida=float(request.form.getlist('aerolinea_p_salida_rapida[]')[i] or 0.0),
+                    precio_premium=float(request.form.getlist('aerolinea_p_premium[]')[i] or 0.0),
+                    precio_vip=float(request.form.getlist('aerolinea_p_vip[]')[i] or 0.0),
+                    precio_basic=float(request.form.getlist('aerolinea_p_basic[]')[i] or 0.0),
+                    precio_classic=float(request.form.getlist('aerolinea_p_classic[]')[i] or 0.0),
+                    precio_flexible=float(request.form.getlist('aerolinea_p_flexible[]')[i] or 0.0),
+                    precio_impuestos=float(request.form.getlist('aerolinea_p_impuestos[]')[i] or 0.0),
+                    otros_costos_json=json.dumps(otros_costos_list),
+                    fecha_compra=to_date(request.form.getlist('aerolinea_fecha_compra[]')[i])
+                ))
 
         try:
             db.session.commit()
@@ -362,4 +451,4 @@ def exportar_excel(id):
     flash(f'La funcionalidad para exportar {viaje.nombre_viaje} a Excel aún no está implementada.', 'info')
     return redirect(url_for('intern.detalle_intern', id=id))
 
-# --- FIN: RUTAS DE EXPORTACIÓN COMPLETAS ---
+# --- FIN: RUTAS DE EXPORTACIÓN COMPLETAS 
