@@ -4,22 +4,136 @@
 
 {% block head_content %}
 <style>
+    /* Estilos base para las tarjetas */
     .card {
-        box-shadow: none !important;
-        border: 1px solid #dee2e6;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Sombra sutil como en ver_pagos */
+        border: none;
         transition: transform 0.2s ease-in-out;
     }
     .card:hover {
         transform: translateY(-5px);
     }
+
+    /* Estilos para la imagen, ahora es clicable */
     .card-img-top {
-        height: 200px;
-        object-fit: cover;
+        width: 100%;
+        height: 200px; /* Mantenemos una altura fija para consistencia visual */
+        object-fit: cover; /* Asegura que la imagen cubra el espacio sin deformarse */
+        cursor: pointer; /* Indica que la imagen es clicable */
     }
-    .btn-warning {
-        /* Se asegura que el color sea el de advertencia para el botón de crear */
-        background-color: #ffc107;
-        border-color: #ffc107;
+
+    /* --- ESTILOS COPIADOS DE ver_pagos.html --- */
+
+    /* Estilos para el botón flotante (FAB) de crear */
+    .fab-container {
+        position: fixed;
+        bottom: 70px;
+        right: 20px;
+        z-index: 1000;
+    }
+    .fab-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        transition: all 0.3s ease;
+        background-color: #ffc107; /* Color warning */
+        color: #212529; /* Texto oscuro */
+        border: none;
+        text-decoration: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .fab-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        background-color: #e0a800;
+    }
+
+    /* Estilos para el botón flotante (FAB) de volver atrás */
+    .fab-container-back {
+        position: fixed;
+        bottom: 70px;
+        left: 20px;
+        z-index: 1000;
+    }
+    .fab-button-back {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        transition: all 0.3s ease;
+        background-color: #007bff; /* Color primary */
+        color: #ffffff; /* Texto blanco */
+        border: none;
+        text-decoration: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .fab-button-back:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        background-color: #0056b3; /* Tono más oscuro */
+    }
+
+    /* Estilos del Modal para ver imagen en grande */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        padding-top: 100px;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.9);
+    }
+    .modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90vh;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+    }
+    #caption {
+        margin: auto;
+        display: block;
+        width: 80%;
+        max-width: 700px;
+        text-align: center;
+        color: #ccc;
+        padding: 10px 0;
+        height: 150px;
+    }
+    .close-button {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+    .close-button:hover,
+    .close-button:focus {
+        color: #bbb;
+        text-decoration: none;
+    }
+    .modal-content, #caption {
+        animation-name: zoom;
+        animation-duration: 0.6s;
+    }
+    @keyframes zoom {
+        from {transform:scale(0)}
+        to {transform:scale(1)}
     }
 </style>
 {% endblock %}
@@ -28,9 +142,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Viajes Internacionales</h1>
-        <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning">
-            <i class="fas fa-plus"></i> Crear Nuevo Viaje
-        </a>
+        <!-- El botón tradicional de crear se ha eliminado -->
     </div>
 
     {% if viajes %}
@@ -38,12 +150,18 @@
         {% for viaje in viajes %}
         <div class="col">
             <div class="card h-100">
-                <img src="{{ viaje.flyer_url or url_for('static', filename='images/default_travel.jpg') }}" class="card-img-top" alt="Flyer de {{ viaje.nombre_viaje }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_travel.jpg') }}';">
-                <div class="card-body">
+                <!-- Imagen del viaje, ahora con onclick para abrir el modal -->
+                <img src="{{ url_for('static', filename=viaje.flyer_url) if viaje.flyer_url else url_for('static', filename='images/default_travel.jpg') }}"
+                     class="card-img-top"
+                     alt="Flyer de {{ viaje.nombre_viaje }}"
+                     onclick="openImageModal(this.src, this.alt)"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_travel.jpg') }}';">
+
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">{{ viaje.pais }}</h6>
                     <p class="card-text">
-                        <strong>Precio:</strong> 
+                        <strong>Precio:</strong>
                         {% if viaje.tipo_moneda == 'CRC' %}
                             ₡{{ "%.2f"|format(viaje.precio_paquete) }}
                         {% else %}
@@ -52,40 +170,12 @@
                         <br>
                         <small class="text-muted">Creado: {{ viaje.fecha_creacion.strftime('%d/%m/%Y') }}</small>
                     </p>
-                </div>
-                <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end gap-2">
-                    <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-eye"></i> Detalles
-                    </a>
-                    <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <!-- Botón para activar el modal de eliminación -->
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de Confirmación de Eliminación -->
-        <div class="modal fade" id="deleteModal-{{ viaje.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ viaje.id }}" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteModalLabel-{{ viaje.id }}">Confirmar Eliminación</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        ¿Estás seguro de que quieres eliminar el viaje a <strong>{{ viaje.nombre_viaje }}</strong>? Esta acción no se puede deshacer.
-                    </div>
-                    <div class="modal-footer">
-                        <form action="{{ url_for('intern.eliminar_intern', id=viaje.id) }}" method="POST" class="d-inline">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
-                        </form>
+                    <!-- El botón "Ver Más" ahora está al final y ocupa todo el ancho -->
+                    <div class="mt-auto">
+                        <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-warning w-100">Ver Más</a>
                     </div>
                 </div>
+                <!-- El card-footer con los botones de editar y eliminar ha sido removido -->
             </div>
         </div>
         {% endfor %}
@@ -94,10 +184,56 @@
     <div class="text-center p-5 border rounded">
         <h3>No hay viajes internacionales creados todavía.</h3>
         <p>¡Crea tu primer viaje para empezar a planificar!</p>
+        <!-- Este botón solo aparece si no hay viajes, se puede dejar o quitar según preferencia -->
         <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning mt-3">
             <i class="fas fa-plus"></i> Crear Mi Primer Viaje
         </a>
     </div>
     {% endif %}
 </div>
+
+<!-- Botón flotante para crear viaje -->
+<div class="fab-container">
+    <a href="{{ url_for('intern.crear_intern') }}" class="fab-button" title="Crear Nuevo Viaje">
+        <i class="fas fa-plus" style="color: black;"></i>
+    </a>
+</div>
+
+<!-- Botón flotante para volver atrás -->
+<div class="fab-container-back">
+    <a href="{{ url_for('home') }}" class="fab-button-back" title="Volver al Inicio">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+</div>
+
+<!-- El Modal para la imagen -->
+<div id="imageModal" class="modal">
+    <span class="close-button">&times;</span>
+    <img class="modal-content" id="fullImage">
+    <div id="caption" class="caption"></div>
+</div>
+
+<script>
+    // --- SCRIPT COPIADO DE ver_pagos.html ---
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("fullImage");
+    const captionText = document.getElementById("caption");
+    const span = document.getElementsByClassName("close-button")[0];
+
+    function openImageModal(imgSrc, imgAlt) {
+        modal.style.display = "block";
+        modalImg.src = imgSrc;
+        captionText.innerHTML = imgAlt;
+    }
+
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
 {% endblock %}
