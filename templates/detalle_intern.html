@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de {{ viaje.nombre_viaje }}{% endblock %}
+
+{% block head_content %}
+<style>
+    .details-card {
+        border: 1px solid #dee2e6;
+        box-shadow: none !important;
+    }
+    .details-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .detail-item span:first-child {
+        font-weight: bold;
+        color: #495057;
+    }
+    .section-title {
+        border-bottom: 2px solid #ffc107;
+        padding-bottom: 0.5rem;
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .total-card {
+        background-color: #343a40;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Encabezado y Botones de Acción -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h1 class="mb-1">{{ viaje.nombre_viaje }}</h1>
+            <h4 class="text-muted">{{ viaje.pais }}</h4>
+        </div>
+        <div class="btn-toolbar" role="toolbar">
+            <div class="btn-group me-2 mb-2" role="group">
+                <a href="{{ url_for('intern.exportar_pdf', id=viaje.id) }}" class="btn btn-outline-danger" title="Exportar a PDF"><i class="fas fa-file-pdf"></i></a>
+                <a href="{{ url_for('intern.exportar_txt', id=viaje.id) }}" class="btn btn-outline-secondary" title="Exportar a TXT"><i class="fas fa-file-alt"></i></a>
+                <a href="{{ url_for('intern.exportar_jpg', id=viaje.id) }}" class="btn btn-outline-info" title="Exportar a JPG"><i class="fas fa-file-image"></i></a>
+                <a href="{{ url_for('intern.exportar_excel', id=viaje.id) }}" class="btn btn-outline-success" title="Exportar a Excel"><i class="fas fa-file-excel"></i></a>
+            </div>
+            <div class="btn-group mb-2" role="group">
+                 <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="btn btn-secondary"><i class="fas fa-edit"></i> Editar</a>
+                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}"><i class="fas fa-trash"></i> Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información General del Viaje -->
+    <div class="card details-card mb-4">
+        <div class="card-header details-header">
+            <h5 class="mb-0">Información General</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    {% if viaje.flyer_url %}
+                        <img src="{{ viaje.flyer_url }}" class="img-fluid rounded" alt="Flyer del viaje">
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <div class="detail-item"><span>Título:</span> <span>{{ viaje.titulo_destino }}</span></div>
+                    {% if viaje.precio_paquete > 0 %}
+                    <div class="detail-item">
+                        <span>Precio Paquete:</span> 
+                        <span>
+                            {% if viaje.tipo_moneda == 'CRC' %}
+                                ₡{{ "%.2f"|format(viaje.precio_paquete) }}
+                            {% else %}
+                                ${{ "%.2f"|format(viaje.precio_paquete) }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if viaje.capacidad > 0 %}
+                    <div class="detail-item"><span>Capacidad:</span> <span>{{ viaje.capacidad }} personas</span></div>
+                    {% endif %}
+                    <div class="detail-item"><span>Moneda Base:</span> <span>{{ viaje.tipo_moneda }}</span></div>
+                    <div class="detail-item"><span>Tipo de Cambio (a USD):</span> <span>{{ viaje.tipo_cambio }}</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secciones Detalladas -->
+    {% set ns = namespace(total_crc=0) %}
+
+    <!-- Pre-Alertas -->
+    {% if viaje.prealertas %}
+    <h3 class="section-title">Pre-Alertas Bancarias</h3>
+    {% for item in viaje.prealertas %}
+        <div class="card details-card mb-3">
+            <div class="card-body">
+                <!-- Muestra detalles de cada pre-alerta, omitiendo campos vacíos -->
+            </div>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Lugares a Visitar -->
+    {% if viaje.lugares %}
+    <h3 class="section-title">Lugares a Visitar</h3>
+    {% for item in viaje.lugares %}
+        {% if item.precio_entrada > 0 %}{% set ns.total_crc = ns.total_crc + item.precio_entrada %}{% endif %}
+        <div class="card details-card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ item.nombre_sitio }} <small class="text-muted">({{ item.tipo_lugar }})</small></h5>
+                {% if item.precio_entrada > 0 %}
+                <div class="detail-item"><span>Precio Entrada:</span> <span>₡{{ "%.2f"|format(item.precio_entrada) }}</span></div>
+                {% endif %}
+                 <!-- Muestra más detalles, omitiendo campos vacíos -->
+            </div>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Transportes -->
+    {% if viaje.transportes %}
+    <h3 class="section-title">Transportes</h3>
+    {% for item in viaje.transportes %}
+        {% if item.precio > 0 %}{% set ns.total_crc = ns.total_crc + item.precio %}{% endif %}
+        <div class="card details-card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ item.nombre_transporte }} <small class="text-muted">({{ item.tipo_transporte }})</small></h5>
+                {% if item.precio > 0 %}
+                <div class="detail-item"><span>Precio:</span> <span>₡{{ "%.2f"|format(item.precio) }}</span></div>
+                {% endif %}
+                 <!-- Muestra más detalles, omitiendo campos vacíos -->
+            </div>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Guías -->
+    {% if viaje.guias %}
+    <h3 class="section-title">Guías</h3>
+    {% for item in viaje.guias %}
+        {% if item.precio_guia_pp > 0 %}{% set ns.total_crc = ns.total_crc + item.precio_guia_pp %}{% endif %}
+        {% if item.precio_acarreo > 0 %}{% set ns.total_crc = ns.total_crc + item.precio_acarreo %}{% endif %}
+        <div class="card details-card mb-3">
+            <div class="card-body">
+                 <h5 class="card-title">{{ item.nombre }}</h5>
+                 <!-- Muestra más detalles, omitiendo campos vacíos -->
+            </div>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Estadías -->
+    {% if viaje.estadias %}
+    <h3 class="section-title">Estadías</h3>
+    {% for item in viaje.estadias %}
+        {% if item.precio_pp > 0 and item.cantidad_noches > 0 %}{% set ns.total_crc = ns.total_crc + (item.precio_pp * item.cantidad_noches) %}{% endif %}
+         <div class="card details-card mb-3">
+            <div class="card-body">
+                 <h5 class="card-title">{{ item.nombre }}</h5>
+                 <!-- Muestra más detalles, omitiendo campos vacíos -->
+            </div>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Aerolíneas -->
+    {% if viaje.aerolineas %}
+    <h3 class="section-title">Aerolíneas</h3>
+    {% for item in viaje.aerolineas %}
+        <!-- Aquí sumarías todos los precios de la aerolínea a ns.total_crc -->
+         <div class="card details-card mb-3">
+            <div class="card-body">
+                 <h5 class="card-title">{{ item.nombre_aerolinea or 'Transporte Principal' }}</h5>
+                 <!-- Muestra más detalles, omitiendo campos vacíos -->
+            </div>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Totales -->
+    <div class="card total-card mt-5">
+        <div class="card-header">
+            <h3 class="mb-0">Costo Total Individual Estimado</h3>
+        </div>
+        <div class="card-body fs-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                        <span>TOTAL EN CRC:</span>
+                        <span class="fw-bold">₡{{ "%.2f"|format(ns.total_crc) }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between">
+                        <span>TOTAL EN USD:</span>
+                        {% if viaje.tipo_cambio and viaje.tipo_cambio > 0 %}
+                        <span class="fw-bold">${{ "%.2f"|format(ns.total_crc / viaje.tipo_cambio) }}</span>
+                        {% else %}
+                        <span class="fw-bold text-warning">N/A (Tipo de cambio no válido)</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación (reutilizado de ver_intern.html) -->
+<div class="modal fade" id="deleteModal-{{ viaje.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ viaje.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel-{{ viaje.id }}">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que quieres eliminar el viaje a <strong>{{ viaje.nombre_viaje }}</strong>? Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <form action="{{ url_for('intern.eliminar_intern', id=viaje.id) }}" method="POST" class="d-inline">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

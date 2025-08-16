@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Viajes Internacionales{% endblock %}
+
+{% block head_content %}
+<style>
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6;
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+    .btn-warning {
+        /* Se asegura que el color sea el de advertencia para el botón de crear */
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Viajes Internacionales</h1>
+        <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning">
+            <i class="fas fa-plus"></i> Crear Nuevo Viaje
+        </a>
+    </div>
+
+    {% if viajes %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for viaje in viajes %}
+        <div class="col">
+            <div class="card h-100">
+                <img src="{{ viaje.flyer_url or url_for('static', filename='images/default_travel.jpg') }}" class="card-img-top" alt="Flyer de {{ viaje.nombre_viaje }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_travel.jpg') }}';">
+                <div class="card-body">
+                    <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ viaje.pais }}</h6>
+                    <p class="card-text">
+                        <strong>Precio:</strong> 
+                        {% if viaje.tipo_moneda == 'CRC' %}
+                            ₡{{ "%.2f"|format(viaje.precio_paquete) }}
+                        {% else %}
+                            ${{ "%.2f"|format(viaje.precio_paquete) }}
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">Creado: {{ viaje.fecha_creacion.strftime('%d/%m/%Y') }}</small>
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> Detalles
+                    </a>
+                    <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <!-- Botón para activar el modal de eliminación -->
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmación de Eliminación -->
+        <div class="modal fade" id="deleteModal-{{ viaje.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ viaje.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel-{{ viaje.id }}">Confirmar Eliminación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        ¿Estás seguro de que quieres eliminar el viaje a <strong>{{ viaje.nombre_viaje }}</strong>? Esta acción no se puede deshacer.
+                    </div>
+                    <div class="modal-footer">
+                        <form action="{{ url_for('intern.eliminar_intern', id=viaje.id) }}" method="POST" class="d-inline">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center p-5 border rounded">
+        <h3>No hay viajes internacionales creados todavía.</h3>
+        <p>¡Crea tu primer viaje para empezar a planificar!</p>
+        <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning mt-3">
+            <i class="fas fa-plus"></i> Crear Mi Primer Viaje
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

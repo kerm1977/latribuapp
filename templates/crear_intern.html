@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Nuevo Viaje Internacional{% endblock %}
+
+{% block head_content %}
+<style>
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6;
+    }
+    .form-section-separator {
+        border-top: 2px solid #ffc107;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+    .dynamic-item {
+        border-left: 3px solid #ffc107;
+        padding-left: 15px;
+        margin-bottom: 1rem;
+    }
+    .remove-btn {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">Crear Nuevo Viaje Internacional</h1>
+
+    <form action="{{ url_for('intern.crear_intern') }}" method="POST" enctype="multipart/form-data">
+        
+        <!-- SECCIÓN DESTINO -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h4 class="mb-0">Destino</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="titulo_destino" class="form-label">Título Destino</label>
+                        <input type="text" class="form-control" id="titulo_destino" name="titulo_destino" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
+                        <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="flyer" class="form-label">Flyer (Imagen)</label>
+                        <input type="file" class="form-control" id="flyer" name="flyer" accept="image/*">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="pais" class="form-label">País</label>
+                        <select class="form-select" id="pais" name="pais" required>
+                            <option selected disabled value="">Seleccionar país...</option>
+                            <option value="Panama">Panamá</option>
+                            <option value="Nicaragua">Nicaragua</option>
+                            <option value="Honduras">Honduras</option>
+                            <option value="El Salvador">El Salvador</option>
+                            <option value="Guatemala">Guatemala</option>
+                            <option value="Mexico">México</option>
+                            <option value="Peru">Perú</option>
+                            <option value="Spain">España</option>
+                        </select>
+                    </div>
+                </div>
+                 <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="precio_paquete" class="form-label">Precio del Paquete</label>
+                        <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="0">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="capacidad" class="form-label">Capacidad</label>
+                        <input type="number" class="form-control" id="capacidad" name="capacidad" value="0">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
+                        <select class="form-select" id="tipo_moneda" name="tipo_moneda">
+                            <option value="CRC">Colones (CRC)</option>
+                            <option value="USD">Dólares (USD)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="tipo_cambio" class="form-label">Tipo de Cambio (a USD)</label>
+                        <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="520.00">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEPARADOR ADMINISTRACIÓN DE VIAJE -->
+        <hr class="form-section-separator">
+        <h2 class="text-center mb-4">Administración de Viaje</h2>
+
+        <!-- SECCIÓN PRE-ALERTA -->
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Pre-Alerta Bancaria</h5>
+                <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('prealerta-container', 'prealerta-template')">
+                    <i class="fas fa-plus"></i> Agregar Pre-Alerta
+                </button>
+            </div>
+            <div class="card-body" id="prealerta-container">
+                <!-- Contenedor para pre-alertas dinámicas -->
+            </div>
+        </div>
+
+        <!-- SEPARADOR LUGARES A VISITAR -->
+        <hr class="form-section-separator">
+        <h2 class="text-center mb-4">Lugares a Visitar</h2>
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Atracciones</h5>
+                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('lugar-container', 'lugar-template')">
+                    <i class="fas fa-plus"></i> Agregar Lugar
+                </button>
+            </div>
+            <div class="card-body" id="lugar-container">
+                <!-- Contenedor para lugares dinámicos -->
+            </div>
+            <div class="card-footer bg-light">
+                <strong>TOTAL DE ATRACCIONES: <span id="total-atracciones">0.00</span> CRC</strong>
+            </div>
+        </div>
+
+        <!-- SEPARADOR TRANSPORTES -->
+        <hr class="form-section-separator">
+        <h2 class="text-center mb-4">Transportes</h2>
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Transporte Local</h5>
+                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('transporte-container', 'transporte-template')">
+                    <i class="fas fa-plus"></i> Agregar Transporte
+                </button>
+            </div>
+            <div class="card-body" id="transporte-container">
+                <!-- Contenedor para transportes dinámicos -->
+            </div>
+            <div class="card-footer bg-light">
+                <strong>TOTAL DE TRANSPORTE: <span id="total-transporte">0.00</span> CRC</strong>
+            </div>
+        </div>
+        
+        <!-- SEPARADOR GUÍAS -->
+        <hr class="form-section-separator">
+        <h2 class="text-center mb-4">Guías</h2>
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Guías Turísticos</h5>
+                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('guia-container', 'guia-template')">
+                    <i class="fas fa-plus"></i> Agregar Guía
+                </button>
+            </div>
+            <div class="card-body" id="guia-container">
+                <!-- Contenedor para guías dinámicos -->
+            </div>
+            <div class="card-footer bg-light">
+                <strong>TOTAL DE GUÍAS POR PERSONA: <span id="total-guias">0.00</span> CRC</strong>
+            </div>
+        </div>
+
+        <!-- SEPARADOR ESTADÍAS -->
+        <hr class="form-section-separator">
+        <h2 class="text-center mb-4">Estadías</h2>
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Hospedaje</h5>
+                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('estadia-container', 'estadia-template')">
+                    <i class="fas fa-plus"></i> Agregar Estadía
+                </button>
+            </div>
+            <div class="card-body" id="estadia-container">
+                <!-- Contenedor para estadías dinámicas -->
+            </div>
+            <div class="card-footer bg-light">
+                <strong>TOTAL DE ESTADÍA POR PERSONA: <span id="total-estadia">0.00</span> CRC</strong>
+            </div>
+        </div>
+
+        <!-- SEPARADOR AEROLINEA -->
+        <hr class="form-section-separator">
+        <h2 class="text-center mb-4">Aerolínea / Transporte Principal</h2>
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Transporte Principal</h5>
+                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('aerolinea-container', 'aerolinea-template')">
+                    <i class="fas fa-plus"></i> Agregar Aerolínea/Transporte
+                </button>
+            </div>
+            <div class="card-body" id="aerolinea-container">
+                <!-- Contenedor para aerolíneas dinámicas -->
+            </div>
+            <div class="card-footer bg-light">
+                <strong>TOTAL DE AEROLÍNEA POR PERSONA: <span id="total-aerolinea">0.00</span> CRC</strong>
+            </div>
+        </div>
+
+        <!-- TOTALES GENERALES -->
+        <div class="card mt-5">
+            <div class="card-header bg-dark text-white">
+                <h3 class="mb-0">Totales Individuales Estimados</h3>
+            </div>
+            <div class="card-body fs-5">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>TOTAL INDIVIDUAL CRC:</strong>
+                        <p class="text-success fw-bold" id="total-individual-crc">0.00 CRC</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>TOTAL INDIVIDUAL USD:</strong>
+                        <p class="text-primary fw-bold" id="total-individual-usd">0.00 USD</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-warning btn-lg">Crear Viaje</button>
+        </div>
+    </form>
+
+    <!-- CALCULADORA DE DIVISAS -->
+    <div class="card mt-5">
+        <div class="card-header">
+            <h5 class="mb-0">Calculadora de Divisas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <input type="number" class="form-control" id="calc-amount" placeholder="Monto">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="calc-from">
+                        <option value="CRC">Colones (CRC)</option>
+                        <option value="USD">Dólares (USD)</option>
+                        <option value="GTQ">Quetzales (GTQ)</option>
+                        <option value="HNL">Lempiras (HNL)</option>
+                        <option value="NIO">Córdobas (NIO)</option>
+                        <option value="PAB">Balboas (PAB)</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    a
+                </div>
+                <div class="col-md-3">
+                     <select class="form-select" id="calc-to">
+                        <option value="CRC">Colones (CRC)</option>
+                        <option value="USD" selected>Dólares (USD)</option>
+                        <option value="GTQ">Quetzales (GTQ)</option>
+                        <option value="HNL">Lempiras (HNL)</option>
+                        <option value="NIO">Córdobas (NIO)</option>
+                        <option value="PAB">Balboas (PAB)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="convertCurrency()">Convertir</button>
+                </div>
+            </div>
+            <div class="mt-3 text-center">
+                <h4>Resultado: <span id="calc-result" class="fw-bold">0.00</span></h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========== TEMPLATES PARA FORMULARIOS DINÁMICOS =========== -->
+<template id="prealerta-template">
+    <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Pre-Alerta #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove()"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Entidad Financiera</label>
+                <select name="prealerta_banco[]" class="form-select">
+                    <option>Banco de Costa Rica (BCR)</option>
+                    <option>Banco Nacional de Costa Rica (BNCR)</option>
+                    <option>Banco Popular</option>
+                    <option>BAC Credomatic</option>
+                    <!-- Agrega más bancos aquí -->
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Teléfono Entidad</label>
+                <input type="tel" name="prealerta_telefono[]" class="form-control">
+            </div>
+            <!-- Agrega los demás campos de pre-alerta aquí -->
+        </div>
+    </div>
+</template>
+
+<template id="lugar-template">
+    <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Lugar #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Tipo</label>
+                <select name="lugar_tipo[]" class="form-select">
+                    <option>Volcán</option><option>Montaña</option><option>Playa</option><option>Ciudad</option><option>Parque Nacional</option><option>Camino</option><option>Otros</option>
+                </select>
+            </div>
+            <div class="col-md-5 mb-3">
+                <label class="form-label">Nombre del Sitio</label>
+                <input type="text" name="lugar_nombre[]" class="form-control">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Precio Entrada (CRC)</label>
+                <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+            <!-- Agrega los demás campos de lugar aquí -->
+        </div>
+    </div>
+</template>
+
+<template id="transporte-template">
+     <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Transporte #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Tipo</label>
+                <select name="transporte_tipo[]" class="form-select">
+                    <option>Buseta</option><option>Bus</option><option>Taxi</option><option>Uber</option><option>Auto</option><option>Lancha</option><option>Avión</option>
+                </select>
+            </div>
+            <div class="col-md-5 mb-3">
+                <label class="form-label">Nombre del Transporte</label>
+                <input type="text" name="transporte_nombre[]" class="form-control">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Precio (CRC)</label>
+                <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+            <!-- Agrega los demás campos de transporte aquí -->
+        </div>
+    </div>
+</template>
+
+<template id="guia-template">
+    <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Guía #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" name="guia_nombre[]" class="form-control">
+            </div>
+             <div class="col-md-3 mb-3">
+                <label class="form-label">Precio Guía PP (CRC)</label>
+                <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+             <div class="col-md-3 mb-3">
+                <label class="form-label">Precio Acarreo (CRC)</label>
+                <input type="number" step="0.01" name="guia_precio_acarreo[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+            <!-- Agrega los demás campos de guía aquí -->
+        </div>
+    </div>
+</template>
+
+<template id="estadia-template">
+     <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Estadía #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" name="estadia_nombre[]" class="form-control">
+            </div>
+             <div class="col-md-3 mb-3">
+                <label class="form-label">Precio PP por Noche (CRC)</label>
+                <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+             <div class="col-md-3 mb-3">
+                <label class="form-label">Cantidad de Noches</label>
+                <input type="number" name="estadia_noches[]" class="form-control" value="1" oninput="calculateTotals()">
+            </div>
+            <!-- Agrega los demás campos de estadía aquí -->
+        </div>
+    </div>
+</template>
+
+<template id="aerolinea-template">
+     <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Aerolínea/Transporte #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+             <div class="col-md-6 mb-3">
+                <label class="form-label">Aerolínea</label>
+                <input type="text" name="aerolinea_nombre[]" class="form-control">
+            </div>
+             <div class="col-md-6 mb-3">
+                <label class="form-label">Precio Vuelo (CRC)</label>
+                <input type="number" step="0.01" name="aerolinea_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+            <!-- Agrega los demás campos de aerolínea aquí -->
+        </div>
+    </div>
+</template>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Función para agregar un nuevo bloque de formulario desde una plantilla
+    function addDynamicForm(containerId, templateId) {
+        const container = document.getElementById(containerId);
+        const template = document.getElementById(templateId);
+        const clone = template.content.cloneNode(true);
+        
+        // Asignar número consecutivo
+        const itemNumber = container.children.length + 1;
+        clone.querySelector('.item-number').textContent = itemNumber;
+        
+        container.appendChild(clone);
+    }
+
+    // Función para calcular todos los totales
+    function calculateTotals() {
+        // Total Atracciones
+        let totalAtracciones = 0;
+        document.querySelectorAll('#lugar-container .price-field').forEach(input => {
+            totalAtracciones += parseFloat(input.value) || 0;
+        });
+        document.getElementById('total-atracciones').textContent = totalAtracciones.toFixed(2);
+
+        // Total Transporte
+        let totalTransporte = 0;
+        document.querySelectorAll('#transporte-container .price-field').forEach(input => {
+            totalTransporte += parseFloat(input.value) || 0;
+        });
+        document.getElementById('total-transporte').textContent = totalTransporte.toFixed(2);
+        
+        // Total Guías PP
+        let totalGuias = 0;
+        document.querySelectorAll('#guia-container .dynamic-item').forEach(item => {
+            const precioPP = parseFloat(item.querySelector('input[name="guia_precio_pp[]"]').value) || 0;
+            const precioAcarreo = parseFloat(item.querySelector('input[name="guia_precio_acarreo[]"]').value) || 0;
+            totalGuias += precioPP + precioAcarreo;
+        });
+        document.getElementById('total-guias').textContent = totalGuias.toFixed(2);
+
+        // Total Estadía PP
+        let totalEstadia = 0;
+        document.querySelectorAll('#estadia-container .dynamic-item').forEach(item => {
+            const precioPP = parseFloat(item.querySelector('input[name="estadia_precio_pp[]"]').value) || 0;
+            const noches = parseInt(item.querySelector('input[name="estadia_noches[]"]').value) || 1;
+            totalEstadia += precioPP * noches;
+        });
+        document.getElementById('total-estadia').textContent = totalEstadia.toFixed(2);
+
+        // Total Aerolínea PP
+        let totalAerolinea = 0;
+        document.querySelectorAll('#aerolinea-container .price-field').forEach(input => {
+            totalAerolinea += parseFloat(input.value) || 0;
+        });
+        document.getElementById('total-aerolinea').textContent = totalAerolinea.toFixed(2);
+        
+        // Gran Total Individual
+        const totalIndividualCRC = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
+        document.getElementById('total-individual-crc').textContent = totalIndividualCRC.toFixed(2) + ' CRC';
+
+        const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
+        const totalIndividualUSD = totalIndividualCRC / tipoCambio;
+        document.getElementById('total-individual-usd').textContent = totalIndividualUSD.toFixed(2) + ' USD';
+    }
+    
+    // Recalcular si el tipo de cambio cambia
+    document.getElementById('tipo_cambio').addEventListener('input', calculateTotals);
+
+    // Función para la calculadora de divisas
+    function convertCurrency() {
+        const rates = { // Tasas de ejemplo relativas al USD
+            "USD": 1.0,
+            "CRC": 520.0,
+            "GTQ": 7.75,
+            "HNL": 24.5,
+            "NIO": 36.5,
+            "PAB": 1.0
+        };
+        
+        const amount = parseFloat(document.getElementById('calc-amount').value);
+        const fromCurrency = document.getElementById('calc-from').value;
+        const toCurrency = document.getElementById('calc-to').value;
+        
+        if (isNaN(amount)) {
+            document.getElementById('calc-result').textContent = "Monto inválido";
+            return;
+        }
+
+        const amountInUSD = amount / rates[fromCurrency];
+        const result = amountInUSD * rates[toCurrency];
+        
+        document.getElementById('calc-result').textContent = `${result.toFixed(2)} ${toCurrency}`;
+    }
+
+</script>
+{% endblock %}

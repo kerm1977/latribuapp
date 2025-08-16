@@ -548,6 +548,17 @@ TOTAL == Precio Cena (¢) * Cantidad de días
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 Genial ahora necesito crear un area nueva área
 todos los botones de borrar o eliminar tienen que ser construidos con Flask y Flash y el Modal con bootstrap
 Solicitarme los archivos app.py, models.py y base.html antes de continuar
@@ -1067,3 +1078,170 @@ Permite que vea toda la información detallada ingresada  por medio de crear_int
 ver_intern.html.html
 Permite ver la tarjeta con el País,  nombre del viaje, Flyer, precio y fecha
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PLANIFICADOR  INTERNACION
+
+Genial ahora necesito crear un nueva área
+Solo se va a exportar lo necesario a app.py
+Todos los botones de borrar o eliminar tienen que ser construidos con Flask y Flash y el Modal con bootstrap
+las opciones de exportar a jpg, pdf, txt con utf-8 para que reconozca la ñ y las tildes (solo en caso de que existiera)
+cada archivo y cada vista vas a darmelo cuando te diga ok
+Permitir exporta a PDF, TXT, JPG, EXCEL 
+Los cards no pueden contener sombras. los botones de crear deben tener color warning.
+Vas a generar todo el código en el canvas pero vas a crear cada enlace también con cada vista
+
+No mostrar en detalle_intern.html ni en ver_intern.html precios en 0 ni campos que tengan N/A ni divisiones en Cero
+Absolutamente todos los totales van a tener el precio en colon y en dolar multiplicado por la casilla llamada tipo de cambio
+
+las áreas que va a contener son:
+intern.py va a contener los modelos y absolutamente toda la lógica de esta área
+crear_intern.html
+editar_intern.html
+detalle_intern.html
+ver_intern.html
+
+
+
+Ahora en crear_intern.html va a estar lo siguiente
+TITULO DESTINO
+Flyer
+Nombre del viaje
+Precio del Viaje
+Capacidad S/G
+Capacidad C/G
+Cantidad de Días
+Tipo de Moneda 
+Tipo de Cambio
+País Select Destinos probables
+Panamá
+Nicaragua
+Honduras
+El Salvador
+Guatemala
+México
+Perú
+España
+
+
+
+
+Un select Un solo Provedor?  (SI, NO) si == True
+
+activar esta área
+---------------------------------------------------
+Paquete Guía, Transporte, Entrada, Acarreo..etc
+Nombre de la Empresa / Operador
+Nombre del Gúia
+Teléfono de La Empresa u Operador
+Teléfono del Guía
+Enlace de Facebook
+Enlace Web
+Placa del Transporte
+Teléfono Conductor
+Incluye otro medio transporte (Si, NO)(Si la Condicional si == true) Activar los siguiente campos con un checkbox)
+Acuatico
+Aereo(Si, No)
+Auto (Si, No)
+Bus (Si, No)
+Buseta (Si, No)
+Poliza (Si, NO)
+Alimentación Incluida (Si,NO)
+Describir Otros medio de transporte y Servicios
+Otros Costos Adicionales(Si, No) (Si la Condicional si == true) Activar los siguiente campos
+	Destalle
+	Precio
+	Select Forma de Pago (Tarjeta, Cuenta, Sinpe, Western Union, Cash, Otro)
+	Descripción de Forma de Pago
+	Número de Comprobante
+	Precio Otros Costos Adicionales
+Precio del Paquete
+
+Precio General del Paquete == Precio del Paquete + Otros Costos Adicionales
+Precio Individual del Paquete == Precio General del Paquete / Capacidad
+-----------------------------------------------------
+
+
+
+si  Un solo Provedor?  (SI, NO) si == False
+activar esta área
+---------------------------------------------------
+Entrada (Incluido, No Incluido)
+La condiciónal es: 
+Si incluido == True: Aparece un botón de + que va a ir agregando los campos 
+Nombre del Lugar
+Entrada
+Incluye Poliza(Si, NO)
+fecha
+hora
+Nombre del Guía
+Teléfono del Lugar
+Teléfono del Guía
+Precio General Atracciones
+
+
+Transporte (Incluido, No Incluido)
+Si incluido == True: Aparece un botón de + que va a ir agregando los campos 
+Nombre del Transporte
+Placa del Transporte
+Nomre del Conductor
+Teléfono Conductor
+Teléfono Empresa
+Whatsapp
+Poliza(Si, NO)
+Precio General del Transporte
+
+
+Agregar un + llamado Otros pagos
+Activa los campos
+Nombre
+Descripción
+Precio Otros
+Precio general Otros suma todos los Precio Otros en caso de Haber
+
+
+-------------------------------------------------------
+Ahora necesito sumar los totales en general
+
+
+
+Total General de Costos == Precio General Atracciones + Precio General del Transporte + Precio general Otros
+Total Individual de Costos ==Total General de Costos * Capacidad C/G / Capacidad S/G
+Covertura Grupal == Precio del Viaje - Total General de Costos
+Covertura Individual ==   Precio del Viaje -  Total Individual de Costos 
+
+
+
+
+editar_intern.html
+Permitir editar absolutamente todo lo que se ingresó por medio de crear_intern.html
+
+detalle_intern.html
+Permite que vea toda la información detallada ingresada  por medio de crear_intern.html
+
+
+ver_intern.html.html
+Permite ver la tarjeta con el País,  nombre del viaje, Flyer, precio y fecha

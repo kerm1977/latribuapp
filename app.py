@@ -14,13 +14,12 @@ from auth_setup import oauth_bp, init_oauth
 # MODIFICADO: Importa db, bcrypt, migrate y User desde models.py
 # ES CRUCIAL QUE EL MODELO USER Y LAS INSTANCIAS DE DB, BCRYPT Y MIGRATE
 # SE IMPORTEN ÚNICAMENTE DESDE models.py PARA EVITAR IMPORTACIONES CIRCULARES.
-# CORRECCIÓN: Eliminado 'Version' de la importación de models, ya que está definida en version.py
-from models import db, bcrypt, migrate, User, Project, Note, InternationalTravel, Caminata, AbonoCaminata, caminata_participantes, Pagos, CalendarEvent, Instruction, Song, Playlist, Itinerario, AboutUs 
+# CORRECCIÓN: Eliminado 'InternationalTravel' de la importación para resolver el conflicto.
+from models import db, bcrypt, migrate, User, Project, Note, Caminata, AbonoCaminata, caminata_participantes, Pagos, CalendarEvent, Instruction, Song, Playlist, Itinerario, AboutUs 
 from contactos import contactos_bp
 from perfil import perfil_bp
 from proyecto import proyecto_bp
 from notas import notas_bp
-# from intern import intern_bp  #Volver Activar
 from caminatas import caminatas_bp
 from pagos import pagos_bp
 from calendario import calendario_bp
@@ -32,7 +31,7 @@ from rutas import rutas_bp
 from polizas import polizas_bp # <-- NUEVA LÍNEA
 from flask_cors import CORS  # 1. Importar CORS
 from flask_mail import Mail, Message #pip install flask_mail
-
+from intern import intern_bp # <--- ASEGÚRATE DE QUE ESTA LÍNEA EXISTA Y NO ESTÉ COMENTADA
 # CORRECCIÓN: Importa Version desde version.py donde está definida
 from version import version_bp, Version 
 from files import files_bp # Importa el Blueprint de Files
@@ -64,6 +63,7 @@ db.init_app(app)
 bcrypt.init_app(app)
 migrate.init_app(app, db)
 mail.init_app(app) # <-- LÍNEA AÑADIDA PARA CORREGIR EL ERROR
+
 
 
 
@@ -557,7 +557,6 @@ app.register_blueprint(contactos_bp)
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
 app.register_blueprint(proyecto_bp)
 app.register_blueprint(notas_bp)
-#app.register_blueprint(intern_bp, url_prefix='/intern') #Volver Activar
 app.register_blueprint(caminatas_bp, url_prefix='/caminatas')
 app.register_blueprint(pagos_bp, url_prefix='/pagos')
 app.register_blueprint(calendario_bp, url_prefix='/calendario')
@@ -570,6 +569,7 @@ app.register_blueprint(version_bp, url_prefix='/version')
 app.register_blueprint(files_bp, url_prefix='/files')
 app.register_blueprint(btns_bp) # REGISTRO DEL BLUEPRINT DE BTNS
 app.register_blueprint(polizas_bp) # <-- NUEVA LÍNEA
+app.register_blueprint(intern_bp) # <--- AÑADE ESTA LÍNEA
 
 # --- AÑADE ESTAS DOS LÍNEAS PARA CONECTAR OAUTH ---
 init_oauth(app)
