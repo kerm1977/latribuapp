@@ -36,13 +36,71 @@
         margin-bottom: 1.5rem;
     }
     .total-card {
-        background-color: #343a40;
+        background-color: #ffc107;
         color: white;
     }
     .flyer-img {
         max-height: 400px;
         width: 100%;
         object-fit: cover;
+    }
+    .profit {
+        color: #198754; /* Verde de Bootstrap */
+    }
+    .loss {
+        color: #dc3545; /* Rojo de Bootstrap */
+    }
+    .fab-container-actions {
+        position: fixed;
+        bottom: 75px;
+        right: 20px;
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .fab-button-action {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    .fab-button-action:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+    .fab-button-edit { background-color: #ffc107; color: black; }
+    .fab-button-delete { background-color: #dc3545; color: white; }
+    
+    .fab-container-back {
+        position: fixed;
+        bottom: 75px;
+        left: 20px;
+        z-index: 1000;
+    }
+    .fab-button-back {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        transition: all 0.3s ease;
+        background-color: #6c757d; /* secondary */
+        color: #ffffff;
+        border: none;
+    }
+    .fab-button-back:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        background-color: #5a6268;
     }
 </style>
 {% endblock %}
@@ -71,10 +129,6 @@
                 <a href="{{ url_for('intern.exportar_txt', id=viaje.id) }}" class="btn btn-outline-secondary" title="Exportar a TXT"><i class="fas fa-file-alt"></i></a>
                 <a href="{{ url_for('intern.exportar_jpg', id=viaje.id) }}" class="btn btn-outline-info" title="Exportar a JPG"><i class="fas fa-file-image"></i></a>
                 <a href="{{ url_for('intern.exportar_excel', id=viaje.id) }}" class="btn btn-outline-success" title="Exportar a Excel"><i class="fas fa-file-excel"></i></a>
-            </div>
-            <div class="btn-group mb-2" role="group">
-                 <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="btn btn-secondary"><i class="fas fa-edit"></i> Editar</a>
-                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}"><i class="fas fa-trash"></i> Eliminar</button>
             </div>
         </div>
     </div>
@@ -307,37 +361,76 @@
     {% endif %}
 
     <!-- Totales -->
+    {% set total_individual_crc = 0 %}
+    {% set total_individual_usd = 0 %}
+    {% if viaje.tipo_moneda == 'CRC' %}
+        {% set total_individual_crc = ns.total_cost %}
+        {% if viaje.tipo_cambio > 0 %}{% set total_individual_usd = ns.total_cost / viaje.tipo_cambio %}{% endif %}
+    {% else %}
+        {% set total_individual_usd = ns.total_cost %}
+        {% set total_individual_crc = ns.total_cost * viaje.tipo_cambio %}
+    {% endif %}
+
+    {% set precio_paquete_en_usd = 0 %}
+    {% if viaje.tipo_moneda == 'CRC' %}
+        {% if viaje.tipo_cambio > 0 %}{% set precio_paquete_en_usd = viaje.precio_paquete / viaje.tipo_cambio %}{% endif %}
+    {% else %}
+        {% set precio_paquete_en_usd = viaje.precio_paquete %}
+    {% endif %}
+    
+    {% set diferencia_usd = precio_paquete_en_usd - total_individual_usd %}
+    {% set diferencia_crc = diferencia_usd * viaje.tipo_cambio %}
+    
+    {% set ganancia_total_usd = diferencia_usd * viaje.capacidad %}
+    {% set ganancia_total_crc = diferencia_crc * viaje.capacidad %}
+
     <div class="card total-card mt-5">
         <div class="card-header">
-            <h3 class="mb-0">Costo Total Individual Estimado</h3>
+            <h3 class="mb-0">Resumen Financiero</h3>
         </div>
-        <div class="card-body fs-4">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-between">
-                        <span>TOTAL EN CRC:</span>
-                        {% if viaje.tipo_moneda == 'CRC' %}
-                            <span class="fw-bold">₡{{ "%.2f"|format(ns.total_cost) }}</span>
-                        {% else %}
-                            <span class="fw-bold">₡{{ "%.2f"|format(ns.total_cost * viaje.tipo_cambio) }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-between">
-                        <span>TOTAL EN USD:</span>
-                        {% if viaje.tipo_moneda == 'USD' %}
-                            <span class="fw-bold">${{ "%.2f"|format(ns.total_cost) }}</span>
-                        {% elif viaje.tipo_cambio and viaje.tipo_cambio > 0 %}
-                            <span class="fw-bold">${{ "%.2f"|format(ns.total_cost / viaje.tipo_cambio) }}</span>
-                        {% else %}
-                            <span class="fw-bold text-warning">N/A</span>
-                        {% endif %}
-                    </div>
-                </div>
+        <div class="card-body fs-5">
+            <div class="detail-item"><span>Costo Total Individual (CRC):</span> <span class="fw-bold">₡{{ "%.2f"|format(total_individual_crc) }}</span></div>
+            <div class="detail-item"><span>Costo Total Individual (USD):</span> <span class="fw-bold">${{ "%.2f"|format(total_individual_usd) }}</span></div>
+            <hr class="my-3" style="border-color: rgba(255,255,255,0.25);">
+            <div class="detail-item">
+                <span>Diferencia por Persona (USD):</span> 
+                <span class="fw-bold {{ 'profit' if diferencia_usd >= 0 else 'loss' }}">${{ "%.2f"|format(diferencia_usd) }}</span>
             </div>
+            <div class="detail-item">
+                <span>Diferencia por Persona (CRC):</span> 
+                <span class="fw-bold {{ 'profit' if diferencia_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(diferencia_crc) }}</span>
+            </div>
+            {% if viaje.capacidad > 0 %}
+            <hr class="my-3" style="border-color: rgba(255,255,255,0.25);">
+            <h5 class="text-warning mt-3">Resumen de Ganancia Total (para {{ viaje.capacidad }} personas)</h5>
+            <div class="detail-item">
+                <span>Ganancia Total (USD):</span> 
+                <span class="fw-bold {{ 'profit' if ganancia_total_usd >= 0 else 'loss' }}">${{ "%.2f"|format(ganancia_total_usd) }}</span>
+            </div>
+            <div class="detail-item">
+                <span>Ganancia Total (CRC):</span> 
+                <span class="fw-bold {{ 'profit' if ganancia_total_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(ganancia_total_crc) }}</span>
+            </div>
+            {% endif %}
         </div>
     </div>
+</div>
+
+<!-- FAB buttons for actions -->
+<div class="fab-container-actions">
+    <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="fab-button-action fab-button-edit" title="Editar Viaje">
+        <i class="fas fa-edit"></i>
+    </a>
+    <a href="#" class="fab-button-action fab-button-delete" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}">
+        <i class="fas fa-trash-alt"></i>
+    </a>
+</div>
+
+<!-- Botón flotante para volver atrás -->
+<div class="fab-container-back">
+    <a href="{{ url_for('intern.ver_intern') }}" class="btn btn-primary fab-button-back" title="Volver a Viajes">
+        <i class="fas fa-arrow-left"></i>
+    </a>
 </div>
 
 <!-- Modal de Confirmación de Eliminación -->
