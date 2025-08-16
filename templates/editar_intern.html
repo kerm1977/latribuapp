@@ -18,6 +18,40 @@
         padding-left: 15px;
         margin-bottom: 1rem;
     }
+    .fab-container-back {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 1000;
+    }
+    .fab-container-actions {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .fab-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    .fab-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+    .airline-fields {
+        display: none; /* Oculto por defecto */
+    }
 </style>
 {% endblock %}
 
@@ -335,13 +369,56 @@
                             <label class="form-label">Nombre</label>
                             <input type="text" name="guia_nombre[]" class="form-control" value="{{ guia.nombre or '' }}">
                         </div>
-                         <div class="col-md-3 mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" name="guia_telefono[]" class="form-control" value="{{ guia.telefono or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Operador</label>
+                            <input type="text" name="guia_operador[]" class="form-control" value="{{ guia.operador or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="guia_email[]" class="form-control" value="{{ guia.email or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Whatsapp</label>
+                            <input type="tel" name="guia_whatsapp[]" class="form-control" value="{{ guia.whatsapp or '' }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">Precio Guía PP (CRC)</label>
                             <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-field" value="{{ guia.precio_guia_pp or 0 }}" oninput="calculateTotals()">
                         </div>
-                         <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">Precio Acarreo (CRC)</label>
                             <input type="number" step="0.01" name="guia_precio_acarreo[]" class="form-control price-field" value="{{ guia.precio_acarreo or 0 }}" oninput="calculateTotals()">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">CPL</label>
+                            <select name="guia_cpl[]" class="form-select">
+                                <option value="No" {% if guia.cpl == 'No' %}selected{% endif %}>No</option>
+                                <option value="Si" {% if guia.cpl == 'Si' %}selected{% endif %}>Si</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Fecha Disponible</label>
+                            <input type="date" name="guia_fecha_disponible[]" class="form-control" value="{{ guia.fecha_disponible.strftime('%Y-%m-%d') if guia.fecha_disponible }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Reserva</label>
+                            <input type="text" name="guia_reserva[]" class="form-control" value="{{ guia.reserva or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha Reserva</label>
+                            <input type="date" name="guia_fecha_reserva[]" class="form-control" value="{{ guia.fecha_reserva.strftime('%Y-%m-%d') if guia.fecha_reserva }}">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Enlaces</label>
+                            <input type="text" name="guia_enlaces[]" class="form-control" value="{{ guia.enlaces or '' }}">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Nota</label>
+                            <textarea name="guia_nota[]" class="form-control" rows="2">{{ guia.nota or '' }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -445,10 +522,43 @@
             </div>
         </div>
         
-        <div class="d-grid gap-2 mt-4">
+        <div class="d-grid gap-2 mt-4 mb-5">
             <button type="submit" class="btn btn-warning btn-lg">Guardar Cambios</button>
         </div>
     </form>
+</div>
+
+<!-- BOTONES FLOTANTES -->
+<div class="fab-container-back">
+    <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-secondary fab-button" title="Volver a Detalles">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+</div>
+<div class="fab-container-actions">
+    <a href="#" class="btn btn-danger fab-button" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}">
+        <i class="fas fa-trash-alt"></i>
+    </a>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteModal-{{ viaje.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que quieres eliminar este viaje? Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('intern.eliminar_intern', id=viaje.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- =========== TEMPLATES (Igual que en crear_intern.html) =========== -->
@@ -655,7 +765,235 @@
     </div>
 </template>
 
-<!-- ... (Otras plantillas) ... -->
+<template id="guia-template">
+    <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Guía #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" name="guia_nombre[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" name="guia_telefono[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Operador</label>
+                <input type="text" name="guia_operador[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="guia_email[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Whatsapp</label>
+                <input type="tel" name="guia_whatsapp[]" class="form-control">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Precio Guía PP (CRC)</label>
+                <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Precio Acarreo (CRC)</label>
+                <input type="number" step="0.01" name="guia_precio_acarreo[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">CPL</label>
+                <select name="guia_cpl[]" class="form-select">
+                    <option value="No">No</option>
+                    <option value="Si">Si</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Fecha Disponible</label>
+                <input type="date" name="guia_fecha_disponible[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Reserva</label>
+                <input type="text" name="guia_reserva[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha Reserva</label>
+                <input type="date" name="guia_fecha_reserva[]" class="form-control">
+            </div>
+            <div class="col-md-12 mb-3">
+                <label class="form-label">Enlaces</label>
+                <input type="text" name="guia_enlaces[]" class="form-control">
+            </div>
+            <div class="col-12 mb-3">
+                <label class="form-label">Nota</label>
+                <textarea name="guia_nota[]" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="estadia-template">
+     <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Estadía #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre</label>
+                <input type="text" name="estadia_nombre[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Contacto</label>
+                <input type="text" name="estadia_contacto[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" name="estadia_telefono[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Whatsapp</label>
+                <input type="tel" name="estadia_whatsapp[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="estadia_email[]" class="form-control">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Precio PP por Noche (CRC)</label>
+                <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Cantidad de Noches</label>
+                <input type="number" name="estadia_noches[]" class="form-control" value="1" oninput="calculateTotals()">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">CPL</label>
+                <select name="estadia_cpl[]" class="form-select">
+                    <option value="No">No</option>
+                    <option value="Si">Si</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Alimentación Incluida</label>
+                <select name="estadia_alimentacion[]" class="form-select">
+                    <option value="No">No</option>
+                    <option value="Si">Si</option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha Disponible Reserva</label>
+                <input type="date" name="estadia_fecha_disponible[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha Entrada</label>
+                <input type="date" name="estadia_fecha_entrada[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha Salida</label>
+                <input type="date" name="estadia_fecha_salida[]" class="form-control">
+            </div>
+            <div class="col-12 mb-3">
+                <label class="form-label">Enlaces</label>
+                <input type="text" name="estadia_enlaces[]" class="form-control">
+            </div>
+            <div class="col-12 mb-3">
+                <label class="form-label">Nota</label>
+                <textarea name="estadia_nota[]" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="aerolinea-template">
+     <div class="dynamic-item p-3 mb-3 border rounded">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Aerolínea/Transporte #<span class="item-number">1</span></h6>
+            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Tipo de Transporte</label>
+                <select name="aerolinea_tipo_transporte[]" class="form-select" onchange="toggleAirlineFields(this)">
+                    <option>Bus</option><option>Buseta</option><option>Auto</option><option>Moto</option><option>Barco</option><option>Avión</option>
+                </select>
+            </div>
+        </div>
+        <div class="row airline-fields">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Aerolínea</label>
+                <select name="aerolinea_nombre[]" class="form-select">
+                    <option>Avianca</option><option>American Airlines</option><option>Copa</option><option>Volaris</option><option>Jetblue</option><option>Sansa</option><option>Spirit</option><option>United</option><option>Wingo</option><option>KLM</option><option>Iberia</option><option>Lufthansa</option><option>Latam Airlines</option><option>IberoJet</option><option>Delta</option><option>AirFrance</option><option>Alaska</option><option>AeroMéxico</option><option>Arajet</option><option>Air Canadá</option><option>Airtransat</option><option>Green Airways</option><option>Southwest</option><option>Edelweiss</option><option>Frontier</option><option>GOL</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Teléfono Aerolínea</label>
+                <input type="tel" name="aerolinea_telefono[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="aerolinea_email[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Whatsapp</label>
+                <input type="tel" name="aerolinea_whatsapp[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha de Pre-alerta</label>
+                <input type="date" name="aerolinea_fecha_prealerta[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Enlace para Pre-alerta</label>
+                <input type="text" name="aerolinea_enlace_prealerta[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Número de Vuelo</label>
+                <input type="text" name="aerolinea_num_vuelo[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Horario de Salida</label>
+                <input type="time" name="aerolinea_hora_salida[]" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Horario de Llegada</label>
+                <input type="time" name="aerolinea_hora_llegada[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre del Aeropuerto</label>
+                <input type="text" name="aerolinea_aeropuerto[]" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Teléfono del Aeropuerto</label>
+                <input type="tel" name="aerolinea_tel_aeropuerto[]" class="form-control">
+            </div>
+            <hr>
+            <h6 class="text-center">Precios</h6>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Asientos</label><input type="number" name="aerolinea_p_asientos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Maletas Doc.</label><input type="number" name="aerolinea_p_maletas[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Equipaje de Mano</label><input type="number" name="aerolinea_p_equipaje_mano[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Estandar</label><input type="number" name="aerolinea_p_estandar[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Mas equipo</label><input type="number" name="aerolinea_p_mas_equipo[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Salida rápida</label><input type="number" name="aerolinea_p_salida_rapida[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Premium</label><input type="number" name="aerolinea_p_premium[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio VIP</label><input type="number" name="aerolinea_p_vip[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Basic</label><input type="number" name="aerolinea_p_basic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Classic</label><input type="number" name="aerolinea_p_classic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Flexible</label><input type="number" name="aerolinea_p_flexible[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Precio Impuestos</label><input type="number" name="aerolinea_p_impuestos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <hr>
+            <h6 class="text-center">Otros Costos</h6>
+            {% for i in range(1, 5) %}
+            <div class="col-md-6 mb-3"><label class="form-label">Descripción #{{i}}</label><input type="text" name="aerolinea_desc_{{i}}[]" class="form-control"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Otros Costos #{{i}}</label><input type="number" name="aerolinea_costo_{{i}}[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
+            <div class="col-md-3 mb-3"><label class="form-label">Cantidad</label><input type="number" name="aerolinea_cant_{{i}}[]" class="form-control" value="1"></div>
+            {% endfor %}
+            <hr>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Fecha de Compra</label>
+                <input type="date" name="aerolinea_fecha_compra[]" class="form-control">
+            </div>
+        </div>
+    </div>
+</template>
 
 {% endblock %}
 
@@ -664,37 +1002,35 @@
     function addDynamicForm(containerId, templateId) {
         const container = document.getElementById(containerId);
         const template = document.getElementById(templateId);
-        if (!template) {
-            console.error("Template not found:", templateId);
-            return;
-        }
         const clone = template.content.cloneNode(true);
-        
-        const itemNumber = container.querySelectorAll('.dynamic-item').length + 1;
-        const numberSpan = clone.querySelector('.item-number');
-        if (numberSpan) {
-            numberSpan.textContent = itemNumber;
-        }
-        
+        const itemNumber = container.children.length + 1;
+        clone.querySelector('.item-number').textContent = itemNumber;
         container.appendChild(clone);
     }
 
+    function toggleAirlineFields(selectElement) {
+        const parentItem = selectElement.closest('.dynamic-item');
+        const airlineFields = parentItem.querySelector('.airline-fields');
+        if (selectElement.value === 'Avión') {
+            airlineFields.style.display = 'flex'; // O 'grid', o lo que corresponda
+        } else {
+            airlineFields.style.display = 'none';
+        }
+    }
+
     function calculateTotals() {
-        // Total Atracciones
         let totalAtracciones = 0;
         document.querySelectorAll('#lugar-container .price-field').forEach(input => {
             totalAtracciones += parseFloat(input.value) || 0;
         });
         document.getElementById('total-atracciones').textContent = totalAtracciones.toFixed(2);
 
-        // Total Transporte
         let totalTransporte = 0;
         document.querySelectorAll('#transporte-container .price-field').forEach(input => {
             totalTransporte += parseFloat(input.value) || 0;
         });
         document.getElementById('total-transporte').textContent = totalTransporte.toFixed(2);
         
-        // Total Guías PP
         let totalGuias = 0;
         document.querySelectorAll('#guia-container .dynamic-item').forEach(item => {
             const precioPP = parseFloat(item.querySelector('input[name="guia_precio_pp[]"]').value) || 0;
@@ -703,7 +1039,6 @@
         });
         document.getElementById('total-guias').textContent = totalGuias.toFixed(2);
 
-        // Total Estadía PP
         let totalEstadia = 0;
         document.querySelectorAll('#estadia-container .dynamic-item').forEach(item => {
             const precioPP = parseFloat(item.querySelector('input[name="estadia_precio_pp[]"]').value) || 0;
@@ -712,14 +1047,15 @@
         });
         document.getElementById('total-estadia').textContent = totalEstadia.toFixed(2);
 
-        // Total Aerolínea PP
         let totalAerolinea = 0;
         document.querySelectorAll('#aerolinea-container .price-field').forEach(input => {
-            totalAerolinea += parseFloat(input.value) || 0;
+            const parentItem = input.closest('.dynamic-item');
+            const cantidadInput = parentItem.querySelector(`input[name="${input.name.replace('costo', 'cant')}"]`);
+            const cantidad = cantidadInput ? (parseInt(cantidadInput.value) || 1) : 1;
+            totalAerolinea += (parseFloat(input.value) || 0) * cantidad;
         });
         document.getElementById('total-aerolinea').textContent = totalAerolinea.toFixed(2);
         
-        // Gran Total Individual
         const totalIndividualCRC = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
         document.getElementById('total-individual-crc').textContent = totalIndividualCRC.toFixed(2) + ' CRC';
 
@@ -728,8 +1064,6 @@
         document.getElementById('total-individual-usd').textContent = totalIndividualUSD.toFixed(2) + ' USD';
     }
     
-    document.addEventListener('DOMContentLoaded', function() {
-        calculateTotals();
-    });
+    document.getElementById('tipo_cambio').addEventListener('input', calculateTotals);
 </script>
 {% endblock %}
