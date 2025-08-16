@@ -150,8 +150,18 @@
         {% for viaje in viajes %}
         <div class="col">
             <div class="card h-100">
-                <!-- Imagen del viaje, ahora con onclick para abrir el modal -->
-                <img src="{{ url_for('static', filename=viaje.flyer_url) if viaje.flyer_url else url_for('static', filename='images/default_travel.jpg') }}"
+                <!--
+                    NOTA PARA EL DESARROLLADOR:
+                    Se ha ajustado la ruta de la imagen. Ahora se asume que los flyers se guardan en la carpeta
+                    'static/uploads/intern_flyers/'. Si guardas solo el nombre del archivo en la base de datos
+                    (ej: 'mi_viaje.png'), esta línea construirá la ruta completa correcta.
+
+                    IMPORTANTE: Asegúrate de que en tu archivo de Python (ej: intern.py), al momento de
+                    crear o editar un viaje, estés guardando el nombre del archivo en el campo 'flyer_url'.
+                    El código de 'intern.py' que proporcionaste no parece estar guardando este dato,
+                    lo cual es la causa más probable del problema.
+                -->
+                <img src="{{ url_for('static', filename='uploads/intern_flyers/' + viaje.flyer_url) if viaje.flyer_url else url_for('static', filename='images/default_travel.jpg') }}"  
                      class="card-img-top"
                      alt="Flyer de {{ viaje.nombre_viaje }}"
                      onclick="openImageModal(this.src, this.alt)"

@@ -141,7 +141,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
-                    <img src="{{ url_for('static', filename='flyers/' + viaje.flyer_url) if viaje.flyer_url else url_for('static', filename='images/default_travel.jpg') }}" class="img-fluid rounded flyer-img" alt="Flyer del viaje">
+                    <img src="{{ url_for('static', filename='uploads/intern_flyers/' + viaje.flyer_url) if viaje.flyer_url else url_for('static', filename='images/default_travel.jpg') }}" class="img-fluid rounded flyer-img" alt="Flyer del viaje">
                 </div>
                 <div class="col-md-8">
                     <div class="detail-item"><span>Título:</span> <span>{{ viaje.titulo_destino }}</span></div>

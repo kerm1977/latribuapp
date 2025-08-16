@@ -4,6 +4,18 @@ from datetime import datetime, time
 import json
 from fpdf import FPDF
 import io
+import os
+from werkzeug.utils import secure_filename
+
+# --- CONFIGURACIÓN PARA SUBIDA DE ARCHIVOS ---
+# Define la ruta para guardar los flyers. Asegúrate de que esta carpeta exista.
+# La ruta es relativa a la raíz de tu aplicación Flask.
+UPLOAD_FOLDER = 'static/uploads/intern_flyers'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Helper para convertir string a objeto time, manejando strings vacíos
 def to_time(time_str):
@@ -174,9 +186,19 @@ def ver_intern():
 @intern_bp.route('/crear', methods=['GET', 'POST'])
 def crear_intern():
     if request.method == 'POST':
+        flyer_filename = None
+        if 'flyer' in request.files:
+            file = request.files['flyer']
+            if file and file.filename != '' and allowed_file(file.filename):
+                flyer_filename = secure_filename(file.filename)
+                # Asegúrate de que el directorio de subida exista
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                file.save(os.path.join(UPLOAD_FOLDER, flyer_filename))
+
         nuevo_viaje = InternationalTravel(
             titulo_destino=request.form.get('titulo_destino'),
             nombre_viaje=request.form.get('nombre_viaje'),
+            flyer_url=flyer_filename,  # Guardar el nombre del archivo
             precio_paquete=float(request.form.get('precio_paquete') or 0.0),
             capacidad=int(request.form.get('capacidad') or 0),
             tipo_moneda=request.form.get('tipo_moneda'),
@@ -186,6 +208,7 @@ def crear_intern():
         db.session.add(nuevo_viaje)
         db.session.flush()
 
+        # ... (el resto de tu código para guardar prealertas, lugares, etc., permanece igual)
         for i in range(len(request.form.getlist('prealerta_banco[]'))):
             if request.form.getlist('prealerta_banco[]')[i]:
                 db.session.add(PreAlerta(travel_id=nuevo_viaje.id, banco=request.form.getlist('prealerta_banco[]')[i], telefono_entidad=request.form.getlist('prealerta_telefono[]')[i], fecha_prealerta=to_date(request.form.getlist('prealerta_fecha[]')[i]), nombre_asesor=request.form.getlist('prealerta_asesor[]')[i], hora_prealerta=to_time(request.form.getlist('prealerta_hora[]')[i]), numero_prealerta=request.form.getlist('prealerta_numero[]')[i], fecha_desde=to_date(request.form.getlist('prealerta_desde[]')[i]), fecha_hasta=to_date(request.form.getlist('prealerta_hasta[]')[i])))
@@ -219,6 +242,7 @@ def crear_intern():
                 
                 db.session.add(Aerolinea(travel_id=nuevo_viaje.id, tipo_transporte=tipos_transporte[i], nombre_aerolinea=request.form.getlist('aerolinea_nombre[]')[i], telefono_aerolinea=request.form.getlist('aerolinea_telefono[]')[i], email=request.form.getlist('aerolinea_email[]')[i], whatsapp=request.form.getlist('aerolinea_whatsapp[]')[i], fecha_prealertar=to_date(request.form.getlist('aerolinea_fecha_prealerta[]')[i]), enlace_prealertar=request.form.getlist('aerolinea_enlace_prealerta[]')[i], numero_vuelo=request.form.getlist('aerolinea_num_vuelo[]')[i], horario_salida=to_time(request.form.getlist('aerolinea_hora_salida[]')[i]), horario_llegada=to_time(request.form.getlist('aerolinea_hora_llegada[]')[i]), nombre_aeropuerto=request.form.getlist('aerolinea_aeropuerto[]')[i], telefono_aeropuerto=request.form.getlist('aerolinea_tel_aeropuerto[]')[i], precio_asientos=float(request.form.getlist('aerolinea_p_asientos[]')[i] or 0.0), precio_maletas_doc=float(request.form.getlist('aerolinea_p_maletas[]')[i] or 0.0), equipaje_mano=float(request.form.getlist('aerolinea_p_equipaje_mano[]')[i] or 0.0), precio_estandar=float(request.form.getlist('aerolinea_p_estandar[]')[i] or 0.0), precio_mas_equipo=float(request.form.getlist('aerolinea_p_mas_equipo[]')[i] or 0.0), precio_salida_rapida=float(request.form.getlist('aerolinea_p_salida_rapida[]')[i] or 0.0), precio_premium=float(request.form.getlist('aerolinea_p_premium[]')[i] or 0.0), precio_vip=float(request.form.getlist('aerolinea_p_vip[]')[i] or 0.0), precio_basic=float(request.form.getlist('aerolinea_p_basic[]')[i] or 0.0), precio_classic=float(request.form.getlist('aerolinea_p_classic[]')[i] or 0.0), precio_flexible=float(request.form.getlist('aerolinea_p_flexible[]')[i] or 0.0), precio_impuestos=float(request.form.getlist('aerolinea_p_impuestos[]')[i] or 0.0), otros_costos_json=json.dumps(otros_costos_list), fecha_compra=to_date(request.form.getlist('aerolinea_fecha_compra[]')[i])))
 
+
         try:
             db.session.commit()
             flash('Viaje internacional creado con éxito.', 'success')
@@ -238,6 +262,14 @@ def detalle_intern(id):
 def editar_intern(id):
     viaje = InternationalTravel.query.get_or_404(id)
     if request.method == 'POST':
+        if 'flyer' in request.files:
+            file = request.files['flyer']
+            if file and file.filename != '' and allowed_file(file.filename):
+                flyer_filename = secure_filename(file.filename)
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                file.save(os.path.join(UPLOAD_FOLDER, flyer_filename))
+                viaje.flyer_url = flyer_filename # Actualizar solo si se sube un nuevo archivo
+
         viaje.titulo_destino = request.form.get('titulo_destino')
         viaje.nombre_viaje = request.form.get('nombre_viaje')
         viaje.precio_paquete = float(request.form.get('precio_paquete') or 0.0)
@@ -246,6 +278,7 @@ def editar_intern(id):
         viaje.tipo_cambio = float(request.form.get('tipo_cambio') or 1.0)
         viaje.pais = request.form.get('pais')
 
+        # ... (el resto de tu código para actualizar prealertas, etc., permanece igual)
         for item in viaje.prealertas: db.session.delete(item)
         for i in range(len(request.form.getlist('prealerta_banco[]'))):
             if request.form.getlist('prealerta_banco[]')[i]:
@@ -285,6 +318,7 @@ def editar_intern(id):
 
                 db.session.add(Aerolinea(travel_id=viaje.id, tipo_transporte=tipos_transporte[i], nombre_aerolinea=request.form.getlist('aerolinea_nombre[]')[i], telefono_aerolinea=request.form.getlist('aerolinea_telefono[]')[i], email=request.form.getlist('aerolinea_email[]')[i], whatsapp=request.form.getlist('aerolinea_whatsapp[]')[i], fecha_prealertar=to_date(request.form.getlist('aerolinea_fecha_prealerta[]')[i]), enlace_prealertar=request.form.getlist('aerolinea_enlace_prealerta[]')[i], numero_vuelo=request.form.getlist('aerolinea_num_vuelo[]')[i], horario_salida=to_time(request.form.getlist('aerolinea_hora_salida[]')[i]), horario_llegada=to_time(request.form.getlist('aerolinea_hora_llegada[]')[i]), nombre_aeropuerto=request.form.getlist('aerolinea_aeropuerto[]')[i], telefono_aeropuerto=request.form.getlist('aerolinea_tel_aeropuerto[]')[i], precio_asientos=float(request.form.getlist('aerolinea_p_asientos[]')[i] or 0.0), precio_maletas_doc=float(request.form.getlist('aerolinea_p_maletas[]')[i] or 0.0), equipaje_mano=float(request.form.getlist('aerolinea_p_equipaje_mano[]')[i] or 0.0), precio_estandar=float(request.form.getlist('aerolinea_p_estandar[]')[i] or 0.0), precio_mas_equipo=float(request.form.getlist('aerolinea_p_mas_equipo[]')[i] or 0.0), precio_salida_rapida=float(request.form.getlist('aerolinea_p_salida_rapida[]')[i] or 0.0), precio_premium=float(request.form.getlist('aerolinea_p_premium[]')[i] or 0.0), precio_vip=float(request.form.getlist('aerolinea_p_vip[]')[i] or 0.0), precio_basic=float(request.form.getlist('aerolinea_p_basic[]')[i] or 0.0), precio_classic=float(request.form.getlist('aerolinea_p_classic[]')[i] or 0.0), precio_flexible=float(request.form.getlist('aerolinea_p_flexible[]')[i] or 0.0), precio_impuestos=float(request.form.getlist('aerolinea_p_impuestos[]')[i] or 0.0), otros_costos_json=json.dumps(otros_costos_list), fecha_compra=to_date(request.form.getlist('aerolinea_fecha_compra[]')[i])))
 
+
         try:
             db.session.commit()
             flash('Viaje actualizado correctamente.', 'success')
@@ -308,7 +342,8 @@ def eliminar_intern(id):
     return redirect(url_for('intern.ver_intern'))
 
 # --- INICIO: RUTAS DE EXPORTACIÓN COMPLETAS ---
-
+# (El resto del código de exportación permanece igual)
+# ...
 def _get_export_context(id):
     """Función auxiliar para obtener todos los datos y cálculos para las exportaciones."""
     viaje = InternationalTravel.query.get_or_404(id)
