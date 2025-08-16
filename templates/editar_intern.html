@@ -264,7 +264,8 @@
                 {% endfor %}
             </div>
             <div class="card-footer bg-light">
-                <strong>TOTAL DE ATRACCIONES: <span id="total-atracciones">0.00</span> CRC</strong>
+                <strong>TOTAL DE ATRACCIONES: <span id="total-atracciones-crc">0.00</span> CRC</strong>
+                <strong class="ms-3">| <span id="total-atracciones-usd">0.00</span> USD</strong>
             </div>
         </div>
         
@@ -343,7 +344,8 @@
                 {% endfor %}
             </div>
             <div class="card-footer bg-light">
-                <strong>TOTAL DE TRANSPORTE: <span id="total-transporte">0.00</span> CRC</strong>
+                <strong>TOTAL DE TRANSPORTE: <span id="total-transporte-crc">0.00</span> CRC</strong>
+                <strong class="ms-3">| <span id="total-transporte-usd">0.00</span> USD</strong>
             </div>
         </div>
         
@@ -425,7 +427,8 @@
                 {% endfor %}
             </div>
             <div class="card-footer bg-light">
-                <strong>TOTAL DE GUÍAS POR PERSONA: <span id="total-guias">0.00</span> CRC</strong>
+                <strong>TOTAL DE GUÍAS POR PERSONA: <span id="total-guias-crc">0.00</span> CRC</strong>
+                <strong class="ms-3">| <span id="total-guias-usd">0.00</span> USD</strong>
             </div>
         </div>
 
@@ -464,7 +467,8 @@
                 {% endfor %}
             </div>
             <div class="card-footer bg-light">
-                <strong>TOTAL DE ESTADÍA POR PERSONA: <span id="total-estadia">0.00</span> CRC</strong>
+                <strong>TOTAL DE ESTADÍA POR PERSONA: <span id="total-estadia-crc">0.00</span> CRC</strong>
+                <strong class="ms-3">| <span id="total-estadia-usd">0.00</span> USD</strong>
             </div>
         </div>
 
@@ -486,20 +490,35 @@
                         <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
                     </div>
                     <div class="row">
-                         <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Transporte</label>
+                            <select name="aerolinea_tipo_transporte[]" class="form-select" onchange="toggleAirlineFields(this)">
+                                <option {% if aerolinea.tipo_transporte == 'Bus' %}selected{% endif %}>Bus</option>
+                                <option {% if aerolinea.tipo_transporte == 'Buseta' %}selected{% endif %}>Buseta</option>
+                                <option {% if aerolinea.tipo_transporte == 'Auto' %}selected{% endif %}>Auto</option>
+                                <option {% if aerolinea.tipo_transporte == 'Moto' %}selected{% endif %}>Moto</option>
+                                <option {% if aerolinea.tipo_transporte == 'Barco' %}selected{% endif %}>Barco</option>
+                                <option {% if aerolinea.tipo_transporte == 'Avión' %}selected{% endif %}>Avión</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row airline-fields" style="display: {% if aerolinea.tipo_transporte == 'Avión' %}flex{% else %}none{% endif %};">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Aerolínea</label>
                             <input type="text" name="aerolinea_nombre[]" class="form-control" value="{{ aerolinea.nombre_aerolinea or '' }}">
                         </div>
                          <div class="col-md-6 mb-3">
-                            <label class="form-label">Precio Vuelo (CRC)</label>
-                            <input type="number" step="0.01" name="aerolinea_precio[]" class="form-control price-field" value="{{ aerolinea.precio_estandar or 0 }}" oninput="calculateTotals()">
+                            <label class="form-label">Teléfono Aerolínea</label>
+                            <input type="tel" name="aerolinea_telefono[]" class="form-control" value="{{ aerolinea.telefono_aerolinea or '' }}">
                         </div>
+                        <!-- ... (Resto de campos de aerolínea) ... -->
                     </div>
                 </div>
                 {% endfor %}
             </div>
             <div class="card-footer bg-light">
-                <strong>TOTAL DE AEROLÍNEA POR PERSONA: <span id="total-aerolinea">0.00</span> CRC</strong>
+                <strong>TOTAL DE AEROLÍNEA POR PERSONA: <span id="total-aerolinea-crc">0.00</span> CRC</strong>
+                <strong class="ms-3">| <span id="total-aerolinea-usd">0.00</span> USD</strong>
             </div>
         </div>
 
@@ -1019,34 +1038,45 @@
     }
 
     function calculateTotals() {
+        const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
+
+        // Total Atracciones
         let totalAtracciones = 0;
         document.querySelectorAll('#lugar-container .price-field').forEach(input => {
             totalAtracciones += parseFloat(input.value) || 0;
         });
-        document.getElementById('total-atracciones').textContent = totalAtracciones.toFixed(2);
+        document.getElementById('total-atracciones-crc').textContent = totalAtracciones.toFixed(2);
+        document.getElementById('total-atracciones-usd').textContent = (totalAtracciones / tipoCambio).toFixed(2);
 
+        // Total Transporte
         let totalTransporte = 0;
         document.querySelectorAll('#transporte-container .price-field').forEach(input => {
             totalTransporte += parseFloat(input.value) || 0;
         });
-        document.getElementById('total-transporte').textContent = totalTransporte.toFixed(2);
+        document.getElementById('total-transporte-crc').textContent = totalTransporte.toFixed(2);
+        document.getElementById('total-transporte-usd').textContent = (totalTransporte / tipoCambio).toFixed(2);
         
+        // Total Guías PP
         let totalGuias = 0;
         document.querySelectorAll('#guia-container .dynamic-item').forEach(item => {
             const precioPP = parseFloat(item.querySelector('input[name="guia_precio_pp[]"]').value) || 0;
             const precioAcarreo = parseFloat(item.querySelector('input[name="guia_precio_acarreo[]"]').value) || 0;
             totalGuias += precioPP + precioAcarreo;
         });
-        document.getElementById('total-guias').textContent = totalGuias.toFixed(2);
+        document.getElementById('total-guias-crc').textContent = totalGuias.toFixed(2);
+        document.getElementById('total-guias-usd').textContent = (totalGuias / tipoCambio).toFixed(2);
 
+        // Total Estadía PP
         let totalEstadia = 0;
         document.querySelectorAll('#estadia-container .dynamic-item').forEach(item => {
             const precioPP = parseFloat(item.querySelector('input[name="estadia_precio_pp[]"]').value) || 0;
             const noches = parseInt(item.querySelector('input[name="estadia_noches[]"]').value) || 1;
             totalEstadia += precioPP * noches;
         });
-        document.getElementById('total-estadia').textContent = totalEstadia.toFixed(2);
+        document.getElementById('total-estadia-crc').textContent = totalEstadia.toFixed(2);
+        document.getElementById('total-estadia-usd').textContent = (totalEstadia / tipoCambio).toFixed(2);
 
+        // Total Aerolínea PP
         let totalAerolinea = 0;
         document.querySelectorAll('#aerolinea-container .price-field').forEach(input => {
             const parentItem = input.closest('.dynamic-item');
@@ -1054,12 +1084,13 @@
             const cantidad = cantidadInput ? (parseInt(cantidadInput.value) || 1) : 1;
             totalAerolinea += (parseFloat(input.value) || 0) * cantidad;
         });
-        document.getElementById('total-aerolinea').textContent = totalAerolinea.toFixed(2);
+        document.getElementById('total-aerolinea-crc').textContent = totalAerolinea.toFixed(2);
+        document.getElementById('total-aerolinea-usd').textContent = (totalAerolinea / tipoCambio).toFixed(2);
         
+        // Gran Total Individual
         const totalIndividualCRC = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
         document.getElementById('total-individual-crc').textContent = totalIndividualCRC.toFixed(2) + ' CRC';
 
-        const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
         const totalIndividualUSD = totalIndividualCRC / tipoCambio;
         document.getElementById('total-individual-usd').textContent = totalIndividualUSD.toFixed(2) + ' USD';
     }
