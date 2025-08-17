@@ -20,13 +20,13 @@
     }
     .fab-container-back {
         position: fixed;
-        bottom: 20px;
+        bottom: 75px;
         left: 20px;
         z-index: 1000;
     }
     .fab-container-actions {
         position: fixed;
-        bottom: 20px;
+        bottom: 75px;
         right: 20px;
         z-index: 1050;
         display: flex;
@@ -49,6 +49,7 @@
         transform: scale(1.05);
         box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     }
+    .fab-button-save { background-color: #ffc107; color: black; }
     .airline-fields {
         display: none; /* Oculto por defecto */
     }
@@ -59,7 +60,7 @@
 <div class="container mt-4">
     <h1 class="mb-4 text-center">Editando: {{ viaje.nombre_viaje }}</h1>
 
-    <form action="{{ url_for('intern.editar_intern', id=viaje.id) }}" method="POST" enctype="multipart/form-data">
+    <form id="editInternForm" action="{{ url_for('intern.editar_intern', id=viaje.id) }}" method="POST" enctype="multipart/form-data">
         
         <!-- SECCIÓN DESTINO -->
         <div class="card mb-4">
@@ -101,15 +102,20 @@
                     </div>
                 </div>
                  <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="precio_paquete" class="form-label price-label">Precio del Paquete</label>
                         <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}">
                     </div>
+                    <!-- MODIFICADO: Se ajustan los atributos 'name' y 'value' -->
                     <div class="col-md-2 mb-3">
-                        <label for="capacidad" class="form-label">Capacidad</label>
-                        <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ viaje.capacidad or 0 }}">
+                        <label for="capacidad_con_guias" class="form-label">Capacidad c/guias</label>
+                        <input type="number" class="form-control" id="capacidad_con_guias" name="capacidad_con_guias" value="{{ viaje.capacidad_con_guias or 0 }}">
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-2 mb-3">
+                        <label for="capacidad_sin_guias" class="form-label">Capacidad s/guias</label>
+                        <input type="number" class="form-control" id="capacidad_sin_guias" name="capacidad_sin_guias" value="{{ viaje.capacidad_sin_guias or 0 }}">
+                    </div>
+                    <div class="col-md-2 mb-3">
                         <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
                         <select class="form-select" id="tipo_moneda" name="tipo_moneda">
                             <option value="CRC" {% if viaje.tipo_moneda == 'CRC' %}selected{% endif %}>Colones (CRC)</option>
@@ -636,7 +642,7 @@
         </div>
 
         <!-- TOTALES GENERALES -->
-        <div class="card mt-5">
+        <div class="card mt-5 mb-5">
             <div class="card-header bg-dark text-white">
                 <h3 class="mb-0">Totales Individuales Estimados</h3>
             </div>
@@ -654,9 +660,6 @@
             </div>
         </div>
         
-        <div class="d-grid gap-2 mt-4 mb-5">
-            <button type="submit" class="btn btn-warning btn-lg">Guardar Cambios</button>
-        </div>
     </form>
 </div>
 
@@ -667,6 +670,9 @@
     </a>
 </div>
 <div class="fab-container-actions">
+    <button type="submit" form="editInternForm" class="fab-button fab-button-save" title="Guardar Cambios">
+        <i class="fas fa-save"></i>
+    </button>
     <a href="#" class="btn btn-danger fab-button" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}">
         <i class="fas fa-trash-alt"></i>
     </a>

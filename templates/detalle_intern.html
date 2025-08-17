@@ -45,10 +45,10 @@
         object-fit: cover;
     }
     .profit {
-        color: #198754; /* Verde de Bootstrap */
+        color: #006400; /* Verde Oscuro */
     }
     .loss {
-        color: #dc3545; /* Rojo de Bootstrap */
+        color: #8B0000; /* Rojo Sangre */
     }
     .fab-container-actions {
         position: fixed;
@@ -109,9 +109,9 @@
 {# Macro para mostrar el precio con el formato de moneda correcto #}
 {% macro display_price(value, currency) %}
     {% if currency == 'CRC' %}
-        ₡{{ "%.2f"|format(value) }}
+        ₡{{ "%.2f"|format(value|float) }}
     {% else %}
-        ${{ "%.2f"|format(value) }}
+        ${{ "%.2f"|format(value|float) }}
     {% endif %}
 {% endmacro %}
 
@@ -381,35 +381,49 @@
     {% set diferencia_usd = precio_paquete_en_usd - total_individual_usd %}
     {% set diferencia_crc = diferencia_usd * viaje.tipo_cambio %}
     
-    {% set ganancia_total_usd = diferencia_usd * viaje.capacidad %}
-    {% set ganancia_total_crc = diferencia_crc * viaje.capacidad %}
+    {# El usuario se refiere a la ganancia total anterior como "Total Bruto" #}
+    {% set total_bruto_usd = diferencia_usd * viaje.capacidad %}
+    {% set total_bruto_crc = diferencia_crc * viaje.capacidad %}
+
+    {# Nueva Ganancia Total según la fórmula del usuario #}
+    {% set ganancia_total_usd = total_bruto_usd - total_individual_usd %}
+    {% set ganancia_total_crc = total_bruto_crc - total_individual_crc %}
 
     <div class="card total-card mt-5">
         <div class="card-header">
             <h3 class="mb-0">Resumen Financiero</h3>
         </div>
         <div class="card-body fs-5">
-            <div class="detail-item"><span>Costo Total Individual (CRC):</span> <span class="fw-bold">₡{{ "%.2f"|format(total_individual_crc) }}</span></div>
-            <div class="detail-item"><span>Costo Total Individual (USD):</span> <span class="fw-bold">${{ "%.2f"|format(total_individual_usd) }}</span></div>
+            <div class="detail-item"><span>Costo Total Individual (CRC):</span> <span class="fw-bold">₡{{ "%.2f"|format(total_individual_crc|float) }}</span></div>
+            <div class="detail-item"><span>Costo Total Individual (USD):</span> <span class="fw-bold">${{ "%.2f"|format(total_individual_usd|float) }}</span></div>
             <hr class="my-3" style="border-color: rgba(255,255,255,0.25);">
             <div class="detail-item">
                 <span>Diferencia por Persona (USD):</span> 
-                <span class="fw-bold {{ 'profit' if diferencia_usd >= 0 else 'loss' }}">${{ "%.2f"|format(diferencia_usd) }}</span>
+                <span class="fw-bold {{ 'profit' if diferencia_usd >= 0 else 'loss' }}">${{ "%.2f"|format(diferencia_usd|float) }}</span>
             </div>
             <div class="detail-item">
                 <span>Diferencia por Persona (CRC):</span> 
-                <span class="fw-bold {{ 'profit' if diferencia_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(diferencia_crc) }}</span>
+                <span class="fw-bold {{ 'profit' if diferencia_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(diferencia_crc|float) }}</span>
             </div>
             {% if viaje.capacidad > 0 %}
             <hr class="my-3" style="border-color: rgba(255,255,255,0.25);">
-            <h5 class="text-warning mt-3">Resumen de Ganancia Total (para {{ viaje.capacidad }} personas)</h5>
+            <h5 class="text-white mt-3">Resumen Financiero Total (para {{ viaje.capacidad }} personas)</h5>
+            <div class="detail-item">
+                <span>Total Bruto USD:</span> 
+                <span class="fw-bold {{ 'profit' if total_bruto_usd >= 0 else 'loss' }}">${{ "%.2f"|format(total_bruto_usd|float) }}</span>
+            </div>
+            <div class="detail-item">
+                <span>Total Bruto CRC:</span> 
+                <span class="fw-bold {{ 'profit' if total_bruto_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(total_bruto_crc|float) }}</span>
+            </div>
+            <hr class="my-2" style="border-color: rgba(255,255,255,0.15);">
             <div class="detail-item">
                 <span>Ganancia Total (USD):</span> 
-                <span class="fw-bold {{ 'profit' if ganancia_total_usd >= 0 else 'loss' }}">${{ "%.2f"|format(ganancia_total_usd) }}</span>
+                <span class="fw-bold {{ 'profit' if ganancia_total_usd >= 0 else 'loss' }}">${{ "%.2f"|format(ganancia_total_usd|float) }}</span>
             </div>
             <div class="detail-item">
                 <span>Ganancia Total (CRC):</span> 
-                <span class="fw-bold {{ 'profit' if ganancia_total_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(ganancia_total_crc) }}</span>
+                <span class="fw-bold {{ 'profit' if ganancia_total_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(ganancia_total_crc|float) }}</span>
             </div>
             {% endif %}
         </div>

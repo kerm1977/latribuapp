@@ -55,7 +55,8 @@ class InternationalTravel(db.Model):
     flyer_url = db.Column(db.String(500))
     nombre_viaje = db.Column(db.String(200), nullable=False)
     precio_paquete = db.Column(db.Float, default=0.0)
-    capacidad = db.Column(db.Integer, default=0)
+    capacidad_con_guias = db.Column(db.Integer, default=0)
+    capacidad_sin_guias = db.Column(db.Integer, default=0)
     tipo_moneda = db.Column(db.String(10), default='CRC')
     tipo_cambio = db.Column(db.Float, default=1.0)
     pais = db.Column(db.String(100))
@@ -84,7 +85,8 @@ class LugarVisitar(db.Model):
     travel_id = db.Column(db.Integer, db.ForeignKey('international_travel.id'), nullable=False)
     tipo_lugar = db.Column(db.String(100))
     nombre_sitio = db.Column(db.String(200))
-    precio_entrada = db.Column(db.Float, default=0.0)
+    precio_entrada_general = db.Column(db.Float, default=0.0)
+    precio_entrada_individual = db.Column(db.Float, default=0.0)
     fecha_reserva = db.Column(db.Date)
     guia_local = db.Column(db.String(5)) # Si/No
     nombre_guia = db.Column(db.String(150))
@@ -191,16 +193,16 @@ def crear_intern():
             file = request.files['flyer']
             if file and file.filename != '' and allowed_file(file.filename):
                 flyer_filename = secure_filename(file.filename)
-                # Asegúrate de que el directorio de subida exista
                 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
                 file.save(os.path.join(UPLOAD_FOLDER, flyer_filename))
 
         nuevo_viaje = InternationalTravel(
             titulo_destino=request.form.get('titulo_destino'),
             nombre_viaje=request.form.get('nombre_viaje'),
-            flyer_url=flyer_filename,  # Guardar el nombre del archivo
+            flyer_url=flyer_filename,
             precio_paquete=float(request.form.get('precio_paquete') or 0.0),
-            capacidad=int(request.form.get('capacidad') or 0),
+            capacidad_con_guias=int(request.form.get('capacidad_con_guias') or 0),
+            capacidad_sin_guias=int(request.form.get('capacidad_sin_guias') or 0),
             tipo_moneda=request.form.get('tipo_moneda'),
             tipo_cambio=float(request.form.get('tipo_cambio') or 1.0),
             pais=request.form.get('pais')
@@ -208,14 +210,28 @@ def crear_intern():
         db.session.add(nuevo_viaje)
         db.session.flush()
 
-        # ... (el resto de tu código para guardar prealertas, lugares, etc., permanece igual)
         for i in range(len(request.form.getlist('prealerta_banco[]'))):
             if request.form.getlist('prealerta_banco[]')[i]:
                 db.session.add(PreAlerta(travel_id=nuevo_viaje.id, banco=request.form.getlist('prealerta_banco[]')[i], telefono_entidad=request.form.getlist('prealerta_telefono[]')[i], fecha_prealerta=to_date(request.form.getlist('prealerta_fecha[]')[i]), nombre_asesor=request.form.getlist('prealerta_asesor[]')[i], hora_prealerta=to_time(request.form.getlist('prealerta_hora[]')[i]), numero_prealerta=request.form.getlist('prealerta_numero[]')[i], fecha_desde=to_date(request.form.getlist('prealerta_desde[]')[i]), fecha_hasta=to_date(request.form.getlist('prealerta_hasta[]')[i])))
         
         for i in range(len(request.form.getlist('lugar_nombre[]'))):
             if request.form.getlist('lugar_nombre[]')[i]:
-                db.session.add(LugarVisitar(travel_id=nuevo_viaje.id, tipo_lugar=request.form.getlist('lugar_tipo[]')[i], nombre_sitio=request.form.getlist('lugar_nombre[]')[i], precio_entrada=float(request.form.getlist('lugar_precio[]')[i] or 0.0), fecha_reserva=to_date(request.form.getlist('lugar_fecha_reserva[]')[i]), guia_local=request.form.getlist('lugar_guia_local[]')[i], nombre_guia=request.form.getlist('lugar_nombre_guia[]')[i], telefono_lugar=request.form.getlist('lugar_telefono_lugar[]')[i], telefono_contacto=request.form.getlist('lugar_telefono_contacto[]')[i], whatsapp_contacto=request.form.getlist('lugar_whatsapp_contacto[]')[i], email=request.form.getlist('lugar_email[]')[i], enlaces=request.form.getlist('lugar_enlaces[]')[i], nota=request.form.getlist('lugar_nota[]')[i]))
+                db.session.add(LugarVisitar(
+                    travel_id=nuevo_viaje.id, 
+                    tipo_lugar=request.form.getlist('lugar_tipo[]')[i], 
+                    nombre_sitio=request.form.getlist('lugar_nombre[]')[i], 
+                    precio_entrada_general=float(request.form.getlist('lugar_precio_general[]')[i] or 0.0),
+                    precio_entrada_individual=float(request.form.getlist('lugar_precio_individual[]')[i] or 0.0),
+                    fecha_reserva=to_date(request.form.getlist('lugar_fecha_reserva[]')[i]), 
+                    guia_local=request.form.getlist('lugar_guia_local[]')[i], 
+                    nombre_guia=request.form.getlist('lugar_nombre_guia[]')[i], 
+                    telefono_lugar=request.form.getlist('lugar_telefono_lugar[]')[i], 
+                    telefono_contacto=request.form.getlist('lugar_telefono_contacto[]')[i], 
+                    whatsapp_contacto=request.form.getlist('lugar_whatsapp_contacto[]')[i], 
+                    email=request.form.getlist('lugar_email[]')[i], 
+                    enlaces=request.form.getlist('lugar_enlaces[]')[i], 
+                    nota=request.form.getlist('lugar_nota[]')[i]
+                ))
 
         for i in range(len(request.form.getlist('transporte_nombre[]'))):
             if request.form.getlist('transporte_nombre[]')[i]:
@@ -268,17 +284,17 @@ def editar_intern(id):
                 flyer_filename = secure_filename(file.filename)
                 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
                 file.save(os.path.join(UPLOAD_FOLDER, flyer_filename))
-                viaje.flyer_url = flyer_filename # Actualizar solo si se sube un nuevo archivo
+                viaje.flyer_url = flyer_filename
 
         viaje.titulo_destino = request.form.get('titulo_destino')
         viaje.nombre_viaje = request.form.get('nombre_viaje')
         viaje.precio_paquete = float(request.form.get('precio_paquete') or 0.0)
-        viaje.capacidad = int(request.form.get('capacidad') or 0)
+        viaje.capacidad_con_guias = int(request.form.get('capacidad_con_guias') or 0)
+        viaje.capacidad_sin_guias = int(request.form.get('capacidad_sin_guias') or 0)
         viaje.tipo_moneda = request.form.get('tipo_moneda')
         viaje.tipo_cambio = float(request.form.get('tipo_cambio') or 1.0)
         viaje.pais = request.form.get('pais')
 
-        # ... (el resto de tu código para actualizar prealertas, etc., permanece igual)
         for item in viaje.prealertas: db.session.delete(item)
         for i in range(len(request.form.getlist('prealerta_banco[]'))):
             if request.form.getlist('prealerta_banco[]')[i]:
@@ -287,7 +303,22 @@ def editar_intern(id):
         for item in viaje.lugares: db.session.delete(item)
         for i in range(len(request.form.getlist('lugar_nombre[]'))):
             if request.form.getlist('lugar_nombre[]')[i]:
-                db.session.add(LugarVisitar(travel_id=viaje.id, tipo_lugar=request.form.getlist('lugar_tipo[]')[i], nombre_sitio=request.form.getlist('lugar_nombre[]')[i], precio_entrada=float(request.form.getlist('lugar_precio[]')[i] or 0.0), fecha_reserva=to_date(request.form.getlist('lugar_fecha_reserva[]')[i]), guia_local=request.form.getlist('lugar_guia_local[]')[i], nombre_guia=request.form.getlist('lugar_nombre_guia[]')[i], telefono_lugar=request.form.getlist('lugar_telefono_lugar[]')[i], telefono_contacto=request.form.getlist('lugar_telefono_contacto[]')[i], whatsapp_contacto=request.form.getlist('lugar_whatsapp_contacto[]')[i], email=request.form.getlist('lugar_email[]')[i], enlaces=request.form.getlist('lugar_enlaces[]')[i], nota=request.form.getlist('lugar_nota[]')[i]))
+                db.session.add(LugarVisitar(
+                    travel_id=viaje.id, 
+                    tipo_lugar=request.form.getlist('lugar_tipo[]')[i], 
+                    nombre_sitio=request.form.getlist('lugar_nombre[]')[i], 
+                    precio_entrada_general=float(request.form.getlist('lugar_precio_general[]')[i] or 0.0),
+                    precio_entrada_individual=float(request.form.getlist('lugar_precio_individual[]')[i] or 0.0),
+                    fecha_reserva=to_date(request.form.getlist('lugar_fecha_reserva[]')[i]), 
+                    guia_local=request.form.getlist('lugar_guia_local[]')[i], 
+                    nombre_guia=request.form.getlist('lugar_nombre_guia[]')[i], 
+                    telefono_lugar=request.form.getlist('lugar_telefono_lugar[]')[i], 
+                    telefono_contacto=request.form.getlist('lugar_telefono_contacto[]')[i], 
+                    whatsapp_contacto=request.form.getlist('lugar_whatsapp_contacto[]')[i], 
+                    email=request.form.getlist('lugar_email[]')[i], 
+                    enlaces=request.form.getlist('lugar_enlaces[]')[i], 
+                    nota=request.form.getlist('lugar_nota[]')[i]
+                ))
 
         for item in viaje.transportes: db.session.delete(item)
         for i in range(len(request.form.getlist('transporte_nombre[]'))):
@@ -342,15 +373,20 @@ def eliminar_intern(id):
     return redirect(url_for('intern.ver_intern'))
 
 # --- INICIO: RUTAS DE EXPORTACIÓN COMPLETAS ---
-# (El resto del código de exportación permanece igual)
-# ...
 def _get_export_context(id):
     """Función auxiliar para obtener todos los datos y cálculos para las exportaciones."""
     viaje = InternationalTravel.query.get_or_404(id)
     
     total_cost = 0
     # Calcular el costo total de todas las secciones
-    for item in viaje.lugares: total_cost += item.precio_entrada or 0
+    for item in viaje.lugares:
+        if item.precio_entrada_individual and item.precio_entrada_individual > 0:
+            total_cost += item.precio_entrada_individual
+        elif item.precio_entrada_general and item.precio_entrada_general > 0 and viaje.capacidad_sin_guias > 0:
+            total_cost += (item.precio_entrada_general * viaje.capacidad_con_guias) / viaje.capacidad_sin_guias
+        else:
+            total_cost += item.precio_entrada_general or 0
+
     for item in viaje.transportes: total_cost += item.precio or 0
     for item in viaje.guias:
         total_cost += item.precio_guia_pp or 0
@@ -395,8 +431,8 @@ def _get_export_context(id):
     diferencia_usd = precio_paquete_en_usd - total_individual_usd
     diferencia_crc = diferencia_usd * (viaje.tipo_cambio or 1)
     
-    ganancia_total_usd = diferencia_usd * (viaje.capacidad or 0)
-    ganancia_total_crc = diferencia_crc * (viaje.capacidad or 0)
+    ganancia_total_usd = diferencia_usd * (viaje.capacidad_con_guias or 0)
+    ganancia_total_crc = diferencia_crc * (viaje.capacidad_con_guias or 0)
 
     return {
         "viaje": viaje,
@@ -405,7 +441,8 @@ def _get_export_context(id):
         "diferencia_usd": diferencia_usd,
         "diferencia_crc": diferencia_crc,
         "ganancia_total_usd": ganancia_total_usd,
-        "ganancia_total_crc": ganancia_total_crc
+        "ganancia_total_crc": ganancia_total_crc,
+        "total_individual_neto_usd": (((precio_paquete_en_usd * (viaje.capacidad_con_guias or 0)) / viaje.capacidad_sin_guias) - total_individual_usd) if viaje.capacidad_sin_guias and viaje.capacidad_sin_guias > 0 else 0
     }
 
 @intern_bp.route('/exportar/pdf/<int:id>')
@@ -457,7 +494,8 @@ def exportar_pdf(id):
     
     pdf.section_title("Información General")
     pdf.item_entry("Precio del Paquete:", format_currency(viaje.precio_paquete, viaje.tipo_moneda))
-    pdf.item_entry("Capacidad:", f"{viaje.capacidad} personas")
+    pdf.item_entry("Capacidad c/guías:", f"{viaje.capacidad_con_guias} personas")
+    pdf.item_entry("Capacidad s/guías:", f"{viaje.capacidad_sin_guias} personas")
     pdf.item_entry("Moneda Base:", viaje.tipo_moneda)
     pdf.item_entry("Tipo de Cambio:", f"{viaje.tipo_cambio:,.2f} (CRC por USD)")
     pdf.ln(5)
@@ -480,7 +518,8 @@ def exportar_pdf(id):
         pdf.section_title("Lugares a Visitar")
         for item in viaje.lugares:
             pdf.sub_section_title(f"{item.nombre_sitio} ({item.tipo_lugar})")
-            pdf.item_entry("Precio Entrada:", format_currency(item.precio_entrada, viaje.tipo_moneda), indent=True)
+            pdf.item_entry("Precio Entrada General:", format_currency(item.precio_entrada_general, viaje.tipo_moneda), indent=True)
+            pdf.item_entry("Precio Entrada Individual:", format_currency(item.precio_entrada_individual, viaje.tipo_moneda), indent=True)
             pdf.item_entry("Fecha Reserva:", item.fecha_reserva.strftime('%d/%m/%Y') if item.fecha_reserva else '', indent=True)
             pdf.item_entry("Contacto:", f"{item.telefono_contacto} / {item.whatsapp_contacto}", indent=True)
             pdf.item_entry("Email:", item.email, indent=True)
@@ -527,7 +566,6 @@ def exportar_pdf(id):
             pdf.item_entry("Contacto:", f"{item.telefono_aerolinea} / {item.whatsapp}", indent=True)
             pdf.item_entry("Email:", item.email, indent=True)
             
-            # Precios
             prices = {
                 "Asientos": item.precio_asientos, "Maletas Doc.": item.precio_maletas_doc, "Equipaje Mano": item.equipaje_mano,
                 "Estándar": item.precio_estandar, "Más Equipo": item.precio_mas_equipo, "Salida Rápida": item.precio_salida_rapida,
@@ -556,6 +594,8 @@ def exportar_pdf(id):
     pdf.ln(2)
     pdf.item_entry("GANANCIA TOTAL (CRC):", f"CRC {context['ganancia_total_crc']:,.2f}")
     pdf.item_entry("GANANCIA TOTAL (USD):", f"$ {context['ganancia_total_usd']:,.2f}")
+    pdf.ln(2)
+    pdf.item_entry("TOTAL INDIVIDUAL NETO (USD):", f"$ {context['total_individual_neto_usd']:,.2f}")
 
     pdf_output = pdf.output(dest='S').encode('latin1')
     
@@ -585,7 +625,8 @@ def exportar_txt(id):
 
     content.append("\n[ INFORMACIÓN GENERAL ]")
     add_line("Precio Paquete", format_currency(viaje.precio_paquete, viaje.tipo_moneda), 1)
-    add_line("Capacidad", f"{viaje.capacidad} personas", 1)
+    add_line("Capacidad c/guías", f"{viaje.capacidad_con_guias} personas", 1)
+    add_line("Capacidad s/guías", f"{viaje.capacidad_sin_guias} personas", 1)
     add_line("Moneda Base", viaje.tipo_moneda, 1)
     add_line("Tipo de Cambio", f"{viaje.tipo_cambio:,.2f}", 1)
 
@@ -603,7 +644,8 @@ def exportar_txt(id):
         content.append("\n[ LUGARES A VISITAR ]")
         for item in viaje.lugares:
             content.append(f"\n  Lugar: {item.nombre_sitio} ({item.tipo_lugar})")
-            add_line("Precio Entrada", format_currency(item.precio_entrada, viaje.tipo_moneda), 2)
+            add_line("Precio Entrada General", format_currency(item.precio_entrada_general, viaje.tipo_moneda), 2)
+            add_line("Precio Entrada Individual", format_currency(item.precio_entrada_individual, viaje.tipo_moneda), 2)
             add_line("Fecha Reserva", item.fecha_reserva.strftime('%d/%m/%Y') if item.fecha_reserva else '', 2)
             add_line("Contacto", f"Tel: {item.telefono_contacto or 'N/A'} / WA: {item.whatsapp_contacto or 'N/A'}", 2)
             add_line("Email", item.email, 2)
@@ -668,6 +710,8 @@ def exportar_txt(id):
     content.append("  --------------------------------------------------")
     add_line("GANANCIA TOTAL (CRC)", f"CRC {context['ganancia_total_crc']:,.2f}", 1)
     add_line("GANANCIA TOTAL (USD)", f"$ {context['ganancia_total_usd']:,.2f}", 1)
+    content.append("  --------------------------------------------------")
+    add_line("TOTAL INDIVIDUAL NETO (USD)", f"$ {context['total_individual_neto_usd']:,.2f}", 1)
     content.append("="*60)
 
     final_content = "\n".join(content)

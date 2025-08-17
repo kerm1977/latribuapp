@@ -20,9 +20,15 @@
     }
     .fab-container-back {
         position: fixed;
-        bottom: 20px;
+        bottom: 75px;
         left: 20px;
         z-index: 1000;
+    }
+    .fab-container-actions {
+        position: fixed;
+        bottom: 75px;
+        right: 20px;
+        z-index: 1050;
     }
     .fab-button {
         width: 60px;
@@ -40,6 +46,7 @@
         transform: scale(1.05);
         box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     }
+    .fab-button-create { background-color: #ffc107; color: black; }
     .airline-fields {
         display: none; /* Oculto por defecto */
     }
@@ -50,7 +57,7 @@
 <div class="container mt-4">
     <h1 class="mb-4 text-center">Crear Nuevo Viaje Internacional</h1>
 
-    <form action="{{ url_for('intern.crear_intern') }}" method="POST" enctype="multipart/form-data">
+    <form id="createInternForm" action="{{ url_for('intern.crear_intern') }}" method="POST" enctype="multipart/form-data">
         
         <!-- SECCIÓN DESTINO -->
         <div class="card mb-4">
@@ -94,18 +101,22 @@
                         <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="0">
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="capacidad" class="form-label">Capacidad</label>
-                        <input type="number" class="form-control" id="capacidad" name="capacidad" value="0">
+                        <label for="capacidad_con_guias" class="form-label">Capacidad c/guias</label>
+                        <input type="number" class="form-control" id="capacidad_con_guias" name="capacidad_con_guias" value="0">
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-2 mb-3">
+                        <label for="capacidad_sin_guias" class="form-label">Capacidad s/guias</label>
+                        <input type="number" class="form-control" id="capacidad_sin_guias" name="capacidad_sin_guias" value="0">
+                    </div>
+                    <div class="col-md-2 mb-3">
                         <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
                         <select class="form-select" id="tipo_moneda" name="tipo_moneda">
                             <option value="CRC">Colones (CRC)</option>
                             <option value="USD">Dólares (USD)</option>
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="tipo_cambio" class="form-label">Tipo de Cambio (a USD)</label>
+                    <div class="col-md-2 mb-3">
+                        <label for="tipo_cambio" class="form-label">Tipo de Cambio</label>
                         <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="520.00" oninput="calculateTotals()">
                     </div>
                 </div>
@@ -213,7 +224,7 @@
         </div>
 
         <!-- TOTALES GENERALES -->
-        <div class="card mt-5">
+        <div class="card mt-5 mb-5">
             <div class="card-header bg-dark text-white">
                 <h3 class="mb-0">Totales Individuales Estimados</h3>
             </div>
@@ -227,22 +238,28 @@
                         <strong>TOTAL INDIVIDUAL USD:</strong>
                         <p class="text-primary fw-bold" id="total-individual-usd">0.00 USD</p>
                     </div>
+                    <div class="col-md-12">
+                        <strong>TOTAL INDIVIDUAL NETO USD:</strong>
+                        <p class="text-info fw-bold" id="total-individual-neto-usd">0.00 USD</p>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="d-grid gap-2 mt-4 mb-5">
-            <button type="submit" class="btn btn-warning btn-lg">Crear Viaje</button>
         </div>
     </form>
 </div>
 
-<!-- BOTÓN FLOTANTE DE VOLVER -->
+<!-- BOTONES FLOTANTES -->
 <div class="fab-container-back">
     <a href="{{ url_for('intern.ver_intern') }}" class="btn btn-secondary fab-button" title="Volver al listado">
         <i class="fas fa-arrow-left"></i>
     </a>
 </div>
+<div class="fab-container-actions">
+    <button type="submit" form="createInternForm" class="fab-button fab-button-create" title="Crear Viaje">
+        <i class="fas fa-rocket"></i>
+    </button>
+</div>
+
 
 <!-- =========== TEMPLATES PARA FORMULARIOS DINÁMICOS =========== -->
 <template id="prealerta-template">
@@ -807,6 +824,24 @@
         
         document.getElementById('total-individual-crc').textContent = totalCRC.toFixed(2) + ' CRC';
         document.getElementById('total-individual-usd').textContent = totalUSD.toFixed(2) + ' USD';
+
+        const precioPaquete = parseFloat(document.getElementById('precio_paquete').value) || 0;
+        const capacidadConGuias = parseInt(document.getElementById('capacidad_con_guias').value) || 0;
+        const capacidadSinGuias = parseInt(document.getElementById('capacidad_sin_guias').value) || 0;
+
+        let precioPaqueteUSD = 0;
+        if (currency === 'CRC') {
+            precioPaqueteUSD = precioPaquete / tipoCambio;
+        } else {
+            precioPaqueteUSD = precioPaquete;
+        }
+
+        let totalIndividualNetoUSD = 0;
+        if (capacidadSinGuias > 0) {
+            totalIndividualNetoUSD = ((precioPaqueteUSD * capacidadConGuias) / capacidadSinGuias) - totalUSD;
+        }
+
+        document.getElementById('total-individual-neto-usd').textContent = totalIndividualNetoUSD.toFixed(2) + ' USD';
     }
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -819,6 +854,9 @@
         calculateTotals();
     });
     document.getElementById('tipo_cambio').addEventListener('input', calculateTotals);
+    document.getElementById('precio_paquete').addEventListener('input', calculateTotals);
+    document.getElementById('capacidad_con_guias').addEventListener('input', calculateTotals);
+    document.getElementById('capacidad_sin_guias').addEventListener('input', calculateTotals);
 
 </script>
 {% endblock %}
