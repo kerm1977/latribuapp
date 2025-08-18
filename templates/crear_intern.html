@@ -1,862 +1,419 @@
-{% extends "base.html" %}
-
-{% block title %}Crear Nuevo Viaje Internacional{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Crear Instrucción{% endblock %}
 {% block head_content %}
-<style>
-    .card {
-        box-shadow: none !important;
-        border: 1px solid #dee2e6;
-    }
-    .form-section-separator {
-        border-top: 2px solid #ffc107;
-        margin-top: 2rem;
-        margin-bottom: 2rem;
-    }
-    .dynamic-item {
-        border-left: 3px solid #ffc107;
-        padding-left: 15px;
-        margin-bottom: 1rem;
-    }
-    .fab-container-back {
-        position: fixed;
-        bottom: 75px;
-        left: 20px;
-        z-index: 1000;
-    }
-    .fab-container-actions {
-        position: fixed;
-        bottom: 75px;
-        right: 20px;
-        z-index: 1050;
-    }
-    .fab-button {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-    .fab-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    }
-    .fab-button-create { background-color: #ffc107; color: black; }
-    .airline-fields {
-        display: none; /* Oculto por defecto */
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4 text-center">Crear Nuevo Viaje Internacional</h1>
-
-    <form id="createInternForm" action="{{ url_for('intern.crear_intern') }}" method="POST" enctype="multipart/form-data">
-        
-        <!-- SECCIÓN DESTINO -->
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h4 class="mb-0">Destino</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="titulo_destino" class="form-label">Título Destino</label>
-                        <input type="text" class="form-control" id="titulo_destino" name="titulo_destino" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
-                        <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="flyer" class="form-label">Flyer (Imagen)</label>
-                        <input type="file" class="form-control" id="flyer" name="flyer" accept="image/*">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="pais" class="form-label">País</label>
-                        <select class="form-select" id="pais" name="pais" required>
-                            <option selected disabled value="">Seleccionar país...</option>
-                            <option value="Panama">Panamá</option>
-                            <option value="Nicaragua">Nicaragua</option>
-                            <option value="Honduras">Honduras</option>
-                            <option value="El Salvador">El Salvador</option>
-                            <option value="Guatemala">Guatemala</option>
-                            <option value="Mexico">México</option>
-                            <option value="Peru">Perú</option>
-                            <option value="Spain">España</option>
-                        </select>
-                    </div>
-                </div>
-                 <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="precio_paquete" class="form-label price-label">Precio del Paquete</label>
-                        <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="0">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="capacidad_con_guias" class="form-label">Capacidad c/guias</label>
-                        <input type="number" class="form-control" id="capacidad_con_guias" name="capacidad_con_guias" value="0">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="capacidad_sin_guias" class="form-label">Capacidad s/guias</label>
-                        <input type="number" class="form-control" id="capacidad_sin_guias" name="capacidad_sin_guias" value="0">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
-                        <select class="form-select" id="tipo_moneda" name="tipo_moneda">
-                            <option value="CRC">Colones (CRC)</option>
-                            <option value="USD">Dólares (USD)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="tipo_cambio" class="form-label">Tipo de Cambio</label>
-                        <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="520.00" oninput="calculateTotals()">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SEPARADOR ADMINISTRACIÓN DE VIAJE -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Administración de Viaje</h2>
-
-        <!-- SECCIÓN PRE-ALERTA -->
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Pre-Alerta Bancaria</h5>
-                <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('prealerta-container', 'prealerta-template')">
-                    <i class="fas fa-plus"></i> Agregar Pre-Alerta
-                </button>
-            </div>
-            <div class="card-body" id="prealerta-container"></div>
-        </div>
-
-        <!-- SEPARADOR LUGARES A VISITAR -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Lugares a Visitar</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Atracciones</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('lugar-container', 'lugar-template')">
-                    <i class="fas fa-plus"></i> Agregar Lugar
-                </button>
-            </div>
-            <div class="card-body" id="lugar-container"></div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE ATRACCIONES: <span id="total-atracciones-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-atracciones-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-
-        <!-- SEPARADOR TRANSPORTES -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Transportes</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Transporte Local</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('transporte-container', 'transporte-template')">
-                    <i class="fas fa-plus"></i> Agregar Transporte
-                </button>
-            </div>
-            <div class="card-body" id="transporte-container"></div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE TRANSPORTE: <span id="total-transporte-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-transporte-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-        
-        <!-- SEPARADOR GUÍAS -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Guías</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Guías Turísticos</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('guia-container', 'guia-template')">
-                    <i class="fas fa-plus"></i> Agregar Guía
-                </button>
-            </div>
-            <div class="card-body" id="guia-container"></div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE GUÍAS POR PERSONA: <span id="total-guias-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-guias-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-
-        <!-- SEPARADOR ESTADÍAS -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Estadías</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Hospedaje</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('estadia-container', 'estadia-template')">
-                    <i class="fas fa-plus"></i> Agregar Estadía
-                </button>
-            </div>
-            <div class="card-body" id="estadia-container"></div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE ESTADÍA POR PERSONA: <span id="total-estadia-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-estadia-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-
-        <!-- SEPARADOR AEROLINEA -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Aerolínea / Transporte Principal</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Transporte Principal</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('aerolinea-container', 'aerolinea-template')">
-                    <i class="fas fa-plus"></i> Agregar Aerolínea/Transporte
-                </button>
-            </div>
-            <div class="card-body" id="aerolinea-container"></div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE AEROLÍNEA POR PERSONA: <span id="total-aerolinea-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-aerolinea-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-
-        <!-- TOTALES GENERALES -->
-        <div class="card mt-5 mb-5">
-            <div class="card-header bg-dark text-white">
-                <h3 class="mb-0">Totales Individuales Estimados</h3>
-            </div>
-            <div class="card-body fs-5">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>TOTAL INDIVIDUAL CRC:</strong>
-                        <p class="text-success fw-bold" id="total-individual-crc">0.00 CRC</p>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>TOTAL INDIVIDUAL USD:</strong>
-                        <p class="text-primary fw-bold" id="total-individual-usd">0.00 USD</p>
-                    </div>
-                    <div class="col-md-12">
-                        <strong>TOTAL INDIVIDUAL NETO USD:</strong>
-                        <p class="text-info fw-bold" id="total-individual-neto-usd">0.00 USD</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-<!-- BOTONES FLOTANTES -->
-<div class="fab-container-back">
-    <a href="{{ url_for('intern.ver_intern') }}" class="btn btn-secondary fab-button" title="Volver al listado">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-</div>
-<div class="fab-container-actions">
-    <button type="submit" form="createInternForm" class="fab-button fab-button-create" title="Crear Viaje">
-        <i class="fas fa-rocket"></i>
-    </button>
-</div>
-
-
-<!-- =========== TEMPLATES PARA FORMULARIOS DINÁMICOS =========== -->
-<template id="prealerta-template">
-    <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Pre-Alerta #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove()"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Entidad Financiera</label>
-                <select name="prealerta_banco[]" class="form-select">
-                    <option selected disabled value="">Seleccionar...</option>
-                    <option>Banco de Costa Rica (BCR)</option>
-                    <option>Banco Nacional de Costa Rica (BNCR)</option>
-                    <option>Banco Popular</option>
-                    <option>Mucap</option>
-                    <option>Mutual</option>
-                    <option>BAC Credomatic</option>
-                    <option>Banco Cathay</option>
-                    <option>Banco BCT</option>
-                    <option>Banco CMB</option>
-                    <option>Banco Davivienda</option>
-                    <option>Banco General</option>
-                    <option>Banco Improsa</option>
-                    <option>Banco Lafise</option>
-                    <option>Banco Promérica</option>
-                    <option>Prival Bank</option>
-                    <option>Scotiabank</option>
-                    <option>Coopealianza</option>
-                    <option>Coopeande</option>
-                    <option>CoopeAnde No. 1</option>
-                    <option>CoopeAnde No. 2</option>
-                    <option>CoopeAnde No. 3</option>
-                    <option>CoopeAnde No. 4</option>
-                    <option>CoopeAnde No. 5</option>
-                    <option>CoopeAnde No. 6</option>
-                    <option>CoopeAnde No. 7</option>
-                    <option>CoopeAnde No. 8</option>
-                    <option>CoopeAnde No. 9</option>
-                    <option>CoopeAnde No. 10</option>
-                    <option>CoopeAnde No. 11</option>
-                    <option>CoopeCaja</option>
-                    <option>Caja de ANDE</option>
-                    <option>COOPENAE</option>
-                    <option>COOPEUCHA</option>
-                    <option>COOPESANRAMON</option>
-                    <option>COOPESERVIDORES</option>
-                    <option>COOPEUNA</option>
-                    <option>CREDECOOP</option>
-                </select>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono Entidad Financiera</label>
-                <input type="tel" name="prealerta_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha de la prealerta</label>
-                <input type="date" name="prealerta_fecha[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre del Asesor Bancario</label>
-                <input type="text" name="prealerta_asesor[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Hora de la Prealerta</label>
-                <input type="time" name="prealerta_hora[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Número de la prealerta</label>
-                <input type="text" name="prealerta_numero[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha prealertada (Desde)</label>
-                <input type="date" name="prealerta_desde[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha prealertada (Hasta)</label>
-                <input type="date" name="prealerta_hasta[]" class="form-control">
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="lugar-template">
-    <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Lugar #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Tipo</label>
-                <select name="lugar_tipo[]" class="form-select">
-                    <option>Volcán</option><option>Montaña</option><option>Playa</option><option>Ciudad</option><option>Parque Nacional</option><option>Camino</option><option>Otros</option>
-                </select>
-            </div>
-            <div class="col-md-8 mb-3">
-                <label class="form-label">Nombre del Sitio</label>
-                <input type="text" name="lugar_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio Entrada</label>
-                <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Fecha Reserva</label>
-                <input type="date" name="lugar_fecha_reserva[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Guía Local</label>
-                <select name="lugar_guia_local[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Nombre Guía</label>
-                <input type="text" name="lugar_nombre_guia[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del Lugar</label>
-                <input type="tel" name="lugar_telefono_lugar[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del Contacto</label>
-                <input type="tel" name="lugar_telefono_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Whatsapp del Contacto</label>
-                <input type="tel" name="lugar_whatsapp_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="lugar_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="lugar_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="lugar_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="transporte-template">
-     <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Transporte #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Tipo</label>
-                <select name="transporte_tipo[]" class="form-select">
-                    <option>Buseta</option><option>Bus</option><option>Taxi</option><option>Uber</option><option>Auto</option><option>Lancha</option><option>Avión</option>
-                </select>
-            </div>
-            <div class="col-md-8 mb-3">
-                <label class="form-label">Nombre del Transporte</label>
-                <input type="text" name="transporte_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label price-label">Precio del Transporte</label>
-                <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Nombre Conductor</label>
-                <input type="text" name="transporte_conductor[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Contratación</label>
-                <input type="date" name="transporte_fecha_contratacion[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del Lugar</label>
-                <input type="tel" name="transporte_telefono_lugar[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del contacto</label>
-                <input type="tel" name="transporte_telefono_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Whatsapp del Contacto</label>
-                <input type="tel" name="transporte_whatsapp_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="transporte_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="transporte_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="transporte_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="guia-template">
-    <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Guía #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre</label>
-                <input type="text" name="guia_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono</label>
-                <input type="tel" name="guia_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Operador</label>
-                <input type="text" name="guia_operador[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="guia_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Whatsapp</label>
-                <input type="tel" name="guia_whatsapp[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio Guía PP</label>
-                <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio Acarreo</label>
-                <input type="number" step="0.01" name="guia_precio_acarreo[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">CPL</label>
-                <select name="guia_cpl[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Fecha Disponible</label>
-                <input type="date" name="guia_fecha_disponible[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Reserva</label>
-                <input type="text" name="guia_reserva[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha Reserva</label>
-                <input type="date" name="guia_fecha_reserva[]" class="form-control">
-            </div>
-            <div class="col-md-12 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="guia_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="guia_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="estadia-template">
-     <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Estadía #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre</label>
-                <input type="text" name="estadia_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Contacto</label>
-                <input type="text" name="estadia_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono</label>
-                <input type="tel" name="estadia_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Whatsapp</label>
-                <input type="tel" name="estadia_whatsapp[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="estadia_email[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio PP por Noche</label>
-                <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Cantidad de Noches</label>
-                <input type="number" name="estadia_noches[]" class="form-control" value="1" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">CPL</label>
-                <select name="estadia_cpl[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Alimentación Incluida</label>
-                <select name="estadia_alimentacion[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Disponible Reserva</label>
-                <input type="date" name="estadia_fecha_disponible[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Entrada</label>
-                <input type="date" name="estadia_fecha_entrada[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Salida</label>
-                <input type="date" name="estadia_fecha_salida[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="estadia_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="estadia_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="aerolinea-template">
-     <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Aerolínea/Transporte #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Tipo de Transporte</label>
-                <select name="aerolinea_tipo_transporte[]" class="form-select" onchange="toggleAirlineFields(this)">
-                    <option>Bus</option><option>Buseta</option><option>Auto</option><option>Moto</option><option>Barco</option><option>Avión</option>
-                </select>
-            </div>
-        </div>
-        <div class="row airline-fields">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Aerolínea</label>
-                <select name="aerolinea_nombre[]" class="form-select">
-                    <option>Avianca</option><option>American Airlines</option><option>Copa</option><option>Volaris</option><option>Jetblue</option><option>Sansa</option><option>Spirit</option><option>United</option><option>Wingo</option><option>KLM</option><option>Iberia</option><option>Lufthansa</option><option>Latam Airlines</option><option>IberoJet</option><option>Delta</option><option>AirFrance</option><option>Alaska</option><option>AeroMéxico</option><option>Arajet</option><option>Air Canadá</option><option>Airtransat</option><option>Green Airways</option><option>Southwest</option><option>Edelweiss</option><option>Frontier</option><option>GOL</option>
-                </select>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono Aerolínea</label>
-                <input type="tel" name="aerolinea_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="aerolinea_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Whatsapp</label>
-                <input type="tel" name="aerolinea_whatsapp[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha de Pre-alerta</label>
-                <input type="date" name="aerolinea_fecha_prealerta[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Enlace para Pre-alerta</label>
-                <input type="text" name="aerolinea_enlace_prealerta[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Número de Vuelo</label>
-                <input type="text" name="aerolinea_num_vuelo[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Horario de Salida</label>
-                <input type="time" name="aerolinea_hora_salida[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Horario de Llegada</label>
-                <input type="time" name="aerolinea_hora_llegada[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre del Aeropuerto</label>
-                <input type="text" name="aerolinea_aeropuerto[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono del Aeropuerto</label>
-                <input type="tel" name="aerolinea_tel_aeropuerto[]" class="form-control">
-            </div>
-            <hr>
-            <h6 class="text-center">Precios</h6>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" name="aerolinea_p_asientos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" name="aerolinea_p_maletas[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" name="aerolinea_p_equipaje_mano[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Estandar</label><input type="number" name="aerolinea_p_estandar[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Mas equipo</label><input type="number" name="aerolinea_p_mas_equipo[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Salida rápida</label><input type="number" name="aerolinea_p_salida_rapida[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Premium</label><input type="number" name="aerolinea_p_premium[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio VIP</label><input type="number" name="aerolinea_p_vip[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Basic</label><input type="number" name="aerolinea_p_basic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Classic</label><input type="number" name="aerolinea_p_classic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Flexible</label><input type="number" name="aerolinea_p_flexible[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" name="aerolinea_p_impuestos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <hr>
-            <h6 class="text-center">Otros Costos</h6>
-            {% for i in range(1, 5) %}
-            <div class="col-md-6 mb-3"><label class="form-label">Descripción #{{i}}</label><input type="text" name="aerolinea_desc_{{i}}[]" class="form-control"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Otros Costos #{{i}}</label><input type="number" name="aerolinea_costo_{{i}}[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Cantidad</label><input type="number" name="aerolinea_cant_{{i}}[]" class="form-control" value="1" oninput="calculateTotals()"></div>
-            {% endfor %}
-            <hr>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha de Compra</label>
-                <input type="date" name="aerolinea_fecha_compra[]" class="form-control">
-            </div>
-        </div>
-    </div>
-</template>
-
-{% endblock %}
-
-{% block scripts %}
-<script>
-    function addDynamicForm(containerId, templateId) {
-        const container = document.getElementById(containerId);
-        const template = document.getElementById(templateId);
-        const clone = template.content.cloneNode(true);
-        const itemNumber = container.children.length + 1;
-        clone.querySelector('.item-number').textContent = itemNumber;
-        container.appendChild(clone);
-        // After adding a new form, update its currency labels
-        updateCurrencyUI();
-    }
-
-    function toggleAirlineFields(selectElement) {
-        const parentItem = selectElement.closest('.dynamic-item');
-        const airlineFields = parentItem.querySelector('.airline-fields');
-        if (selectElement.value === 'Avión') {
-            airlineFields.style.display = 'flex';
-        } else {
-            airlineFields.style.display = 'none';
+    <style>
+        /* Estilos personalizados */
+        body {
+            background-color: #f8f9fa;
         }
-    }
-
-    function updateCurrencyUI() {
-        const currency = document.getElementById('tipo_moneda').value;
-        const currencySymbol = `(${currency})`;
-
-        document.querySelectorAll('.price-label').forEach(label => {
-            let text = label.textContent.replace(/\s*\((CRC|USD)\)$/, '');
-            label.textContent = `${text} ${currencySymbol}`;
-        });
-    }
-
-    function calculateTotals() {
-        const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
-        const currency = document.getElementById('tipo_moneda').value;
-
-        const calculateSectionTotal = (containerId, priceFieldSelector) => {
-            let total = 0;
-            document.querySelectorAll(`#${containerId} .dynamic-item`).forEach(item => {
-                item.querySelectorAll(priceFieldSelector).forEach(input => {
-                    total += parseFloat(input.value) || 0;
-                });
-            });
-            return total;
-        };
-
-        const calculateGuiaTotal = () => {
-             let total = 0;
-             document.querySelectorAll('#guia-container .dynamic-item').forEach(item => {
-                const precioPP = parseFloat(item.querySelector('input[name="guia_precio_pp[]"]').value) || 0;
-                const precioAcarreo = parseFloat(item.querySelector('input[name="guia_precio_acarreo[]"]').value) || 0;
-                total += precioPP + precioAcarreo;
-            });
-            return total;
-        };
-
-        const calculateEstadiaTotal = () => {
-            let total = 0;
-            document.querySelectorAll('#estadia-container .dynamic-item').forEach(item => {
-                const precioPP = parseFloat(item.querySelector('input[name="estadia_precio_pp[]"]').value) || 0;
-                const noches = parseInt(item.querySelector('input[name="estadia_noches[]"]').value) || 1;
-                total += precioPP * noches;
-            });
-            return total;
-        };
-
-        const calculateAerolineaTotal = () => {
-            let total = 0;
-            document.querySelectorAll('#aerolinea-container .dynamic-item').forEach(item => {
-                item.querySelectorAll('.price-field').forEach(input => {
-                    let precio = parseFloat(input.value) || 0;
-                    let cantidad = 1;
-                    if (input.name.startsWith('aerolinea_costo_')) {
-                        const index = input.name.match(/(\d+)/)[0];
-                        const cantInput = item.querySelector(`input[name="aerolinea_cant_${index}[]"]`);
-                        if (cantInput) {
-                            cantidad = parseInt(cantInput.value) || 1;
-                        }
-                    }
-                    total += precio * cantidad;
-                });
-            });
-            return total;
-        };
-
-        let totalAtracciones = calculateSectionTotal('lugar-container', 'input[name="lugar_precio[]"]');
-        let totalTransporte = calculateSectionTotal('transporte-container', 'input[name="transporte_precio[]"]');
-        let totalGuias = calculateGuiaTotal();
-        let totalEstadia = calculateEstadiaTotal();
-        let totalAerolinea = calculateAerolineaTotal();
-
-        let totalInputCurrency = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
-        
-        let totalCRC, totalUSD;
-
-        if (currency === 'USD') {
-            totalUSD = totalInputCurrency;
-            totalCRC = totalInputCurrency * tipoCambio;
-        } else { // CRC
-            totalCRC = totalInputCurrency;
-            totalUSD = totalInputCurrency / tipoCambio;
+        .container {
+            max-width: 1200px;
         }
+        .card {
+            border: 1px solid #dee2e6;
+            box-shadow: none !important; /* Eliminando sombras de los cards */
+        }
+        .card-header {
+            background-color: #e9ecef;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: bold;
+        }
+        .btn-add {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .total-field {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        .form-control:disabled, .form-control[readonly] {
+            background-color: #e9ecef;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
 
-        const updateSectionDisplay = (sectionPrefix, totalValue) => {
-            let crc, usd;
-            if (currency === 'USD') {
-                usd = totalValue;
-                crc = totalValue * tipoCambio;
-            } else {
-                crc = totalValue;
-                usd = totalValue / tipoCambio;
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Planificador de Viaje Internacional</h1>
+
+        <form action="/intern/crear" method="POST" enctype="multipart/form-data" id="viajeForm">
+            <!-- Card Principal del Viaje -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    Información General del Viaje
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
+                            <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="pais" class="form-label">País de Destino</label>
+                            <select class="form-select" id="pais" name="pais" required>
+                                <option selected disabled value="">Seleccionar...</option>
+                                <option value="Panama">Panamá</option>
+                                <option value="Nicaragua">Nicaragua</option>
+                                <option value="Honduras">Honduras</option>
+                                <option value="El Salvador">El Salvador</option>
+                                <option value="Guatemala">Guatemala</option>
+                                <option value="Mexico">México</option>
+                                <option value="Peru">Perú</option>
+                                <option value="Espana">España</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="flyer" class="form-label">Flyer del Viaje</label>
+                            <input class="form-control" type="file" id="flyer" name="flyer">
+                        </div>
+                         <div class="col-md-6">
+                            <label for="fecha_viaje" class="form-label">Fecha del Viaje</label>
+                            <input type="date" class="form-control" id="fecha_viaje" name="fecha_viaje" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_regreso" class="form-label">Fecha de Regreso</label>
+                            <input type="date" class="form-control" id="fecha_regreso" name="fecha_regreso" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cantidad_dias" class="form-label">Cantidad de Días</label>
+                            <input type="number" class="form-control" id="cantidad_dias" name="cantidad_dias" min="1" required>
+                        </div>
+                        <div class="col-md-6">
+                             <label for="precio_viaje" class="form-label">Precio del Viaje (USD)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="precio_viaje" name="precio_viaje" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="capacidad_sg" class="form-label">Capacidad S/G (Sin Guía)</label>
+                            <input type="number" class="form-control" id="capacidad_sg" name="capacidad_sg" min="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="capacidad_cg" class="form-label">Capacidad C/G (Con Guía)</label>
+                            <input type="number" class="form-control" id="capacidad_cg" name="capacidad_cg" min="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipo_moneda" class="form-label">Tipo de Moneda Base</label>
+                            <select class="form-select" id="tipo_moneda" name="tipo_moneda">
+                                <option value="USD">USD</option>
+                                <option value="CRC">CRC</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipo_cambio" class="form-label">Tipo de Cambio (USD a CRC)</label>
+                             <div class="input-group">
+                                <span class="input-group-text">₡</span>
+                                <input type="number" class="form-control" id="tipo_cambio" name="tipo_cambio" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Pagos -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Registro de Pagos y Servicios</span>
+                    <button type="button" class="btn btn-primary btn-sm btn-add" id="addPagoBtn">
+                        <i class="bi bi-plus-circle"></i> Agregar Nuevo Pago
+                    </button>
+                </div>
+                <div class="card-body" id="pagosContainer">
+                    <!-- Los nuevos pagos se agregarán aquí dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Totales -->
+            <div class="card">
+                <div class="card-header">
+                    Resumen Financiero
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <!-- Totales Netos -->
+                        <div class="col-lg-6">
+                            <h5>Costos Netos del Viaje</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Total Neto (USD):
+                                    <span class="badge bg-primary rounded-pill total-field" id="totalNetoUSD">$0.00</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Total Neto (CRC):
+                                    <span class="badge bg-info rounded-pill total-field" id="totalNetoCRC">₡0.00</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Precio General (USD):
+                                    <span class="badge bg-secondary rounded-pill total-field" id="precioGeneralUSD">$0.00</span>
+                                </li>
+                                 <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Precio General (CRC):
+                                    <span class="badge bg-secondary rounded-pill total-field" id="precioGeneralCRC">₡0.00</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Precio Individual (USD):
+                                    <span class="badge bg-secondary rounded-pill total-field" id="precioIndividualUSD">$0.00</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Precio Individual (CRC):
+                                    <span class="badge bg-secondary rounded-pill total-field" id="precioIndividualCRC">₡0.00</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Totales Excedentes -->
+                        <div class="col-lg-6">
+                            <h5>Excedente (Ganancia)</h5>
+                             <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Excedente General (USD):
+                                    <span class="badge bg-success rounded-pill total-field" id="excedenteGeneralUSD">$0.00</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Excedente General (CRC):
+                                    <span class="badge bg-success rounded-pill total-field" id="excedenteGeneralCRC">₡0.00</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Excedente Individual (USD):
+                                    <span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualUSD">$0.00</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Excedente Individual (CRC):
+                                    <span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualCRC">₡0.00</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-warning btn-lg">Crear Viaje</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Contadores para IDs únicos
+            let pagoIndex = 0;
+
+            // --- MANEJO DE EVENTOS PRINCIPALES ---
+            document.getElementById('addPagoBtn').addEventListener('click', addPago);
+            document.getElementById('viajeForm').addEventListener('input', calcularTodosLosTotales);
+
+            // --- FUNCIONES PARA AÑADIR ELEMENTOS DINÁMICOS ---
+
+            function addPago() {
+                pagoIndex++;
+                const container = document.getElementById('pagosContainer');
+                const newPagoDiv = document.createElement('div');
+                newPagoDiv.className = 'card mb-3 pago-item';
+                newPagoDiv.innerHTML = `
+                    <div class="card-body">
+                        <h6 class="card-title">Detalle del Pago #${pagoIndex}</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo de Pago</label>
+                                <select class="form-select" name="pagos[${pagoIndex}][tipo_pago]">
+                                    <option>Estadía</option>
+                                    <option>Transporte</option>
+                                    <option>Bancario</option>
+                                    <option>Guía</option>
+                                    <option>Operador</option>
+                                    <option>Agencia</option>
+                                    <option>Aéreo</option>
+                                    <option>Alimentación</option>
+                                    <option>Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Nombre del Contacto o Empresa</label>
+                                <input type="text" class="form-control" name="pagos[${pagoIndex}][nombre_contacto]">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cantidad de Días/Eventos</label>
+                                <input type="number" class="form-control cantidad-dias-evento" name="pagos[${pagoIndex}][cantidad_dias_evento]" value="1" min="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Precio (USD)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control precio-nuevo-pago" name="pagos[${pagoIndex}][precio]" step="0.01" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Total Pago (USD)</label>
+                                <input type="text" class="form-control total-nuevo-pago" readonly>
+                            </div>
+                             <div class="col-md-4">
+                                <label class="form-label">Póliza</label>
+                                <select class="form-select" name="pagos[${pagoIndex}][poliza]">
+                                    <option>No Aplica</option>
+                                    <option>Si</option>
+                                    <option>No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <hr>
+                        <!-- Contenedores para elementos dinámicos -->
+                        <div class="dynamic-fields-container mt-3">
+                            <div id="telefonosContainer_${pagoIndex}"></div>
+                            <div id="emailsContainer_${pagoIndex}"></div>
+                            <div id="urlsContainer_${pagoIndex}"></div>
+                            <div id="serviciosContainer_${pagoIndex}"></div>
+                            <div id="fechasContainer_${pagoIndex}"></div>
+                        </div>
+                        <!-- Botones para añadir dinámicamente -->
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('telefono', ${pagoIndex})"><i class="bi bi-telephone-plus"></i> Teléfono</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('email', ${pagoIndex})"><i class="bi bi-envelope-plus"></i> Email</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('url', ${pagoIndex})"><i class="bi bi-link-45deg"></i> Enlace URL</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('servicio', ${pagoIndex})"><i class="bi bi-card-text"></i> Servicio</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('fecha', ${pagoIndex})"><i class="bi bi-calendar-plus"></i> Fecha</button>
+                            <button type="button" class="btn btn-danger btn-sm float-end" onclick="this.closest('.pago-item').remove(); calcularTodosLosTotales();"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(newPagoDiv);
             }
-            const crcEl = document.getElementById(`total-${sectionPrefix}-crc`);
-            const usdEl = document.getElementById(`total-${sectionPrefix}-usd`);
-            if (crcEl) crcEl.textContent = crc.toFixed(2);
-            if (usdEl) usdEl.textContent = usd.toFixed(2);
-        };
 
-        updateSectionDisplay('atracciones', totalAtracciones);
-        updateSectionDisplay('transporte', totalTransporte);
-        updateSectionDisplay('guias', totalGuias);
-        updateSectionDisplay('estadia', totalEstadia);
-        updateSectionDisplay('aerolinea', totalAerolinea);
-        
-        document.getElementById('total-individual-crc').textContent = totalCRC.toFixed(2) + ' CRC';
-        document.getElementById('total-individual-usd').textContent = totalUSD.toFixed(2) + ' USD';
+            window.addDynamicField = function(type, pagoId) {
+                const timestamp = Date.now(); // ID único para el campo
+                let container, newFieldHtml;
 
-        const precioPaquete = parseFloat(document.getElementById('precio_paquete').value) || 0;
-        const capacidadConGuias = parseInt(document.getElementById('capacidad_con_guias').value) || 0;
-        const capacidadSinGuias = parseInt(document.getElementById('capacidad_sin_guias').value) || 0;
+                switch(type) {
+                    case 'telefono':
+                        container = document.getElementById(`telefonosContainer_${pagoId}`);
+                        newFieldHtml = `
+                            <div class="input-group mb-2">
+                                <select class="input-group-text" name="pagos[${pagoId}][telefonos][${timestamp}][tipo]">
+                                    <option>WHATSAPP</option><option>PERSONAL</option><option>EMPRESA</option>
+                                </select>
+                                <input type="text" class="form-control" placeholder="Código País" name="pagos[${pagoId}][telefonos][${timestamp}][codigo]">
+                                <input type="tel" class="form-control" placeholder="Número" name="pagos[${pagoId}][telefonos][${timestamp}][numero]">
+                                <input type="text" class="form-control" placeholder="Contacto/Empresa" name="pagos[${pagoId}][telefonos][${timestamp}][contacto]">
+                                <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
+                            </div>`;
+                        break;
+                    case 'email':
+                         container = document.getElementById(`emailsContainer_${pagoId}`);
+                         newFieldHtml = `
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" placeholder="correo@ejemplo.com" name="pagos[${pagoId}][emails][${timestamp}][email]">
+                                <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
+                            </div>`;
+                        break;
+                    case 'url':
+                        container = document.getElementById(`urlsContainer_${pagoId}`);
+                        newFieldHtml = `
+                           <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="bi bi-link"></i></span>
+                                <input type="url" class="form-control" placeholder="https://ejemplo.com" name="pagos[${pagoId}][urls][${timestamp}][url]">
+                                <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
+                            </div>`;
+                        break;
+                    case 'servicio':
+                        container = document.getElementById(`serviciosContainer_${pagoId}`);
+                        newFieldHtml = `
+                           <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="bi bi-info-circle"></i></span>
+                                <input type="text" class="form-control" placeholder="Descripción del servicio" name="pagos[${pagoId}][servicios][${timestamp}][descripcion]">
+                                <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
+                            </div>`;
+                        break;
+                    case 'fecha':
+                        container = document.getElementById(`fechasContainer_${pagoId}`);
+                        newFieldHtml = `
+                            <div class="input-group mb-2">
+                                 <select class="input-group-text" name="pagos[${pagoId}][fechas][${timestamp}][tipo]">
+                                    <option>Fecha Declaración</option><option>Fecha Reserva</option><option>Fecha Entrada</option><option>Fecha Salida</option><option>Fecha de Regreso</option><option>Fecha de la Actividad</option>
+                                </select>
+                                <input type="date" class="form-control" name="pagos[${pagoId}][fechas][${timestamp}][fecha]">
+                                <input type="text" class="form-control" placeholder="Descripción" name="pagos[${pagoId}][fechas][${timestamp}][descripcion]">
+                                <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
+                            </div>`;
+                        break;
+                }
+                if (container) {
+                    container.insertAdjacentHTML('beforeend', newFieldHtml);
+                }
+            }
 
-        let precioPaqueteUSD = 0;
-        if (currency === 'CRC') {
-            precioPaqueteUSD = precioPaquete / tipoCambio;
-        } else {
-            precioPaqueteUSD = precioPaquete;
-        }
 
-        let totalIndividualNetoUSD = 0;
-        if (capacidadSinGuias > 0) {
-            totalIndividualNetoUSD = ((precioPaqueteUSD * capacidadConGuias) / capacidadSinGuias) - totalUSD;
-        }
+            // --- FUNCIONES DE CÁLCULO ---
 
-        document.getElementById('total-individual-neto-usd').textContent = totalIndividualNetoUSD.toFixed(2) + ' USD';
-    }
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        updateCurrencyUI();
-        calculateTotals();
-    });
+            function formatCurrency(value, currency = 'USD') {
+                const options = {
+                    style: 'currency',
+                    currency: currency,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                };
+                // Si el valor no es un número válido, devuelve el formato para 0.
+                if (isNaN(value) || !isFinite(value)) {
+                    value = 0;
+                }
+                return new Intl.NumberFormat('es-CR', options).format(value);
+            }
 
-    document.getElementById('tipo_moneda').addEventListener('change', () => {
-        updateCurrencyUI();
-        calculateTotals();
-    });
-    document.getElementById('tipo_cambio').addEventListener('input', calculateTotals);
-    document.getElementById('precio_paquete').addEventListener('input', calculateTotals);
-    document.getElementById('capacidad_con_guias').addEventListener('input', calculateTotals);
-    document.getElementById('capacidad_sin_guias').addEventListener('input', calculateTotals);
+            function calcularTotalPagoIndividual(pagoItem) {
+                const cantidad = parseFloat(pagoItem.querySelector('.cantidad-dias-evento').value) || 0;
+                const precio = parseFloat(pagoItem.querySelector('.precio-nuevo-pago').value) || 0;
+                const total = cantidad * precio;
+                pagoItem.querySelector('.total-nuevo-pago').value = formatCurrency(total);
+                return total;
+            }
 
-</script>
+            function calcularTodosLosTotales() {
+                // Obtener valores base
+                const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 0;
+                const precioViaje = parseFloat(document.getElementById('precio_viaje').value) || 0;
+                const capacidadSG = parseFloat(document.getElementById('capacidad_sg').value) || 0;
+                const capacidadCG = parseFloat(document.getElementById('capacidad_cg').value) || 0;
+
+                // Calcular total neto de todos los pagos
+                let totalNetoUSD = 0;
+                document.querySelectorAll('.pago-item').forEach(pago => {
+                    totalNetoUSD += calcularTotalPagoIndividual(pago);
+                });
+                
+                // Calcular otros valores
+                const precioGeneralUSD = totalNetoUSD;
+                const precioIndividualUSD = capacidadSG > 0 ? precioGeneralUSD / capacidadSG : 0;
+
+                const totalNetoCRC = totalNetoUSD * tipoCambio;
+                const precioGeneralCRC = precioGeneralUSD * tipoCambio;
+                const precioIndividualCRC = precioIndividualUSD * tipoCambio;
+
+                const excedenteGeneralUSD = precioViaje - precioGeneralUSD;
+                const excedenteIndividualUSD = capacidadSG > 0 ? excedenteGeneralUSD / capacidadSG : 0;
+                const excedenteGeneralCRC = excedenteGeneralUSD * tipoCambio;
+                const excedenteIndividualCRC = excedenteIndividualUSD * tipoCambio;
+
+
+                // Actualizar la UI
+                document.getElementById('totalNetoUSD').textContent = formatCurrency(totalNetoUSD, 'USD');
+                document.getElementById('totalNetoCRC').textContent = formatCurrency(totalNetoCRC, 'CRC');
+                document.getElementById('precioGeneralUSD').textContent = formatCurrency(precioGeneralUSD, 'USD');
+                document.getElementById('precioGeneralCRC').textContent = formatCurrency(precioGeneralCRC, 'CRC');
+                document.getElementById('precioIndividualUSD').textContent = formatCurrency(precioIndividualUSD, 'USD');
+                document.getElementById('precioIndividualCRC').textContent = formatCurrency(precioIndividualCRC, 'CRC');
+                document.getElementById('excedenteGeneralUSD').textContent = formatCurrency(excedenteGeneralUSD, 'USD');
+                document.getElementById('excedenteGeneralCRC').textContent = formatCurrency(excedenteGeneralCRC, 'CRC');
+                document.getElementById('excedenteIndividualUSD').textContent = formatCurrency(excedenteIndividualUSD, 'USD');
+                document.getElementById('excedenteIndividualCRC').textContent = formatCurrency(excedenteIndividualCRC, 'CRC');
+            }
+            
+            // Inicializar con un pago vacío para empezar
+            addPago();
+        });
+    </script>
 {% endblock %}

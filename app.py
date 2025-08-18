@@ -569,7 +569,7 @@ app.register_blueprint(version_bp, url_prefix='/version')
 app.register_blueprint(files_bp, url_prefix='/files')
 app.register_blueprint(btns_bp) # REGISTRO DEL BLUEPRINT DE BTNS
 app.register_blueprint(polizas_bp) # <-- NUEVA LÍNEA
-app.register_blueprint(intern_bp) # <--- AÑADE ESTA LÍNEA
+app.register_blueprint(intern_bp, url_prefix='/intern')
 
 # --- AÑADE ESTAS DOS LÍNEAS PARA CONECTAR OAUTH ---
 init_oauth(app)

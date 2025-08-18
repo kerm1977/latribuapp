@@ -1,470 +1,166 @@
-{% extends "base.html" %}
-
-{% block title %}Detalle de {{ viaje.nombre_viaje }}{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Detalle del Viaje{% endblock %}
 {% block head_content %}
-<style>
-    .details-card {
-        border: 1px solid #dee2e6;
-        box-shadow: none !important;
-    }
-    .details-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-    }
-    .detail-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #eee;
-    }
-    .detail-item:last-child {
-        border-bottom: none;
-    }
-    .detail-item span:first-child {
-        font-weight: bold;
-        color: #495057;
-        margin-right: 15px;
-    }
-    .detail-item span:last-child {
-        text-align: right;
-    }
-    .section-title {
-        border-bottom: 2px solid #ffc107;
-        padding-bottom: 0.5rem;
-        margin-top: 2rem;
-        margin-bottom: 1.5rem;
-    }
-    .total-card {
-        background-color: #ffc107;
-        color: white;
-    }
-    .flyer-img {
-        max-height: 400px;
-        width: 100%;
-        object-fit: cover;
-    }
-    .profit {
-        color: #006400; /* Verde Oscuro */
-    }
-    .loss {
-        color: #8B0000; /* Rojo Sangre */
-    }
-    .fab-container-actions {
-        position: fixed;
-        bottom: 75px;
-        right: 20px;
-        z-index: 1050;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .fab-button-action {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-    .fab-button-action:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-    }
-    .fab-button-edit { background-color: #ffc107; color: black; }
-    .fab-button-delete { background-color: #dc3545; color: white; }
-    
-    .fab-container-back {
-        position: fixed;
-        bottom: 75px;
-        left: 20px;
-        z-index: 1000;
-    }
-    .fab-button-back {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        transition: all 0.3s ease;
-        background-color: #6c757d; /* secondary */
-        color: #ffffff;
-        border: none;
-    }
-    .fab-button-back:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        background-color: #5a6268;
-    }
-</style>
+{# 
+  NOTA: Asegúrate de que tu 'base.html' esté cargando Font Awesome para que los íconos se muestren correctamente.
+  Puedes añadir esta línea en el <head> de tu base.html si no la tienes:
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+#}
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            border: 1px solid #dee2e6;
+            box-shadow: none !important;
+        }
+        .card-header {
+            background-color: #e9ecef;
+            font-weight: 500;
+        }
+        .flyer-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: .375rem;
+            border: 1px solid #dee2e6;
+        }
+        .list-group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-group-item strong {
+            margin-right: auto;
+            padding-left: 10px;
+        }
+        .list-group-item .fas, .list-group-item .far {
+            width: 20px; /* Ancho fijo para alinear íconos */
+            text-align: center;
+        }
+        .badge {
+            font-size: 1em;
+        }
+        .pago-card {
+            background-color: #fff;
+        }
+        .sub-list {
+            list-style-type: none;
+            padding-left: 1rem;
+        }
+        .sub-list li {
+            margin-bottom: 0.25rem;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-{# Macro para mostrar el precio con el formato de moneda correcto #}
-{% macro display_price(value, currency) %}
-    {% if currency == 'CRC' %}
-        ₡{{ "%.2f"|format(value|float) }}
-    {% else %}
-        ${{ "%.2f"|format(value|float) }}
-    {% endif %}
-{% endmacro %}
-
-<div class="container mt-4">
-
-    <!-- Encabezado y Botones de Acción -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+<div class="container my-5">
+    <!-- Título y Botones de Acción -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="mb-1">{{ viaje.nombre_viaje }}</h1>
-            <h4 class="text-muted">{{ viaje.pais }}</h4>
+            <h1 class="mb-0">{{ viaje.nombre_viaje }}</h1>
+            <p class="text-muted fs-5">Destino: {{ viaje.pais }}</p>
         </div>
         <div class="btn-toolbar" role="toolbar">
             <div class="btn-group me-2 mb-2" role="group">
-                <a href="{{ url_for('intern.exportar_pdf', id=viaje.id) }}" class="btn btn-outline-danger" title="Exportar a PDF"><i class="fas fa-file-pdf"></i></a>
-                <a href="{{ url_for('intern.exportar_txt', id=viaje.id) }}" class="btn btn-outline-secondary" title="Exportar a TXT"><i class="fas fa-file-alt"></i></a>
-                <a href="{{ url_for('intern.exportar_jpg', id=viaje.id) }}" class="btn btn-outline-info" title="Exportar a JPG"><i class="fas fa-file-image"></i></a>
-                <a href="{{ url_for('intern.exportar_excel', id=viaje.id) }}" class="btn btn-outline-success" title="Exportar a Excel"><i class="fas fa-file-excel"></i></a>
+                <a href="{{ url_for('intern.ver_intern') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                <a href="{{ url_for('intern.editar_intern', viaje_id=viaje.id) }}" class="btn btn-outline-primary"><i class="fas fa-pencil-alt"></i> Editar</a>
+            </div>
+            <div class="btn-group mb-2" role="group">
+                <button id="btnGroupDrop1" type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download"></i> Exportar
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="btnGroupDrop1">
+                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_pdf', viaje_id=viaje.id) }}">PDF</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_txt', viaje_id=viaje.id) }}">TXT</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_jpg', viaje_id=viaje.id) }}">JPG</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_excel', viaje_id=viaje.id) }}">Excel</a></li>
+                </ul>
             </div>
         </div>
     </div>
 
-    <!-- Información General del Viaje -->
-    <div class="card details-card mb-4">
-        <div class="card-header details-header">
-            <h5 class="mb-0">Información General</h5>
+    <!-- Fila Principal: Flyer y Datos Generales -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-5">
+            {# CORRECCIÓN APLICADA: Se usa .replace() para normalizar la ruta de la imagen. #}
+            <img src="{{ url_for('static', filename=viaje.flyer_url.replace('static/', '', 1).replace('\\', '/')) if viaje.flyer_url and viaje.flyer_url != 'None' else 'https://placehold.co/800x600/cccccc/ffffff?text=Sin+Imagen' }}" 
+                 alt="Flyer para {{ viaje.nombre_viaje }}" 
+                 class="flyer-img">
         </div>
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">Información General</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><i class="fas fa-calendar-alt text-primary"></i><strong>Fechas:</strong> <span>Del {{ viaje.fecha_viaje }} al {{ viaje.fecha_regreso }}</span></li>
+                    <li class="list-group-item"><i class="far fa-clock text-info"></i><strong>Duración:</strong> <span class="badge bg-light text-dark">{{ viaje.cantidad_dias }} Días</span></li>
+                    <li class="list-group-item"><i class="fas fa-users text-success"></i><strong>Capacidad S/G:</strong> <span>{{ viaje.capacidad_sg }} personas</span></li>
+                    <li class="list-group-item"><i class="fas fa-user-check text-success"></i><strong>Capacidad C/G:</strong> <span>{{ viaje.capacidad_cg }} personas</span></li>
+                    <li class="list-group-item"><i class="fas fa-money-bill-wave text-warning"></i><strong>Precio de Venta:</strong> <span class="badge bg-warning text-dark">${{ "{:,.2f}".format(viaje.precio_viaje_usd) }} USD</span></li>
+                    <li class="list-group-item"><i class="fas fa-exchange-alt text-secondary"></i><strong>Tipo de Cambio:</strong> <span>₡{{ "{:,.2f}".format(viaje.tipo_cambio_a_crc) }}</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen Financiero -->
+    <div class="card mb-4">
+        <div class="card-header">Resumen Financiero</div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <img src="{{ url_for('static', filename='uploads/intern_flyers/' + viaje.flyer_url) if viaje.flyer_url else url_for('static', filename='images/default_travel.jpg') }}" class="img-fluid rounded flyer-img" alt="Flyer del viaje">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h5>Costos y Precios</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item"><strong>Total Neto:</strong> <span class="badge bg-primary">${{ "{:,.2f}".format(viaje.calculos.get('total_neto_usd', 0)) }} USD</span></li>
+                        {% if viaje.calculos.get('precio_individual_usd', 0) > 0 %}
+                        <li class="list-group-item"><strong>Precio Individual:</strong> <span class="badge bg-info text-dark">${{ "{:,.2f}".format(viaje.calculos.get('precio_individual_usd', 0)) }} USD</span></li>
+                        {% endif %}
+                    </ul>
                 </div>
-                <div class="col-md-8">
-                    <div class="detail-item"><span>Título:</span> <span>{{ viaje.titulo_destino }}</span></div>
-                    {% if viaje.precio_paquete > 0 %}
-                    <div class="detail-item">
-                        <span>Precio Paquete:</span> 
-                        <span>{{ display_price(viaje.precio_paquete, viaje.tipo_moneda) }}</span>
+                <div class="col-md-6">
+                    <h5>Excedente (Ganancia)</h5>
+                    <ul class="list-group">
+                        <!-- Aquí puedes añadir la lógica para mostrar los excedentes si los calculas en el backend -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalle de Pagos y Servicios -->
+    <div class="card">
+        <div class="card-header">Detalle de Pagos y Servicios Registrados</div>
+        <div class="card-body">
+            {% for pago in viaje.pagos_y_servicios %}
+            <div class="card pago-card mb-3">
+                <div class="card-header d-flex justify-content-between">
+                    <span><strong>Tipo:</strong> {{ pago.get('tipo_pago', 'N/A') }}</span>
+                    <span><strong>Total:</strong> ${{ "{:,.2f}".format(pago.get('cantidad_dias_evento', '0')|float * pago.get('precio', '0')|float) }} USD</span>
+                </div>
+                <div class="card-body">
+                    <p><strong>Contacto:</strong> {{ pago.get('nombre_contacto', 'N/A') }}</p>
+                    <p><strong>Póliza:</strong> {{ pago.get('poliza', 'N/A') }}</p>
+                    
+                    {% if pago.get('telefonos') %}
+                    <div class="mt-2">
+                        <h6><i class="fas fa-phone-alt text-muted"></i> Teléfonos:</h6>
+                        <ul class="sub-list">
+                            {% for tel in pago.get('telefonos', []) %}
+                            <li><strong>{{ tel.get('tipo', 'N/A') }}:</strong> {{ tel.get('codigo', '') }} {{ tel.get('numero', 'N/A') }} ({{ tel.get('contacto', 'N/A') }})</li>
+                            {% endfor %}
+                        </ul>
                     </div>
                     {% endif %}
-                    {% if viaje.capacidad > 0 %}
-                    <div class="detail-item"><span>Capacidad:</span> <span>{{ viaje.capacidad }} personas</span></div>
-                    {% endif %}
-                    <div class="detail-item"><span>Moneda Base:</span> <span>{{ viaje.tipo_moneda }}</span></div>
-                    <div class="detail-item"><span>Tipo de Cambio (a USD):</span> <span>{{ viaje.tipo_cambio }}</span></div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Secciones Detalladas -->
-    {% set ns = namespace(total_cost=0) %}
-
-    <!-- Pre-Alertas -->
-    {% if viaje.prealertas %}
-    <h3 class="section-title">Pre-Alertas Bancarias</h3>
-    {% for item in viaje.prealertas %}
-        <div class="card details-card mb-3">
-            <div class="card-header details-header">
-                <h5 class="mb-0">Pre-Alerta #{{ loop.index }}</h5>
-            </div>
-            <div class="card-body">
-                {% if item.banco %}<div class="detail-item"><span>Entidad Financiera:</span> <span>{{ item.banco }}</span></div>{% endif %}
-                {% if item.telefono_entidad %}<div class="detail-item"><span>Teléfono Entidad:</span> <span>{{ item.telefono_entidad }}</span></div>{% endif %}
-                {% if item.fecha_prealerta %}<div class="detail-item"><span>Fecha de Pre-alerta:</span> <span>{{ item.fecha_prealerta.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                {% if item.nombre_asesor %}<div class="detail-item"><span>Asesor Bancario:</span> <span>{{ item.nombre_asesor }}</span></div>{% endif %}
-                {% if item.hora_prealerta %}<div class="detail-item"><span>Hora de Pre-alerta:</span> <span>{{ item.hora_prealerta.strftime('%I:%M %p') }}</span></div>{% endif %}
-                {% if item.numero_prealerta %}<div class="detail-item"><span>Número de Pre-alerta:</span> <span>{{ item.numero_prealerta }}</span></div>{% endif %}
-                {% if item.fecha_desde %}<div class="detail-item"><span>Válido Desde:</span> <span>{{ item.fecha_desde.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                {% if item.fecha_hasta %}<div class="detail-item"><span>Válido Hasta:</span> <span>{{ item.fecha_hasta.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-            </div>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Lugares a Visitar -->
-    {% if viaje.lugares %}
-    <h3 class="section-title">Lugares a Visitar</h3>
-    {% for item in viaje.lugares %}
-        {% if item.precio_entrada > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_entrada %}{% endif %}
-        <div class="card details-card mb-3">
-            <div class="card-header details-header">
-                <h5 class="mb-0">{{ item.nombre_sitio }} <small class="text-muted">({{ item.tipo_lugar }})</small></h5>
-            </div>
-            <div class="card-body">
-                {% if item.precio_entrada > 0 %}<div class="detail-item"><span>Precio Entrada:</span> <span>{{ display_price(item.precio_entrada, viaje.tipo_moneda) }}</span></div>{% endif %}
-                {% if item.fecha_reserva %}<div class="detail-item"><span>Fecha de Reserva:</span> <span>{{ item.fecha_reserva.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                {% if item.guia_local and item.guia_local != 'No' %}<div class="detail-item"><span>Requiere Guía Local:</span> <span>{{ item.guia_local }}</span></div>{% endif %}
-                {% if item.nombre_guia %}<div class="detail-item"><span>Nombre del Guía:</span> <span>{{ item.nombre_guia }}</span></div>{% endif %}
-                {% if item.telefono_lugar %}<div class="detail-item"><span>Teléfono del Lugar:</span> <span>{{ item.telefono_lugar }}</span></div>{% endif %}
-                {% if item.telefono_contacto %}<div class="detail-item"><span>Teléfono de Contacto:</span> <span>{{ item.telefono_contacto }}</span></div>{% endif %}
-                {% if item.whatsapp_contacto %}<div class="detail-item"><span>WhatsApp de Contacto:</span> <span>{{ item.whatsapp_contacto }}</span></div>{% endif %}
-                {% if item.email %}<div class="detail-item"><span>Email:</span> <span>{{ item.email }}</span></div>{% endif %}
-                {% if item.enlaces %}<div class="detail-item"><span>Enlaces:</span> <span><a href="{{ item.enlaces }}" target="_blank">{{ item.enlaces }}</a></span></div>{% endif %}
-                {% if item.nota %}<div class="detail-item"><span>Nota:</span> <span>{{ item.nota }}</span></div>{% endif %}
-            </div>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Transportes -->
-    {% if viaje.transportes %}
-    <h3 class="section-title">Transportes</h3>
-    {% for item in viaje.transportes %}
-        {% if item.precio > 0 %}{% set ns.total_cost = ns.total_cost + item.precio %}{% endif %}
-        <div class="card details-card mb-3">
-             <div class="card-header details-header">
-                <h5 class="mb-0">{{ item.nombre_transporte }} <small class="text-muted">({{ item.tipo_transporte }})</small></h5>
-            </div>
-            <div class="card-body">
-                {% if item.precio > 0 %}<div class="detail-item"><span>Precio:</span> <span>{{ display_price(item.precio, viaje.tipo_moneda) }}</span></div>{% endif %}
-                {% if item.conductor %}<div class="detail-item"><span>Conductor:</span> <span>{{ item.conductor }}</span></div>{% endif %}
-                {% if item.fecha_contratacion %}<div class="detail-item"><span>Fecha de Contratación:</span> <span>{{ item.fecha_contratacion.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                {% if item.telefono_lugar %}<div class="detail-item"><span>Teléfono del Lugar:</span> <span>{{ item.telefono_lugar }}</span></div>{% endif %}
-                {% if item.telefono_contacto %}<div class="detail-item"><span>Teléfono de Contacto:</span> <span>{{ item.telefono_contacto }}</span></div>{% endif %}
-                {% if item.whatsapp_contacto %}<div class="detail-item"><span>WhatsApp de Contacto:</span> <span>{{ item.whatsapp_contacto }}</span></div>{% endif %}
-                {% if item.email %}<div class="detail-item"><span>Email:</span> <span>{{ item.email }}</span></div>{% endif %}
-                {% if item.enlaces %}<div class="detail-item"><span>Enlaces:</span> <span><a href="{{ item.enlaces }}" target="_blank">{{ item.enlaces }}</a></span></div>{% endif %}
-                {% if item.nota %}<div class="detail-item"><span>Nota:</span> <span>{{ item.nota }}</span></div>{% endif %}
-            </div>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Guías -->
-    {% if viaje.guias %}
-    <h3 class="section-title">Guías</h3>
-    {% for item in viaje.guias %}
-        {% if item.precio_guia_pp > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_guia_pp %}{% endif %}
-        {% if item.precio_acarreo > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_acarreo %}{% endif %}
-        <div class="card details-card mb-3">
-            <div class="card-header details-header">
-                 <h5 class="mb-0">{{ item.nombre }}</h5>
-            </div>
-            <div class="card-body">
-                 {% if item.telefono %}<div class="detail-item"><span>Teléfono:</span> <span>{{ item.telefono }}</span></div>{% endif %}
-                 {% if item.operador %}<div class="detail-item"><span>Operador:</span> <span>{{ item.operador }}</span></div>{% endif %}
-                 {% if item.email %}<div class="detail-item"><span>Email:</span> <span>{{ item.email }}</span></div>{% endif %}
-                 {% if item.whatsapp %}<div class="detail-item"><span>WhatsApp:</span> <span>{{ item.whatsapp }}</span></div>{% endif %}
-                 {% if item.precio_guia_pp > 0 %}<div class="detail-item"><span>Precio Guía (p.p.):</span> <span>{{ display_price(item.precio_guia_pp, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_acarreo > 0 %}<div class="detail-item"><span>Precio Acarreo:</span> <span>{{ display_price(item.precio_acarreo, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.cpl and item.cpl != 'No' %}<div class="detail-item"><span>CPL:</span> <span>{{ item.cpl }}</span></div>{% endif %}
-                 {% if item.fecha_disponible %}<div class="detail-item"><span>Fecha Disponible:</span> <span>{{ item.fecha_disponible.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                 {% if item.reserva %}<div class="detail-item"><span>Reserva:</span> <span>{{ item.reserva }}</span></div>{% endif %}
-                 {% if item.fecha_reserva %}<div class="detail-item"><span>Fecha de Reserva:</span> <span>{{ item.fecha_reserva.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                 {% if item.enlaces %}<div class="detail-item"><span>Enlaces:</span> <span><a href="{{ item.enlaces }}" target="_blank">{{ item.enlaces }}</a></span></div>{% endif %}
-                 {% if item.nota %}<div class="detail-item"><span>Nota:</span> <span>{{ item.nota }}</span></div>{% endif %}
-            </div>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Estadías -->
-    {% if viaje.estadias %}
-    <h3 class="section-title">Estadías</h3>
-    {% for item in viaje.estadias %}
-        {% if item.precio_pp > 0 and item.cantidad_noches > 0 %}{% set ns.total_cost = ns.total_cost + (item.precio_pp * item.cantidad_noches) %}{% endif %}
-         <div class="card details-card mb-3">
-            <div class="card-header details-header">
-                 <h5 class="mb-0">{{ item.nombre }}</h5>
-            </div>
-            <div class="card-body">
-                 {% if item.contacto %}<div class="detail-item"><span>Contacto:</span> <span>{{ item.contacto }}</span></div>{% endif %}
-                 {% if item.telefono %}<div class="detail-item"><span>Teléfono:</span> <span>{{ item.telefono }}</span></div>{% endif %}
-                 {% if item.whatsapp %}<div class="detail-item"><span>WhatsApp:</span> <span>{{ item.whatsapp }}</span></div>{% endif %}
-                 {% if item.email %}<div class="detail-item"><span>Email:</span> <span>{{ item.email }}</span></div>{% endif %}
-                 {% if item.precio_pp > 0 %}<div class="detail-item"><span>Precio p.p. por Noche:</span> <span>{{ display_price(item.precio_pp, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.cantidad_noches > 0 %}<div class="detail-item"><span>Cantidad de Noches:</span> <span>{{ item.cantidad_noches }}</span></div>{% endif %}
-                 {% if item.cpl and item.cpl != 'No' %}<div class="detail-item"><span>CPL:</span> <span>{{ item.cpl }}</span></div>{% endif %}
-                 {% if item.alimentacion_incluida and item.alimentacion_incluida != 'No' %}<div class="detail-item"><span>Alimentación Incluida:</span> <span>{{ item.alimentacion_incluida }}</span></div>{% endif %}
-                 {% if item.fecha_disponible_reserva %}<div class="detail-item"><span>Fecha Disponible Reserva:</span> <span>{{ item.fecha_disponible_reserva.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                 {% if item.fecha_entrada %}<div class="detail-item"><span>Fecha de Entrada:</span> <span>{{ item.fecha_entrada.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                 {% if item.fecha_salida %}<div class="detail-item"><span>Fecha de Salida:</span> <span>{{ item.fecha_salida.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                 {% if item.enlaces %}<div class="detail-item"><span>Enlaces:</span> <span><a href="{{ item.enlaces }}" target="_blank">{{ item.enlaces }}</a></span></div>{% endif %}
-                 {% if item.nota %}<div class="detail-item"><span>Nota:</span> <span>{{ item.nota }}</span></div>{% endif %}
-            </div>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Aerolíneas -->
-    {% if viaje.aerolineas %}
-    <h3 class="section-title">Aerolínea / Transporte Principal</h3>
-    {% for item in viaje.aerolineas %}
-        {# Sumar todos los precios de la aerolínea a ns.total_cost #}
-        {% if item.precio_asientos > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_asientos %}{% endif %}
-        {% if item.precio_maletas_doc > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_maletas_doc %}{% endif %}
-        {% if item.equipaje_mano > 0 %}{% set ns.total_cost = ns.total_cost + item.equipaje_mano %}{% endif %}
-        {% if item.precio_estandar > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_estandar %}{% endif %}
-        {% if item.precio_mas_equipo > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_mas_equipo %}{% endif %}
-        {% if item.precio_salida_rapida > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_salida_rapida %}{% endif %}
-        {% if item.precio_premium > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_premium %}{% endif %}
-        {% if item.precio_vip > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_vip %}{% endif %}
-        {% if item.precio_basic > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_basic %}{% endif %}
-        {% if item.precio_classic > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_classic %}{% endif %}
-        {% if item.precio_flexible > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_flexible %}{% endif %}
-        {% if item.precio_impuestos > 0 %}{% set ns.total_cost = ns.total_cost + item.precio_impuestos %}{% endif %}
-        {% set otros_costos = item.otros_costos_json | fromjson %}
-        {% for costo_item in otros_costos %}
-            {% if costo_item.costo > 0 and costo_item.cantidad > 0 %}{% set ns.total_cost = ns.total_cost + (costo_item.costo * costo_item.cantidad) %}{% endif %}
-        {% endfor %}
-
-         <div class="card details-card mb-3">
-            <div class="card-header details-header">
-                 <h5 class="mb-0">{{ item.nombre_aerolinea or 'Transporte Principal' }} <small class="text-muted">({{ item.tipo_transporte }})</small></h5>
-            </div>
-            <div class="card-body">
-                 {% if item.telefono_aerolinea %}<div class="detail-item"><span>Teléfono:</span> <span>{{ item.telefono_aerolinea }}</span></div>{% endif %}
-                 {% if item.email %}<div class="detail-item"><span>Email:</span> <span>{{ item.email }}</span></div>{% endif %}
-                 {% if item.whatsapp %}<div class="detail-item"><span>WhatsApp:</span> <span>{{ item.whatsapp }}</span></div>{% endif %}
-                 {% if item.fecha_prealertar %}<div class="detail-item"><span>Fecha Pre-alerta:</span> <span>{{ item.fecha_prealertar.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                 {% if item.enlace_prealertar %}<div class="detail-item"><span>Enlace Pre-alerta:</span> <span><a href="{{ item.enlace_prealertar }}" target="_blank">{{ item.enlace_prealertar }}</a></span></div>{% endif %}
-                 {% if item.numero_vuelo %}<div class="detail-item"><span>Número de Vuelo:</span> <span>{{ item.numero_vuelo }}</span></div>{% endif %}
-                 {% if item.horario_salida %}<div class="detail-item"><span>Hora de Salida:</span> <span>{{ item.horario_salida.strftime('%I:%M %p') }}</span></div>{% endif %}
-                 {% if item.horario_llegada %}<div class="detail-item"><span>Hora de Llegada:</span> <span>{{ item.horario_llegada.strftime('%I:%M %p') }}</span></div>{% endif %}
-                 {% if item.nombre_aeropuerto %}<div class="detail-item"><span>Aeropuerto:</span> <span>{{ item.nombre_aeropuerto }}</span></div>{% endif %}
-                 {% if item.telefono_aeropuerto %}<div class="detail-item"><span>Teléfono Aeropuerto:</span> <span>{{ item.telefono_aeropuerto }}</span></div>{% endif %}
-                 {% if item.fecha_compra %}<div class="detail-item"><span>Fecha de Compra:</span> <span>{{ item.fecha_compra.strftime('%d/%m/%Y') }}</span></div>{% endif %}
-                
-                 <h6 class="mt-3">Precios Detallados</h6>
-                 {% if item.precio_asientos > 0 %}<div class="detail-item"><span>Asientos:</span> <span>{{ display_price(item.precio_asientos, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_maletas_doc > 0 %}<div class="detail-item"><span>Maletas Doc.:</span> <span>{{ display_price(item.precio_maletas_doc, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.equipaje_mano > 0 %}<div class="detail-item"><span>Equipaje de Mano:</span> <span>{{ display_price(item.equipaje_mano, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_estandar > 0 %}<div class="detail-item"><span>Estándar:</span> <span>{{ display_price(item.precio_estandar, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_mas_equipo > 0 %}<div class="detail-item"><span>Más Equipo:</span> <span>{{ display_price(item.precio_mas_equipo, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_salida_rapida > 0 %}<div class="detail-item"><span>Salida Rápida:</span> <span>{{ display_price(item.precio_salida_rapida, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_premium > 0 %}<div class="detail-item"><span>Premium:</span> <span>{{ display_price(item.precio_premium, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_vip > 0 %}<div class="detail-item"><span>VIP:</span> <span>{{ display_price(item.precio_vip, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_basic > 0 %}<div class="detail-item"><span>Basic:</span> <span>{{ display_price(item.precio_basic, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_classic > 0 %}<div class="detail-item"><span>Classic:</span> <span>{{ display_price(item.precio_classic, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_flexible > 0 %}<div class="detail-item"><span>Flexible:</span> <span>{{ display_price(item.precio_flexible, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 {% if item.precio_impuestos > 0 %}<div class="detail-item"><span>Impuestos:</span> <span>{{ display_price(item.precio_impuestos, viaje.tipo_moneda) }}</span></div>{% endif %}
-                 
-                 {% if otros_costos %}
-                    <h6 class="mt-3">Otros Costos</h6>
-                    {% for costo_item in otros_costos %}
-                        {% if costo_item.costo > 0 %}
-                        <div class="detail-item">
-                            <span>{{ costo_item.descripcion }} (x{{ costo_item.cantidad }}):</span> 
-                            <span>{{ display_price(costo_item.costo * costo_item.cantidad, viaje.tipo_moneda) }}</span>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                 {% endif %}
-            </div>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Totales -->
-    {% set total_individual_crc = 0 %}
-    {% set total_individual_usd = 0 %}
-    {% if viaje.tipo_moneda == 'CRC' %}
-        {% set total_individual_crc = ns.total_cost %}
-        {% if viaje.tipo_cambio > 0 %}{% set total_individual_usd = ns.total_cost / viaje.tipo_cambio %}{% endif %}
-    {% else %}
-        {% set total_individual_usd = ns.total_cost %}
-        {% set total_individual_crc = ns.total_cost * viaje.tipo_cambio %}
-    {% endif %}
-
-    {% set precio_paquete_en_usd = 0 %}
-    {% if viaje.tipo_moneda == 'CRC' %}
-        {% if viaje.tipo_cambio > 0 %}{% set precio_paquete_en_usd = viaje.precio_paquete / viaje.tipo_cambio %}{% endif %}
-    {% else %}
-        {% set precio_paquete_en_usd = viaje.precio_paquete %}
-    {% endif %}
-    
-    {% set diferencia_usd = precio_paquete_en_usd - total_individual_usd %}
-    {% set diferencia_crc = diferencia_usd * viaje.tipo_cambio %}
-    
-    {# El usuario se refiere a la ganancia total anterior como "Total Bruto" #}
-    {% set total_bruto_usd = diferencia_usd * viaje.capacidad %}
-    {% set total_bruto_crc = diferencia_crc * viaje.capacidad %}
-
-    {# Nueva Ganancia Total según la fórmula del usuario #}
-    {% set ganancia_total_usd = total_bruto_usd - total_individual_usd %}
-    {% set ganancia_total_crc = total_bruto_crc - total_individual_crc %}
-
-    <div class="card total-card mt-5">
-        <div class="card-header">
-            <h3 class="mb-0">Resumen Financiero</h3>
-        </div>
-        <div class="card-body fs-5">
-            <div class="detail-item"><span>Costo Total Individual (CRC):</span> <span class="fw-bold">₡{{ "%.2f"|format(total_individual_crc|float) }}</span></div>
-            <div class="detail-item"><span>Costo Total Individual (USD):</span> <span class="fw-bold">${{ "%.2f"|format(total_individual_usd|float) }}</span></div>
-            <hr class="my-3" style="border-color: rgba(255,255,255,0.25);">
-            <div class="detail-item">
-                <span>Diferencia por Persona (USD):</span> 
-                <span class="fw-bold {{ 'profit' if diferencia_usd >= 0 else 'loss' }}">${{ "%.2f"|format(diferencia_usd|float) }}</span>
-            </div>
-            <div class="detail-item">
-                <span>Diferencia por Persona (CRC):</span> 
-                <span class="fw-bold {{ 'profit' if diferencia_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(diferencia_crc|float) }}</span>
-            </div>
-            {% if viaje.capacidad > 0 %}
-            <hr class="my-3" style="border-color: rgba(255,255,255,0.25);">
-            <h5 class="text-white mt-3">Resumen Financiero Total (para {{ viaje.capacidad }} personas)</h5>
-            <div class="detail-item">
-                <span>Total Bruto USD:</span> 
-                <span class="fw-bold {{ 'profit' if total_bruto_usd >= 0 else 'loss' }}">${{ "%.2f"|format(total_bruto_usd|float) }}</span>
-            </div>
-            <div class="detail-item">
-                <span>Total Bruto CRC:</span> 
-                <span class="fw-bold {{ 'profit' if total_bruto_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(total_bruto_crc|float) }}</span>
-            </div>
-            <hr class="my-2" style="border-color: rgba(255,255,255,0.15);">
-            <div class="detail-item">
-                <span>Ganancia Total (USD):</span> 
-                <span class="fw-bold {{ 'profit' if ganancia_total_usd >= 0 else 'loss' }}">${{ "%.2f"|format(ganancia_total_usd|float) }}</span>
-            </div>
-            <div class="detail-item">
-                <span>Ganancia Total (CRC):</span> 
-                <span class="fw-bold {{ 'profit' if ganancia_total_crc >= 0 else 'loss' }} ">₡{{ "%.2f"|format(ganancia_total_crc|float) }}</span>
-            </div>
-            {% endif %}
+            {% else %}
+            <p class="text-muted">No hay pagos o servicios registrados para este viaje.</p>
+            {% endfor %}
         </div>
     </div>
 </div>
 
-<!-- FAB buttons for actions -->
-<div class="fab-container-actions">
-    <a href="{{ url_for('intern.editar_intern', id=viaje.id) }}" class="fab-button-action fab-button-edit" title="Editar Viaje">
-        <i class="fas fa-edit"></i>
-    </a>
-    <a href="#" class="fab-button-action fab-button-delete" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}">
-        <i class="fas fa-trash-alt"></i>
-    </a>
-</div>
-
-<!-- Botón flotante para volver atrás -->
-<div class="fab-container-back">
-    <a href="{{ url_for('intern.ver_intern') }}" class="btn btn-primary fab-button-back" title="Volver a Viajes">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-</div>
-
-<!-- Modal de Confirmación de Eliminación -->
-<div class="modal fade" id="deleteModal-{{ viaje.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ viaje.id }}" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel-{{ viaje.id }}">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                ¿Estás seguro de que quieres eliminar el viaje a <strong>{{ viaje.nombre_viaje }}</strong>? Esta acción no se puede deshacer.
-            </div>
-            <div class="modal-footer">
-                <form action="{{ url_for('intern.eliminar_intern', id=viaje.id) }}" method="POST" class="d-inline">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

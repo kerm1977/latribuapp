@@ -1,249 +1,175 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Viajes Internacionales{% endblock %}
+{% block title %}Ver Viajes Internacionales{% endblock %}
 
 {% block head_content %}
+{# 
+  NOTA: Asegúrate de que tu 'base.html' esté cargando Font Awesome para que los íconos se muestren correctamente.
+  Puedes añadir esta línea en el <head> de tu base.html si no la tienes:
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+#}
 <style>
-    /* Estilos base para las tarjetas */
-    .card {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Sombra sutil como en ver_pagos */
-        border: none;
-        transition: transform 0.2s ease-in-out;
-    }
-    .card:hover {
-        transform: translateY(-5px);
+    body {
+        background-color: #f8f9fa; /* Un fondo ligeramente gris para que resalten las tarjetas */
     }
 
-    /* Estilos para la imagen, ahora es clicable */
-    .card-img-top {
-        width: 100%;
-        height: 200px; /* Mantenemos una altura fija para consistencia visual */
-        object-fit: cover; /* Asegura que la imagen cubra el espacio sin deformarse */
-        cursor: pointer; /* Indica que la imagen es clicable */
+    .main-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 15px;
     }
 
-    /* --- ESTILOS COPIADOS DE ver_pagos.html --- */
-
-    /* Estilos para el botón flotante (FAB) de crear */
-    .fab-container {
-        position: fixed;
-        bottom: 70px;
-        right: 20px;
-        z-index: 1000;
+    .page-title {
+        font-size: 2rem;
+        font-weight: 300;
+        color: #333;
+        margin-bottom: 30px;
     }
-    .fab-button {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
+
+    /* Estilos de la tarjeta para coincidir con la imagen */
+    .trip-card {
+        background-color: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden; /* Para que la imagen no se salga de los bordes redondeados */
         display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        transition: all 0.3s ease;
-        background-color: #ffc107; /* Color warning */
-        color: #212529; /* Texto oscuro */
-        border: none;
-        text-decoration: none;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    .fab-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        background-color: #e0a800;
-    }
-
-    /* Estilos para el botón flotante (FAB) de volver atrás */
-    .fab-container-back {
-        position: fixed;
-        bottom: 70px;
-        left: 20px;
-        z-index: 1000;
-    }
-    .fab-button-back {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        transition: all 0.3s ease;
-        background-color: #007bff; /* Color primary */
-        color: #ffffff; /* Texto blanco */
-        border: none;
-        text-decoration: none;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    .fab-button-back:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        background-color: #0056b3; /* Tono más oscuro */
-    }
-
-    /* Estilos del Modal para ver imagen en grande */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 2000;
-        padding-top: 100px;
-        left: 0;
-        top: 0;
-        width: 100%;
+        flex-direction: column;
         height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.9);
     }
-    .modal-content {
-        margin: auto;
-        display: block;
-        max-width: 90%;
-        max-height: 90vh;
-        width: auto;
-        height: auto;
-        object-fit: contain;
+
+    .trip-card .card-img-top {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
     }
-    #caption {
-        margin: auto;
-        display: block;
-        width: 80%;
-        max-width: 700px;
-        text-align: center;
-        color: #ccc;
-        padding: 10px 0;
-        height: 150px;
+
+    .trip-card .card-body {
+        padding: 1rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
     }
-    .close-button {
-        position: absolute;
-        top: 15px;
-        right: 35px;
-        color: #f1f1f1;
-        font-size: 40px;
-        font-weight: bold;
-        transition: 0.3s;
-        cursor: pointer;
+
+    .trip-card .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
     }
-    .close-button:hover,
-    .close-button:focus {
-        color: #bbb;
+
+    .trip-card .card-subtitle {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.75rem;
+    }
+
+    .trip-card .card-text {
+        font-size: 0.9rem;
+        color: #333;
+        margin-bottom: 0.25rem;
+    }
+
+    .trip-card .btn-view-more {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #212529;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        margin-top: auto; /* Empuja el botón al final */
+        width: 100%;
+        transition: background-color 0.2s;
+    }
+
+    .trip-card .btn-view-more:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+    }
+
+    /* Estilos para los botones flotantes (FAB) */
+    .fab {
+        position: fixed;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         text-decoration: none;
+        transition: all 0.3s ease;
     }
-    .modal-content, #caption {
-        animation-name: zoom;
-        animation-duration: 0.6s;
+    .fab:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        color: #fff;
     }
-    @keyframes zoom {
-        from {transform:scale(0)}
-        to {transform:scale(1)}
+    .fab-add {
+        bottom: 75px;
+        right: 20px;
+        background-color: #ffc107; /* Amarillo */
+        color: #212529;
     }
+    .fab-back {
+        bottom: 75px;
+        left: 20px;
+        background-color: #007bff; /* Azul */
+    }
+    .fab-top-right {
+        top: 20px;
+        right: 20px;
+        background-color: #17a2b8; /* Cyan/Info */
+    }
+
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">Viajes Internacionales</h1>
-        <!-- El botón tradicional de crear se ha eliminado -->
-    </div>
+<div class="main-container">
+    <h1 class="page-title">Viajes Internacionales</h1>
 
     {% if viajes %}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 g-4">
         {% for viaje in viajes %}
         <div class="col">
-            <div class="card h-100">
-                <!--
-                    NOTA PARA EL DESARROLLADOR:
-                    Se ha ajustado la ruta de la imagen. Ahora se asume que los flyers se guardan en la carpeta
-                    'static/uploads/intern_flyers/'. Si guardas solo el nombre del archivo en la base de datos
-                    (ej: 'mi_viaje.png'), esta línea construirá la ruta completa correcta.
-
-                    IMPORTANTE: Asegúrate de que en tu archivo de Python (ej: intern.py), al momento de
-                    crear o editar un viaje, estés guardando el nombre del archivo en el campo 'flyer_url'.
-                    El código de 'intern.py' que proporcionaste no parece estar guardando este dato,
-                    lo cual es la causa más probable del problema.
-                -->
-                <img src="{{ url_for('static', filename='uploads/intern_flyers/' + viaje.flyer_url) if viaje.flyer_url else url_for('static', filename='images/default_travel.jpg') }}"  
-                     class="card-img-top"
-                     alt="Flyer de {{ viaje.nombre_viaje }}"
-                     onclick="openImageModal(this.src, this.alt)"
-                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_travel.jpg') }}';">
-
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">{{ viaje.pais }}</h6>
-                    <p class="card-text">
-                        <strong>Precio:</strong>
-                        {% if viaje.tipo_moneda == 'CRC' %}
-                            ₡{{ "%.2f"|format(viaje.precio_paquete) }}
-                        {% else %}
-                            ${{ "%.2f"|format(viaje.precio_paquete) }}
-                        {% endif %}
-                        <br>
-                        <small class="text-muted">Creado: {{ viaje.fecha_creacion.strftime('%d/%m/%Y') }}</small>
-                    </p>
-                    <!-- El botón "Ver Más" ahora está al final y ocupa todo el ancho -->
-                    <div class="mt-auto">
-                        <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-warning w-100">Ver Más</a>
+            <div class="trip-card">
+                <img src="{{ url_for('static', filename=viaje.flyer_url.replace('static/', '', 1).replace('\\', '/')) if viaje.flyer_url and viaje.flyer_url != 'None' else 'https://placehold.co/600x400/cccccc/ffffff?text=Sin+Imagen' }}" 
+                     class="card-img-top" 
+                     alt="Flyer para {{ viaje.nombre_viaje }}">
+                <div class="card-body">
+                    <div>
+                        <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ viaje.pais }}</h6>
+                        <p class="card-text"><strong>Precio:</strong> ${{ "{:,.2f}".format(viaje.precio_viaje_usd) }}</p>
+                        <p class="card-text"><small class="text-muted">Creado: {{ viaje.fecha_viaje }}</small></p>
                     </div>
+                    <a href="{{ url_for('intern.detalle_intern', viaje_id=viaje.id) }}" class="btn btn-view-more">Ver Más</a>
                 </div>
-                <!-- El card-footer con los botones de editar y eliminar ha sido removido -->
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="text-center p-5 border rounded">
-        <h3>No hay viajes internacionales creados todavía.</h3>
-        <p>¡Crea tu primer viaje para empezar a planificar!</p>
-        <!-- Este botón solo aparece si no hay viajes, se puede dejar o quitar según preferencia -->
-        <a href="{{ url_for('intern.crear_intern') }}" class="btn btn-warning mt-3">
-            <i class="fas fa-plus"></i> Crear Mi Primer Viaje
-        </a>
+    <div class="alert alert-light text-center" role="alert">
+        No hay viajes registrados aún.
     </div>
     {% endif %}
 </div>
 
-<!-- Botón flotante para crear viaje -->
-<div class="fab-container">
-    <a href="{{ url_for('intern.crear_intern') }}" class="fab-button" title="Crear Nuevo Viaje">
-        <i class="fas fa-plus" style="color: black;"></i>
-    </a>
-</div>
+<!-- Botones flotantes -->
+<a href="{{ url_for('intern.crear_intern') }}" class="fab fab-add" title="Crear Nuevo Viaje">
+    <i class="fas fa-plus"></i>
+</a>
+<a href="{{ url_for('home') }}" class="fab fab-back" title="Volver al Inicio">
+    <i class="fas fa-arrow-left"></i>
+</a>
+<a href="#" class="fab fab-top-right" title="Opción Extra">
+    <i class="fas fa-question"></i>
+</a>
 
-<!-- Botón flotante para volver atrás -->
-<div class="fab-container-back">
-    <a href="{{ url_for('home') }}" class="fab-button-back" title="Volver al Inicio">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-</div>
-
-<!-- El Modal para la imagen -->
-<div id="imageModal" class="modal">
-    <span class="close-button">&times;</span>
-    <img class="modal-content" id="fullImage">
-    <div id="caption" class="caption"></div>
-</div>
-
-<script>
-    // --- SCRIPT COPIADO DE ver_pagos.html ---
-    const modal = document.getElementById("imageModal");
-    const modalImg = document.getElementById("fullImage");
-    const captionText = document.getElementById("caption");
-    const span = document.getElementsByClassName("close-button")[0];
-
-    function openImageModal(imgSrc, imgAlt) {
-        modal.style.display = "block";
-        modalImg.src = imgSrc;
-        captionText.innerHTML = imgAlt;
-    }
-
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    }
-</script>
 {% endblock %}

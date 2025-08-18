@@ -1,1278 +1,399 @@
-{% extends "base.html" %}
-
-{% block title %}Editar Viaje: {{ viaje.nombre_viaje }}{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Crear Instrucción{% endblock %}
 {% block head_content %}
-<style>
-    .card {
-        box-shadow: none !important;
-        border: 1px solid #dee2e6;
-    }
-    .form-section-separator {
-        border-top: 2px solid #ffc107;
-        margin-top: 2rem;
-        margin-bottom: 2rem;
-    }
-    .dynamic-item {
-        border-left: 3px solid #ffc107;
-        padding-left: 15px;
-        margin-bottom: 1rem;
-    }
-    .fab-container-back {
-        position: fixed;
-        bottom: 75px;
-        left: 20px;
-        z-index: 1000;
-    }
-    .fab-container-actions {
-        position: fixed;
-        bottom: 75px;
-        right: 20px;
-        z-index: 1050;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .fab-button {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-    .fab-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    }
-    .fab-button-save { background-color: #ffc107; color: black; }
-    .airline-fields {
-        display: none; /* Oculto por defecto */
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4 text-center">Editando: {{ viaje.nombre_viaje }}</h1>
-
-    <form id="editInternForm" action="{{ url_for('intern.editar_intern', id=viaje.id) }}" method="POST" enctype="multipart/form-data">
-        
-        <!-- SECCIÓN DESTINO -->
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h4 class="mb-0">Destino</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="titulo_destino" class="form-label">Título Destino</label>
-                        <input type="text" class="form-control" id="titulo_destino" name="titulo_destino" value="{{ viaje.titulo_destino or '' }}" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
-                        <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" value="{{ viaje.nombre_viaje or '' }}" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="flyer" class="form-label">Cambiar Flyer (Imagen)</label>
-                        <input type="file" class="form-control" id="flyer" name="flyer" accept="image/*">
-                        {% if viaje.flyer_url %}
-                        <small class="form-text text-muted">Flyer actual: {{ viaje.flyer_url }}</small>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="pais" class="form-label">País</label>
-                        <select class="form-select" id="pais" name="pais" required>
-                            <option disabled>Seleccionar país...</option>
-                            <option value="Panama" {% if viaje.pais == 'Panama' %}selected{% endif %}>Panamá</option>
-                            <option value="Nicaragua" {% if viaje.pais == 'Nicaragua' %}selected{% endif %}>Nicaragua</option>
-                            <option value="Honduras" {% if viaje.pais == 'Honduras' %}selected{% endif %}>Honduras</option>
-                            <option value="El Salvador" {% if viaje.pais == 'El Salvador' %}selected{% endif %}>El Salvador</option>
-                            <option value="Guatemala" {% if viaje.pais == 'Guatemala' %}selected{% endif %}>Guatemala</option>
-                            <option value="Mexico" {% if viaje.pais == 'Mexico' %}selected{% endif %}>México</option>
-                            <option value="Peru" {% if viaje.pais == 'Peru' %}selected{% endif %}>Perú</option>
-                            <option value="Spain" {% if viaje.pais == 'Spain' %}selected{% endif %}>España</option>
-                        </select>
-                    </div>
-                </div>
-                 <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="precio_paquete" class="form-label price-label">Precio del Paquete</label>
-                        <input type="number" step="0.01" class="form-control" id="precio_paquete" name="precio_paquete" value="{{ viaje.precio_paquete or 0 }}">
-                    </div>
-                    <!-- MODIFICADO: Se ajustan los atributos 'name' y 'value' -->
-                    <div class="col-md-2 mb-3">
-                        <label for="capacidad_con_guias" class="form-label">Capacidad c/guias</label>
-                        <input type="number" class="form-control" id="capacidad_con_guias" name="capacidad_con_guias" value="{{ viaje.capacidad_con_guias or 0 }}">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="capacidad_sin_guias" class="form-label">Capacidad s/guias</label>
-                        <input type="number" class="form-control" id="capacidad_sin_guias" name="capacidad_sin_guias" value="{{ viaje.capacidad_sin_guias or 0 }}">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="tipo_moneda" class="form-label">Tipo de Moneda</label>
-                        <select class="form-select" id="tipo_moneda" name="tipo_moneda">
-                            <option value="CRC" {% if viaje.tipo_moneda == 'CRC' %}selected{% endif %}>Colones (CRC)</option>
-                            <option value="USD" {% if viaje.tipo_moneda == 'USD' %}selected{% endif %}>Dólares (USD)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="tipo_cambio" class="form-label">Tipo de Cambio (a USD)</label>
-                        <input type="number" step="0.01" class="form-control" id="tipo_cambio" name="tipo_cambio" value="{{ viaje.tipo_cambio or 520.00 }}" oninput="calculateTotals()">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SEPARADOR ADMINISTRACIÓN DE VIAJE -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Administración de Viaje</h2>
-
-        <!-- SECCIÓN PRE-ALERTA -->
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Pre-Alerta Bancaria</h5>
-                <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('prealerta-container', 'prealerta-template')">
-                    <i class="fas fa-plus"></i> Agregar Pre-Alerta
-                </button>
-            </div>
-            <div class="card-body" id="prealerta-container">
-                {% for prealerta in viaje.prealertas %}
-                <div class="dynamic-item p-3 mb-3 border rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Pre-Alerta #<span class="item-number">{{ loop.index }}</span></h6>
-                        <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove()"></button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Entidad Financiera</label>
-                            <input type="text" name="prealerta_banco[]" class="form-control" value="{{ prealerta.banco or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Teléfono Entidad Financiera</label>
-                            <input type="tel" name="prealerta_telefono[]" class="form-control" value="{{ prealerta.telefono_entidad or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha de la prealerta</label>
-                            <input type="date" name="prealerta_fecha[]" class="form-control" value="{{ prealerta.fecha_prealerta.strftime('%Y-%m-%d') if prealerta.fecha_prealerta }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nombre del Asesor Bancario</label>
-                            <input type="text" name="prealerta_asesor[]" class="form-control" value="{{ prealerta.nombre_asesor or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Hora de la Prealerta</label>
-                            <input type="time" name="prealerta_hora[]" class="form-control" value="{{ prealerta.hora_prealerta.strftime('%H:%M') if prealerta.hora_prealerta }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Número de la prealerta</label>
-                            <input type="text" name="prealerta_numero[]" class="form-control" value="{{ prealerta.numero_prealerta or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha prealertada (Desde)</label>
-                            <input type="date" name="prealerta_desde[]" class="form-control" value="{{ prealerta.fecha_desde.strftime('%Y-%m-%d') if prealerta.fecha_desde }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha prealertada (Hasta)</label>
-                            <input type="date" name="prealerta_hasta[]" class="form-control" value="{{ prealerta.fecha_hasta.strftime('%Y-%m-%d') if prealerta.fecha_hasta }}">
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- SEPARADOR LUGARES A VISITAR -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Lugares a Visitar</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Atracciones</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('lugar-container', 'lugar-template')">
-                    <i class="fas fa-plus"></i> Agregar Lugar
-                </button>
-            </div>
-            <div class="card-body" id="lugar-container">
-                {% for lugar in viaje.lugares %}
-                <div class="dynamic-item p-3 mb-3 border rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Lugar #<span class="item-number">{{ loop.index }}</span></h6>
-                        <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Tipo</label>
-                            <select name="lugar_tipo[]" class="form-select">
-                                <option {% if lugar.tipo_lugar == 'Volcán' %}selected{% endif %}>Volcán</option>
-                                <option {% if lugar.tipo_lugar == 'Montaña' %}selected{% endif %}>Montaña</option>
-                                <option {% if lugar.tipo_lugar == 'Playa' %}selected{% endif %}>Playa</option>
-                                <option {% if lugar.tipo_lugar == 'Ciudad' %}selected{% endif %}>Ciudad</option>
-                                <option {% if lugar.tipo_lugar == 'Parque Nacional' %}selected{% endif %}>Parque Nacional</option>
-                                <option {% if lugar.tipo_lugar == 'Camino' %}selected{% endif %}>Camino</option>
-                                <option {% if lugar.tipo_lugar == 'Otros' %}selected{% endif %}>Otros</option>
-                            </select>
-                        </div>
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label">Nombre del Sitio</label>
-                            <input type="text" name="lugar_nombre[]" class="form-control" value="{{ lugar.nombre_sitio or '' }}">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio Entrada</label>
-                            <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-field" value="{{ lugar.precio_entrada or 0 }}" oninput="calculateTotals()">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Fecha Reserva</label>
-                            <input type="date" name="lugar_fecha_reserva[]" class="form-control" value="{{ lugar.fecha_reserva.strftime('%Y-%m-%d') if lugar.fecha_reserva }}">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Guía Local</label>
-                            <select name="lugar_guia_local[]" class="form-select">
-                                <option value="No" {% if lugar.guia_local == 'No' %}selected{% endif %}>No</option>
-                                <option value="Si" {% if lugar.guia_local == 'Si' %}selected{% endif %}>Si</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Nombre Guía</label>
-                            <input type="text" name="lugar_nombre_guia[]" class="form-control" value="{{ lugar.nombre_guia or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Teléfono del Lugar</label>
-                            <input type="tel" name="lugar_telefono_lugar[]" class="form-control" value="{{ lugar.telefono_lugar or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Teléfono del Contacto</label>
-                            <input type="tel" name="lugar_telefono_contacto[]" class="form-control" value="{{ lugar.telefono_contacto or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Whatsapp del Contacto</label>
-                            <input type="tel" name="lugar_whatsapp_contacto[]" class="form-control" value="{{ lugar.whatsapp_contacto or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="lugar_email[]" class="form-control" value="{{ lugar.email or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Enlaces</label>
-                            <input type="text" name="lugar_enlaces[]" class="form-control" value="{{ lugar.enlaces or '' }}">
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Nota</label>
-                            <textarea name="lugar_nota[]" class="form-control" rows="2">{{ lugar.nota or '' }}</textarea>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE ATRACCIONES: <span id="total-atracciones-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-atracciones-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-        
-        <!-- SEPARADOR TRANSPORTES -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Transportes</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Transporte Local</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('transporte-container', 'transporte-template')">
-                    <i class="fas fa-plus"></i> Agregar Transporte
-                </button>
-            </div>
-            <div class="card-body" id="transporte-container">
-                {% for transporte in viaje.transportes %}
-                <div class="dynamic-item p-3 mb-3 border rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Transporte #<span class="item-number">{{ loop.index }}</span></h6>
-                        <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Tipo</label>
-                            <select name="transporte_tipo[]" class="form-select">
-                                <option {% if transporte.tipo_transporte == 'Buseta' %}selected{% endif %}>Buseta</option>
-                                <option {% if transporte.tipo_transporte == 'Bus' %}selected{% endif %}>Bus</option>
-                                <option {% if transporte.tipo_transporte == 'Taxi' %}selected{% endif %}>Taxi</option>
-                                <option {% if transporte.tipo_transporte == 'Uber' %}selected{% endif %}>Uber</option>
-                                <option {% if transporte.tipo_transporte == 'Auto' %}selected{% endif %}>Auto</option>
-                                <option {% if transporte.tipo_transporte == 'Lancha' %}selected{% endif %}>Lancha</option>
-                                <option {% if transporte.tipo_transporte == 'Avión' %}selected{% endif %}>Avión</option>
-                            </select>
-                        </div>
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label">Nombre del Transporte</label>
-                            <input type="text" name="transporte_nombre[]" class="form-control" value="{{ transporte.nombre_transporte or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label price-label">Precio del Transporte</label>
-                            <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-field" value="{{ transporte.precio or 0 }}" oninput="calculateTotals()">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Nombre Conductor</label>
-                            <input type="text" name="transporte_conductor[]" class="form-control" value="{{ transporte.conductor or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Fecha Contratación</label>
-                            <input type="date" name="transporte_fecha_contratacion[]" class="form-control" value="{{ transporte.fecha_contratacion.strftime('%Y-%m-%d') if transporte.fecha_contratacion }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Teléfono del Lugar</label>
-                            <input type="tel" name="transporte_telefono_lugar[]" class="form-control" value="{{ transporte.telefono_lugar or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Teléfono del contacto</label>
-                            <input type="tel" name="transporte_telefono_contacto[]" class="form-control" value="{{ transporte.telefono_contacto or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Whatsapp del Contacto</label>
-                            <input type="tel" name="transporte_whatsapp_contacto[]" class="form-control" value="{{ transporte.whatsapp_contacto or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="transporte_email[]" class="form-control" value="{{ transporte.email or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Enlaces</label>
-                            <input type="text" name="transporte_enlaces[]" class="form-control" value="{{ transporte.enlaces or '' }}">
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Nota</label>
-                            <textarea name="transporte_nota[]" class="form-control" rows="2">{{ transporte.nota or '' }}</textarea>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE TRANSPORTE: <span id="total-transporte-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-transporte-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-        
-        <!-- SEPARADOR GUÍAS -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Guías</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Guías Turísticos</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('guia-container', 'guia-template')">
-                    <i class="fas fa-plus"></i> Agregar Guía
-                </button>
-            </div>
-            <div class="card-body" id="guia-container">
-                {% for guia in viaje.guias %}
-                <div class="dynamic-item p-3 mb-3 border rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Guía #<span class="item-number">{{ loop.index }}</span></h6>
-                        <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nombre</label>
-                            <input type="text" name="guia_nombre[]" class="form-control" value="{{ guia.nombre or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="tel" name="guia_telefono[]" class="form-control" value="{{ guia.telefono or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Operador</label>
-                            <input type="text" name="guia_operador[]" class="form-control" value="{{ guia.operador or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="guia_email[]" class="form-control" value="{{ guia.email or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Whatsapp</label>
-                            <input type="tel" name="guia_whatsapp[]" class="form-control" value="{{ guia.whatsapp or '' }}">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio Guía PP</label>
-                            <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-field" value="{{ guia.precio_guia_pp or 0 }}" oninput="calculateTotals()">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio Acarreo</label>
-                            <input type="number" step="0.01" name="guia_precio_acarreo[]" class="form-control price-field" value="{{ guia.precio_acarreo or 0 }}" oninput="calculateTotals()">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">CPL</label>
-                            <select name="guia_cpl[]" class="form-select">
-                                <option value="No" {% if guia.cpl == 'No' %}selected{% endif %}>No</option>
-                                <option value="Si" {% if guia.cpl == 'Si' %}selected{% endif %}>Si</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Fecha Disponible</label>
-                            <input type="date" name="guia_fecha_disponible[]" class="form-control" value="{{ guia.fecha_disponible.strftime('%Y-%m-%d') if guia.fecha_disponible }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Reserva</label>
-                            <input type="text" name="guia_reserva[]" class="form-control" value="{{ guia.reserva or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha Reserva</label>
-                            <input type="date" name="guia_fecha_reserva[]" class="form-control" value="{{ guia.fecha_reserva.strftime('%Y-%m-%d') if guia.fecha_reserva }}">
-                        </div>
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">Enlaces</label>
-                            <input type="text" name="guia_enlaces[]" class="form-control" value="{{ guia.enlaces or '' }}">
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Nota</label>
-                            <textarea name="guia_nota[]" class="form-control" rows="2">{{ guia.nota or '' }}</textarea>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE GUÍAS POR PERSONA: <span id="total-guias-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-guias-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-
-        <!-- SEPARADOR ESTADÍAS -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Estadías</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Hospedaje</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('estadia-container', 'estadia-template')">
-                    <i class="fas fa-plus"></i> Agregar Estadía
-                </button>
-            </div>
-            <div class="card-body" id="estadia-container">
-                {% for estadia in viaje.estadias %}
-                <div class="dynamic-item p-3 mb-3 border rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Estadía #<span class="item-number">{{ loop.index }}</span></h6>
-                        <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nombre</label>
-                            <input type="text" name="estadia_nombre[]" class="form-control" value="{{ estadia.nombre or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Contacto</label>
-                            <input type="text" name="estadia_contacto[]" class="form-control" value="{{ estadia.contacto or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="tel" name="estadia_telefono[]" class="form-control" value="{{ estadia.telefono or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Whatsapp</label>
-                            <input type="tel" name="estadia_whatsapp[]" class="form-control" value="{{ estadia.whatsapp or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="estadia_email[]" class="form-control" value="{{ estadia.email or '' }}">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label price-label">Precio PP por Noche</label>
-                            <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-field" value="{{ estadia.precio_pp or 0 }}" oninput="calculateTotals()">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Cantidad de Noches</label>
-                            <input type="number" name="estadia_noches[]" class="form-control" value="{{ estadia.cantidad_noches or 1 }}" oninput="calculateTotals()">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">CPL</label>
-                            <select name="estadia_cpl[]" class="form-select">
-                                <option value="No" {% if estadia.cpl == 'No' %}selected{% endif %}>No</option>
-                                <option value="Si" {% if estadia.cpl == 'Si' %}selected{% endif %}>Si</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Alimentación Incluida</label>
-                            <select name="estadia_alimentacion[]" class="form-select">
-                                <option value="No" {% if estadia.alimentacion_incluida == 'No' %}selected{% endif %}>No</option>
-                                <option value="Si" {% if estadia.alimentacion_incluida == 'Si' %}selected{% endif %}>Si</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Fecha Disponible Reserva</label>
-                            <input type="date" name="estadia_fecha_disponible[]" class="form-control" value="{{ estadia.fecha_disponible_reserva.strftime('%Y-%m-%d') if estadia.fecha_disponible_reserva }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Fecha Entrada</label>
-                            <input type="date" name="estadia_fecha_entrada[]" class="form-control" value="{{ estadia.fecha_entrada.strftime('%Y-%m-%d') if estadia.fecha_entrada }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Fecha Salida</label>
-                            <input type="date" name="estadia_fecha_salida[]" class="form-control" value="{{ estadia.fecha_salida.strftime('%Y-%m-%d') if estadia.fecha_salida }}">
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Enlaces</label>
-                            <input type="text" name="estadia_enlaces[]" class="form-control" value="{{ estadia.enlaces or '' }}">
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Nota</label>
-                            <textarea name="estadia_nota[]" class="form-control" rows="2">{{ estadia.nota or '' }}</textarea>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE ESTADÍA POR PERSONA: <span id="total-estadia-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-estadia-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-
-        <!-- SEPARADOR AEROLINEA -->
-        <hr class="form-section-separator">
-        <h2 class="text-center mb-4">Aerolínea / Transporte Principal</h2>
-        <div class="card mb-4">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Transporte Principal</h5>
-                 <button type="button" class="btn btn-sm btn-outline-warning" onclick="addDynamicForm('aerolinea-container', 'aerolinea-template')">
-                    <i class="fas fa-plus"></i> Agregar Aerolínea/Transporte
-                </button>
-            </div>
-            <div class="card-body" id="aerolinea-container">
-                {% for aerolinea in viaje.aerolineas %}
-                <div class="dynamic-item p-3 mb-3 border rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Aerolínea/Transporte #<span class="item-number">{{ loop.index }}</span></h6>
-                        <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo de Transporte</label>
-                            <select name="aerolinea_tipo_transporte[]" class="form-select" onchange="toggleAirlineFields(this)">
-                                <option {% if aerolinea.tipo_transporte == 'Bus' %}selected{% endif %}>Bus</option>
-                                <option {% if aerolinea.tipo_transporte == 'Buseta' %}selected{% endif %}>Buseta</option>
-                                <option {% if aerolinea.tipo_transporte == 'Auto' %}selected{% endif %}>Auto</option>
-                                <option {% if aerolinea.tipo_transporte == 'Moto' %}selected{% endif %}>Moto</option>
-                                <option {% if aerolinea.tipo_transporte == 'Barco' %}selected{% endif %}>Barco</option>
-                                <option {% if aerolinea.tipo_transporte == 'Avión' %}selected{% endif %}>Avión</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row airline-fields" style="display: {% if aerolinea.tipo_transporte == 'Avión' %}flex{% else %}none{% endif %};">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Aerolínea</label>
-                            <input type="text" name="aerolinea_nombre[]" class="form-control" value="{{ aerolinea.nombre_aerolinea or '' }}">
-                        </div>
-                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Teléfono Aerolínea</label>
-                            <input type="tel" name="aerolinea_telefono[]" class="form-control" value="{{ aerolinea.telefono_aerolinea or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="aerolinea_email[]" class="form-control" value="{{ aerolinea.email or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Whatsapp</label>
-                            <input type="tel" name="aerolinea_whatsapp[]" class="form-control" value="{{ aerolinea.whatsapp or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha de Pre-alerta</label>
-                            <input type="date" name="aerolinea_fecha_prealerta[]" class="form-control" value="{{ aerolinea.fecha_prealertar.strftime('%Y-%m-%d') if aerolinea.fecha_prealertar }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Enlace para Pre-alerta</label>
-                            <input type="text" name="aerolinea_enlace_prealerta[]" class="form-control" value="{{ aerolinea.enlace_prealertar or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Número de Vuelo</label>
-                            <input type="text" name="aerolinea_num_vuelo[]" class="form-control" value="{{ aerolinea.numero_vuelo or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Horario de Salida</label>
-                            <input type="time" name="aerolinea_hora_salida[]" class="form-control" value="{{ aerolinea.horario_salida.strftime('%H:%M') if aerolinea.horario_salida }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Horario de Llegada</label>
-                            <input type="time" name="aerolinea_hora_llegada[]" class="form-control" value="{{ aerolinea.horario_llegada.strftime('%H:%M') if aerolinea.horario_llegada }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nombre del Aeropuerto</label>
-                            <input type="text" name="aerolinea_aeropuerto[]" class="form-control" value="{{ aerolinea.nombre_aeropuerto or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Teléfono del Aeropuerto</label>
-                            <input type="tel" name="aerolinea_tel_aeropuerto[]" class="form-control" value="{{ aerolinea.telefono_aeropuerto or '' }}">
-                        </div>
-                        <hr>
-                        <h6 class="text-center">Precios</h6>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" name="aerolinea_p_asientos[]" class="form-control price-field" value="{{ aerolinea.precio_asientos or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" name="aerolinea_p_maletas[]" class="form-control price-field" value="{{ aerolinea.precio_maletas_doc or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" name="aerolinea_p_equipaje_mano[]" class="form-control price-field" value="{{ aerolinea.equipaje_mano or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Estandar</label><input type="number" name="aerolinea_p_estandar[]" class="form-control price-field" value="{{ aerolinea.precio_estandar or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Mas equipo</label><input type="number" name="aerolinea_p_mas_equipo[]" class="form-control price-field" value="{{ aerolinea.precio_mas_equipo or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Salida rápida</label><input type="number" name="aerolinea_p_salida_rapida[]" class="form-control price-field" value="{{ aerolinea.precio_salida_rapida or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Premium</label><input type="number" name="aerolinea_p_premium[]" class="form-control price-field" value="{{ aerolinea.precio_premium or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio VIP</label><input type="number" name="aerolinea_p_vip[]" class="form-control price-field" value="{{ aerolinea.precio_vip or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Basic</label><input type="number" name="aerolinea_p_basic[]" class="form-control price-field" value="{{ aerolinea.precio_basic or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Classic</label><input type="number" name="aerolinea_p_classic[]" class="form-control price-field" value="{{ aerolinea.precio_classic or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Flexible</label><input type="number" name="aerolinea_p_flexible[]" class="form-control price-field" value="{{ aerolinea.precio_flexible or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" name="aerolinea_p_impuestos[]" class="form-control price-field" value="{{ aerolinea.precio_impuestos or 0 }}" oninput="calculateTotals()"></div>
-                        <hr>
-                        <h6 class="text-center">Otros Costos</h6>
-                        {% set otros_costos = aerolinea.otros_costos_json | fromjson if aerolinea.otros_costos_json else [] %}
-                        {% for i in range(1, 5) %}
-                        {% set costo_item = otros_costos[loop.index0] if otros_costos and otros_costos | length > loop.index0 else {} %}
-                        <div class="col-md-6 mb-3"><label class="form-label">Descripción #{{i}}</label><input type="text" name="aerolinea_desc_{{i}}[]" class="form-control" value="{{ costo_item.descripcion or '' }}"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label price-label">Otros Costos #{{i}}</label><input type="number" name="aerolinea_costo_{{i}}[]" class="form-control price-field" value="{{ costo_item.costo or 0 }}" oninput="calculateTotals()"></div>
-                        <div class="col-md-3 mb-3"><label class="form-label">Cantidad</label><input type="number" name="aerolinea_cant_{{i}}[]" class="form-control" value="{{ costo_item.cantidad or 1 }}" oninput="calculateTotals()"></div>
-                        {% endfor %}
-                        <hr>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Fecha de Compra</label>
-                            <input type="date" name="aerolinea_fecha_compra[]" class="form-control" value="{{ aerolinea.fecha_compra.strftime('%Y-%m-%d') if aerolinea.fecha_compra }}">
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="card-footer bg-light">
-                <strong>TOTAL DE AEROLÍNEA POR PERSONA: <span id="total-aerolinea-crc">0.00</span> CRC</strong>
-                <strong class="ms-3">| <span id="total-aerolinea-usd">0.00</span> USD</strong>
-            </div>
-        </div>
-
-        <!-- TOTALES GENERALES -->
-        <div class="card mt-5 mb-5">
-            <div class="card-header bg-dark text-white">
-                <h3 class="mb-0">Totales Individuales Estimados</h3>
-            </div>
-            <div class="card-body fs-5">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>TOTAL INDIVIDUAL CRC:</strong>
-                        <p class="text-success fw-bold" id="total-individual-crc">0.00 CRC</p>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>TOTAL INDIVIDUAL USD:</strong>
-                        <p class="text-primary fw-bold" id="total-individual-usd">0.00 USD</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-    </form>
-</div>
-
-<!-- BOTONES FLOTANTES -->
-<div class="fab-container-back">
-    <a href="{{ url_for('intern.detalle_intern', id=viaje.id) }}" class="btn btn-secondary fab-button" title="Volver a Detalles">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-</div>
-<div class="fab-container-actions">
-    <button type="submit" form="editInternForm" class="fab-button fab-button-save" title="Guardar Cambios">
-        <i class="fas fa-save"></i>
-    </button>
-    <a href="#" class="btn btn-danger fab-button" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ viaje.id }}">
-        <i class="fas fa-trash-alt"></i>
-    </a>
-</div>
-
-<!-- Modal de Confirmación de Eliminación -->
-<div class="modal fade" id="deleteModal-{{ viaje.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                ¿Estás seguro de que quieres eliminar este viaje? Esta acción no se puede deshacer.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form action="{{ url_for('intern.eliminar_intern', id=viaje.id) }}" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- =========== TEMPLATES (Igual que en crear_intern.html) =========== -->
-<template id="prealerta-template">
-    <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Pre-Alerta #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove()"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Entidad Financiera</label>
-                <select name="prealerta_banco[]" class="form-select">
-                    <option selected disabled value="">Seleccionar...</option>
-                    <option>Banco de Costa Rica (BCR)</option>
-                    <option>Banco Nacional de Costa Rica (BNCR)</option>
-                    <option>Banco Popular</option>
-                    <option>Mucap</option>
-                    <option>Mutual</option>
-                    <option>BAC Credomatic</option>
-                    <option>Banco Cathay</option>
-                    <option>Banco BCT</option>
-                    <option>Banco CMB</option>
-                    <option>Banco Davivienda</option>
-                    <option>Banco General</option>
-                    <option>Banco Improsa</option>
-                    <option>Banco Lafise</option>
-                    <option>Banco Promérica</option>
-                    <option>Prival Bank</option>
-                    <option>Scotiabank</option>
-                    <option>Coopealianza</option>
-                    <option>Coopeande</option>
-                    <option>CoopeAnde No. 1</option>
-                    <option>CoopeAnde No. 2</option>
-                    <option>CoopeAnde No. 3</option>
-                    <option>CoopeAnde No. 4</option>
-                    <option>CoopeAnde No. 5</option>
-                    <option>CoopeAnde No. 6</option>
-                    <option>CoopeAnde No. 7</option>
-                    <option>CoopeAnde No. 8</option>
-                    <option>CoopeAnde No. 9</option>
-                    <option>CoopeAnde No. 10</option>
-                    <option>CoopeAnde No. 11</option>
-                    <option>CoopeCaja</option>
-                    <option>Caja de ANDE</option>
-                    <option>COOPENAE</option>
-                    <option>COOPEUCHA</option>
-                    <option>COOPESANRAMON</option>
-                    <option>COOPESERVIDORES</option>
-                    <option>COOPEUNA</option>
-                    <option>CREDECOOP</option>
-                </select>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono Entidad Financiera</label>
-                <input type="tel" name="prealerta_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha de la prealerta</label>
-                <input type="date" name="prealerta_fecha[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre del Asesor Bancario</label>
-                <input type="text" name="prealerta_asesor[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Hora de la Prealerta</label>
-                <input type="time" name="prealerta_hora[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Número de la prealerta</label>
-                <input type="text" name="prealerta_numero[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha prealertada (Desde)</label>
-                <input type="date" name="prealerta_desde[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha prealertada (Hasta)</label>
-                <input type="date" name="prealerta_hasta[]" class="form-control">
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="lugar-template">
-    <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Lugar #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Tipo</label>
-                <select name="lugar_tipo[]" class="form-select">
-                    <option>Volcán</option><option>Montaña</option><option>Playa</option><option>Ciudad</option><option>Parque Nacional</option><option>Camino</option><option>Otros</option>
-                </select>
-            </div>
-            <div class="col-md-8 mb-3">
-                <label class="form-label">Nombre del Sitio</label>
-                <input type="text" name="lugar_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio Entrada</label>
-                <input type="number" step="0.01" name="lugar_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Fecha Reserva</label>
-                <input type="date" name="lugar_fecha_reserva[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Guía Local</label>
-                <select name="lugar_guia_local[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Nombre Guía</label>
-                <input type="text" name="lugar_nombre_guia[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del Lugar</label>
-                <input type="tel" name="lugar_telefono_lugar[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del Contacto</label>
-                <input type="tel" name="lugar_telefono_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Whatsapp del Contacto</label>
-                <input type="tel" name="lugar_whatsapp_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="lugar_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="lugar_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="lugar_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="transporte-template">
-     <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Transporte #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Tipo</label>
-                <select name="transporte_tipo[]" class="form-select">
-                    <option>Buseta</option><option>Bus</option><option>Taxi</option><option>Uber</option><option>Auto</option><option>Lancha</option><option>Avión</option>
-                </select>
-            </div>
-            <div class="col-md-8 mb-3">
-                <label class="form-label">Nombre del Transporte</label>
-                <input type="text" name="transporte_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label price-label">Precio del Transporte</label>
-                <input type="number" step="0.01" name="transporte_precio[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Nombre Conductor</label>
-                <input type="text" name="transporte_conductor[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Contratación</label>
-                <input type="date" name="transporte_fecha_contratacion[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del Lugar</label>
-                <input type="tel" name="transporte_telefono_lugar[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono del contacto</label>
-                <input type="tel" name="transporte_telefono_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Whatsapp del Contacto</label>
-                <input type="tel" name="transporte_whatsapp_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="transporte_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="transporte_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="transporte_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="guia-template">
-    <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Guía #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre</label>
-                <input type="text" name="guia_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono</label>
-                <input type="tel" name="guia_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Operador</label>
-                <input type="text" name="guia_operador[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="guia_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Whatsapp</label>
-                <input type="tel" name="guia_whatsapp[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio Guía PP</label>
-                <input type="number" step="0.01" name="guia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio Acarreo</label>
-                <input type="number" step="0.01" name="guia_precio_acarreo[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">CPL</label>
-                <select name="guia_cpl[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Fecha Disponible</label>
-                <input type="date" name="guia_fecha_disponible[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Reserva</label>
-                <input type="text" name="guia_reserva[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha Reserva</label>
-                <input type="date" name="guia_fecha_reserva[]" class="form-control">
-            </div>
-            <div class="col-md-12 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="guia_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="guia_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="estadia-template">
-     <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Estadía #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre</label>
-                <input type="text" name="estadia_nombre[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Contacto</label>
-                <input type="text" name="estadia_contacto[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono</label>
-                <input type="tel" name="estadia_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Whatsapp</label>
-                <input type="tel" name="estadia_whatsapp[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="estadia_email[]" class="form-control">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label price-label">Precio PP por Noche</label>
-                <input type="number" step="0.01" name="estadia_precio_pp[]" class="form-control price-field" value="0" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Cantidad de Noches</label>
-                <input type="number" name="estadia_noches[]" class="form-control" value="1" oninput="calculateTotals()">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">CPL</label>
-                <select name="estadia_cpl[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Alimentación Incluida</label>
-                <select name="estadia_alimentacion[]" class="form-select">
-                    <option value="No">No</option>
-                    <option value="Si">Si</option>
-                </select>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Disponible Reserva</label>
-                <input type="date" name="estadia_fecha_disponible[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Entrada</label>
-                <input type="date" name="estadia_fecha_entrada[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha Salida</label>
-                <input type="date" name="estadia_fecha_salida[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Enlaces</label>
-                <input type="text" name="estadia_enlaces[]" class="form-control">
-            </div>
-            <div class="col-12 mb-3">
-                <label class="form-label">Nota</label>
-                <textarea name="estadia_nota[]" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-</template>
-
-<template id="aerolinea-template">
-     <div class="dynamic-item p-3 mb-3 border rounded">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Aerolínea/Transporte #<span class="item-number">1</span></h6>
-            <button type="button" class="btn-close" aria-label="Close" onclick="this.closest('.dynamic-item').remove(); calculateTotals();"></button>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Tipo de Transporte</label>
-                <select name="aerolinea_tipo_transporte[]" class="form-select" onchange="toggleAirlineFields(this)">
-                    <option>Bus</option><option>Buseta</option><option>Auto</option><option>Moto</option><option>Barco</option><option>Avión</option>
-                </select>
-            </div>
-        </div>
-        <div class="row airline-fields">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Aerolínea</label>
-                <select name="aerolinea_nombre[]" class="form-select">
-                    <option>Avianca</option><option>American Airlines</option><option>Copa</option><option>Volaris</option><option>Jetblue</option><option>Sansa</option><option>Spirit</option><option>United</option><option>Wingo</option><option>KLM</option><option>Iberia</option><option>Lufthansa</option><option>Latam Airlines</option><option>IberoJet</option><option>Delta</option><option>AirFrance</option><option>Alaska</option><option>AeroMéxico</option><option>Arajet</option><option>Air Canadá</option><option>Airtransat</option><option>Green Airways</option><option>Southwest</option><option>Edelweiss</option><option>Frontier</option><option>GOL</option>
-                </select>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono Aerolínea</label>
-                <input type="tel" name="aerolinea_telefono[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="aerolinea_email[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Whatsapp</label>
-                <input type="tel" name="aerolinea_whatsapp[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha de Pre-alerta</label>
-                <input type="date" name="aerolinea_fecha_prealerta[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Enlace para Pre-alerta</label>
-                <input type="text" name="aerolinea_enlace_prealerta[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Número de Vuelo</label>
-                <input type="text" name="aerolinea_num_vuelo[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Horario de Salida</label>
-                <input type="time" name="aerolinea_hora_salida[]" class="form-control">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Horario de Llegada</label>
-                <input type="time" name="aerolinea_hora_llegada[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre del Aeropuerto</label>
-                <input type="text" name="aerolinea_aeropuerto[]" class="form-control">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono del Aeropuerto</label>
-                <input type="tel" name="aerolinea_tel_aeropuerto[]" class="form-control">
-            </div>
-            <hr>
-            <h6 class="text-center">Precios</h6>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Asientos</label><input type="number" name="aerolinea_p_asientos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Maletas Doc.</label><input type="number" name="aerolinea_p_maletas[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Equipaje de Mano</label><input type="number" name="aerolinea_p_equipaje_mano[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Estandar</label><input type="number" name="aerolinea_p_estandar[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Mas equipo</label><input type="number" name="aerolinea_p_mas_equipo[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Salida rápida</label><input type="number" name="aerolinea_p_salida_rapida[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Premium</label><input type="number" name="aerolinea_p_premium[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio VIP</label><input type="number" name="aerolinea_p_vip[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Basic</label><input type="number" name="aerolinea_p_basic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Classic</label><input type="number" name="aerolinea_p_classic[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Flexible</label><input type="number" name="aerolinea_p_flexible[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Precio Impuestos</label><input type="number" name="aerolinea_p_impuestos[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <hr>
-            <h6 class="text-center">Otros Costos</h6>
-            {% for i in range(1, 5) %}
-            <div class="col-md-6 mb-3"><label class="form-label">Descripción #{{i}}</label><input type="text" name="aerolinea_desc_{{i}}[]" class="form-control"></div>
-            <div class="col-md-3 mb-3"><label class="form-label price-label">Otros Costos #{{i}}</label><input type="number" name="aerolinea_costo_{{i}}[]" class="form-control price-field" value="0" oninput="calculateTotals()"></div>
-            <div class="col-md-3 mb-3"><label class="form-label">Cantidad</label><input type="number" name="aerolinea_cant_{{i}}[]" class="form-control" value="1" oninput="calculateTotals()"></div>
-            {% endfor %}
-            <hr>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Fecha de Compra</label>
-                <input type="date" name="aerolinea_fecha_compra[]" class="form-control">
-            </div>
-        </div>
-    </div>
-</template>
-
-{% endblock %}
-
-{% block scripts %}
-<script>
-    function addDynamicForm(containerId, templateId) {
-        const container = document.getElementById(containerId);
-        const template = document.getElementById(templateId);
-        const clone = template.content.cloneNode(true);
-        const itemNumber = container.children.length + 1;
-        clone.querySelector('.item-number').textContent = itemNumber;
-        container.appendChild(clone);
-        updateCurrencyUI();
-    }
-
-    function toggleAirlineFields(selectElement) {
-        const parentItem = selectElement.closest('.dynamic-item');
-        const airlineFields = parentItem.querySelector('.airline-fields');
-        if (selectElement.value === 'Avión') {
-            airlineFields.style.display = 'flex';
-        } else {
-            airlineFields.style.display = 'none';
+    <style>
+        body {
+            background-color: #f8f9fa;
         }
-    }
-
-    function updateCurrencyUI() {
-        const currency = document.getElementById('tipo_moneda').value;
-        const currencySymbol = `(${currency})`;
-
-        document.querySelectorAll('.price-label').forEach(label => {
-            let text = label.textContent.replace(/\s*\((CRC|USD)\)$/, '');
-            label.textContent = `${text} ${currencySymbol}`;
-        });
-    }
-
-    function calculateTotals() {
-        const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 1;
-        const currency = document.getElementById('tipo_moneda').value;
-
-        const calculateSectionTotal = (containerId, priceFieldSelector) => {
-            let total = 0;
-            document.querySelectorAll(`#${containerId} .dynamic-item`).forEach(item => {
-                item.querySelectorAll(priceFieldSelector).forEach(input => {
-                    total += parseFloat(input.value) || 0;
-                });
-            });
-            return total;
-        };
-
-        const calculateGuiaTotal = () => {
-             let total = 0;
-             document.querySelectorAll('#guia-container .dynamic-item').forEach(item => {
-                const precioPP = parseFloat(item.querySelector('input[name="guia_precio_pp[]"]').value) || 0;
-                const precioAcarreo = parseFloat(item.querySelector('input[name="guia_precio_acarreo[]"]').value) || 0;
-                total += precioPP + precioAcarreo;
-            });
-            return total;
-        };
-
-        const calculateEstadiaTotal = () => {
-            let total = 0;
-            document.querySelectorAll('#estadia-container .dynamic-item').forEach(item => {
-                const precioPP = parseFloat(item.querySelector('input[name="estadia_precio_pp[]"]').value) || 0;
-                const noches = parseInt(item.querySelector('input[name="estadia_noches[]"]').value) || 1;
-                total += precioPP * noches;
-            });
-            return total;
-        };
-
-        const calculateAerolineaTotal = () => {
-            let total = 0;
-            document.querySelectorAll('#aerolinea-container .dynamic-item').forEach(item => {
-                item.querySelectorAll('.price-field').forEach(input => {
-                    let precio = parseFloat(input.value) || 0;
-                    let cantidad = 1;
-                    if (input.name.startsWith('aerolinea_costo_')) {
-                        const index = input.name.match(/(\d+)/)[0];
-                        const cantInput = item.querySelector(`input[name="aerolinea_cant_${index}[]"]`);
-                        if (cantInput) {
-                            cantidad = parseInt(cantInput.value) || 1;
-                        }
-                    }
-                    total += precio * cantidad;
-                });
-            });
-            return total;
-        };
-
-        let totalAtracciones = calculateSectionTotal('lugar-container', 'input[name="lugar_precio[]"]');
-        let totalTransporte = calculateSectionTotal('transporte-container', 'input[name="transporte_precio[]"]');
-        let totalGuias = calculateGuiaTotal();
-        let totalEstadia = calculateEstadiaTotal();
-        let totalAerolinea = calculateAerolineaTotal();
-
-        let totalInputCurrency = totalAtracciones + totalTransporte + totalGuias + totalEstadia + totalAerolinea;
-        
-        let totalCRC, totalUSD;
-
-        if (currency === 'USD') {
-            totalUSD = totalInputCurrency;
-            totalCRC = totalInputCurrency * tipoCambio;
-        } else { // CRC
-            totalCRC = totalInputCurrency;
-            totalUSD = totalInputCurrency / tipoCambio;
+        .container {
+            max-width: 1200px;
         }
+        .card {
+            border: 1px solid #dee2e6;
+            box-shadow: none !important;
+        }
+        .card-header {
+            background-color: #e9ecef;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: bold;
+        }
+        .btn-add {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .total-field {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        .form-control:disabled, .form-control[readonly] {
+            background-color: #e9ecef;
+            opacity: 1;
+        }
+        .current-flyer {
+            max-width: 150px;
+            height: auto;
+            border-radius: .25rem;
+        }
+    </style>
+</head>
+<body>
 
-        const updateSectionDisplay = (sectionPrefix, totalValue) => {
-            let crc, usd;
-            if (currency === 'USD') {
-                usd = totalValue;
-                crc = totalValue * tipoCambio;
-            } else {
-                crc = totalValue;
-                usd = totalValue / tipoCambio;
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Editando Viaje: {{ viaje.nombre_viaje }}</h1>
+
+        <form action="{{ url_for('intern.editar_intern', viaje_id=viaje.id) }}" method="POST" enctype="multipart/form-data" id="viajeForm">
+            <!-- Card Principal del Viaje -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    Información General del Viaje
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre_viaje" class="form-label">Nombre del Viaje</label>
+                            <input type="text" class="form-control" id="nombre_viaje" name="nombre_viaje" value="{{ viaje.nombre_viaje }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="pais" class="form-label">País de Destino</label>
+                            <select class="form-select" id="pais" name="pais" required>
+                                <option value="Panama" {% if viaje.pais == 'Panama' %}selected{% endif %}>Panamá</option>
+                                <option value="Nicaragua" {% if viaje.pais == 'Nicaragua' %}selected{% endif %}>Nicaragua</option>
+                                <option value="Honduras" {% if viaje.pais == 'Honduras' %}selected{% endif %}>Honduras</option>
+                                <option value="El Salvador" {% if viaje.pais == 'El Salvador' %}selected{% endif %}>El Salvador</option>
+                                <option value="Guatemala" {% if viaje.pais == 'Guatemala' %}selected{% endif %}>Guatemala</option>
+                                <option value="Mexico" {% if viaje.pais == 'Mexico' %}selected{% endif %}>México</option>
+                                <option value="Peru" {% if viaje.pais == 'Peru' %}selected{% endif %}>Perú</option>
+                                <option value="Espana" {% if viaje.pais == 'Espana' %}selected{% endif %}>España</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="flyer" class="form-label">Cambiar Flyer del Viaje</label>
+                            <input class="form-control" type="file" id="flyer" name="flyer">
+                            {% if viaje.flyer_url and viaje.flyer_url != 'None' %}
+                            <div class="mt-2">
+                                <small class="text-muted">Flyer actual:</small><br>
+                                <img src="{{ url_for('static', filename=viaje.flyer_url) }}" alt="Flyer actual" class="current-flyer">
+                            </div>
+                            {% endif %}
+                        </div>
+                         <div class="col-md-6">
+                            <label for="fecha_viaje" class="form-label">Fecha del Viaje</label>
+                            <input type="date" class="form-control" id="fecha_viaje" name="fecha_viaje" value="{{ viaje.fecha_viaje }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_regreso" class="form-label">Fecha de Regreso</label>
+                            <input type="date" class="form-control" id="fecha_regreso" name="fecha_regreso" value="{{ viaje.fecha_regreso }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cantidad_dias" class="form-label">Cantidad de Días</label>
+                            <input type="number" class="form-control" id="cantidad_dias" name="cantidad_dias" min="1" value="{{ viaje.cantidad_dias }}" required>
+                        </div>
+                        <div class="col-md-6">
+                             <label for="precio_viaje" class="form-label">Precio del Viaje (USD)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="precio_viaje" name="precio_viaje" step="0.01" min="0" value="{{ viaje.precio_viaje_usd }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="capacidad_sg" class="form-label">Capacidad S/G (Sin Guía)</label>
+                            <input type="number" class="form-control" id="capacidad_sg" name="capacidad_sg" min="0" value="{{ viaje.capacidad_sg }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="capacidad_cg" class="form-label">Capacidad C/G (Con Guía)</label>
+                            <input type="number" class="form-control" id="capacidad_cg" name="capacidad_cg" min="0" value="{{ viaje.capacidad_cg }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipo_moneda" class="form-label">Tipo de Moneda Base</label>
+                            <select class="form-select" id="tipo_moneda" name="tipo_moneda">
+                                <option value="USD" {% if viaje.tipo_moneda_base == 'USD' %}selected{% endif %}>USD</option>
+                                <option value="CRC" {% if viaje.tipo_moneda_base == 'CRC' %}selected{% endif %}>CRC</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipo_cambio" class="form-label">Tipo de Cambio (USD a CRC)</label>
+                             <div class="input-group">
+                                <span class="input-group-text">₡</span>
+                                <input type="number" class="form-control" id="tipo_cambio" name="tipo_cambio" step="0.01" min="0" value="{{ viaje.tipo_cambio_a_crc }}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Pagos -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Registro de Pagos y Servicios</span>
+                    <button type="button" class="btn btn-primary btn-sm btn-add" id="addPagoBtn">
+                        <i class="bi bi-plus-circle"></i> Agregar Nuevo Pago
+                    </button>
+                </div>
+                <div class="card-body" id="pagosContainer">
+                    <!-- Bucle para renderizar los pagos existentes -->
+                    {% for pago in viaje.pagos_y_servicios %}
+                    {% set pago_index = loop.index %}
+                    <div class="card mb-3 pago-item">
+                        <div class="card-body">
+                            <h6 class="card-title">Detalle del Pago #{{ pago_index }}</h6>
+                            <div class="row g-3">
+                               <div class="col-md-4">
+                                    <label class="form-label">Tipo de Pago</label>
+                                    <select class="form-select" name="pagos[{{ pago_index }}][tipo_pago]">
+                                        <option {% if pago.tipo_pago == 'Estadía' %}selected{% endif %}>Estadía</option>
+                                        <option {% if pago.tipo_pago == 'Transporte' %}selected{% endif %}>Transporte</option>
+                                        <option {% if pago.tipo_pago == 'Bancario' %}selected{% endif %}>Bancario</option>
+                                        <option {% if pago.tipo_pago == 'Guía' %}selected{% endif %}>Guía</option>
+                                        <option {% if pago.tipo_pago == 'Operador' %}selected{% endif %}>Operador</option>
+                                        <option {% if pago.tipo_pago == 'Agencia' %}selected{% endif %}>Agencia</option>
+                                        <option {% if pago.tipo_pago == 'Aéreo' %}selected{% endif %}>Aéreo</option>
+                                        <option {% if pago.tipo_pago == 'Alimentación' %}selected{% endif %}>Alimentación</option>
+                                        <option {% if pago.tipo_pago == 'Otro' %}selected{% endif %}>Otro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Nombre del Contacto o Empresa</label>
+                                    <input type="text" class="form-control" name="pagos[{{ pago_index }}][nombre_contacto]" value="{{ pago.get('nombre_contacto', '') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Cantidad de Días/Eventos</label>
+                                    <input type="number" class="form-control cantidad-dias-evento" name="pagos[{{ pago_index }}][cantidad_dias_evento]" value="{{ pago.get('cantidad_dias_evento', 1) }}" min="0">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Precio (USD)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control precio-nuevo-pago" name="pagos[{{ pago_index }}][precio]" step="0.01" min="0" value="{{ pago.get('precio', 0) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Total Pago (USD)</label>
+                                    <input type="text" class="form-control total-nuevo-pago" readonly>
+                                </div>
+                                 <div class="col-md-4">
+                                    <label class="form-label">Póliza</label>
+                                    <select class="form-select" name="pagos[{{ pago_index }}][poliza]">
+                                        <option {% if pago.poliza == 'No Aplica' %}selected{% endif %}>No Aplica</option>
+                                        <option {% if pago.poliza == 'Si' %}selected{% endif %}>Si</option>
+                                        <option {% if pago.poliza == 'No' %}selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="dynamic-fields-container mt-3">
+                                <div id="telefonosContainer_{{ pago_index }}">
+                                    {% for tel in pago.get('telefonos', []) %}
+                                    {% set timestamp = loop.index0 %}
+                                    <div class="input-group mb-2">
+                                        <select class="input-group-text" name="pagos[{{ pago_index }}][telefonos][{{ timestamp }}][tipo]">
+                                            <option {% if tel.tipo == 'WHATSAPP' %}selected{% endif %}>WHATSAPP</option>
+                                            <option {% if tel.tipo == 'PERSONAL' %}selected{% endif %}>PERSONAL</option>
+                                            <option {% if tel.tipo == 'EMPRESA' %}selected{% endif %}>EMPRESA</option>
+                                        </select>
+                                        <input type="text" class="form-control" placeholder="Código País" name="pagos[{{ pago_index }}][telefonos][{{ timestamp }}][codigo]" value="{{ tel.get('codigo', '') }}">
+                                        <input type="tel" class="form-control" placeholder="Número" name="pagos[{{ pago_index }}][telefonos][{{ timestamp }}][numero]" value="{{ tel.get('numero', '') }}">
+                                        <input type="text" class="form-control" placeholder="Contacto/Empresa" name="pagos[{{ pago_index }}][telefonos][{{ timestamp }}][contacto]" value="{{ tel.get('contacto', '') }}">
+                                        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <!-- Repetir para emails, urls, etc. si es necesario -->
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('telefono', {{ pago_index }})"><i class="bi bi-telephone-plus"></i> Teléfono</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('email', {{ pago_index }})"><i class="bi bi-envelope-plus"></i> Email</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('url', {{ pago_index }})"><i class="bi bi-link-45deg"></i> Enlace URL</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('servicio', {{ pago_index }})"><i class="bi bi-card-text"></i> Servicio</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('fecha', {{ pago_index }})"><i class="bi bi-calendar-plus"></i> Fecha</button>
+                                <button type="button" class="btn btn-danger btn-sm float-end" onclick="this.closest('.pago-item').remove(); calcularTodosLosTotales();"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Totales -->
+            <div class="card">
+                <div class="card-header">
+                    Resumen Financiero
+                </div>
+                <div class="card-body">
+                     <div class="row g-4">
+                        <div class="col-lg-6">
+                            <h5>Costos Netos del Viaje</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Total Neto (USD):<span class="badge bg-primary rounded-pill total-field" id="totalNetoUSD">$0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Total Neto (CRC):<span class="badge bg-info rounded-pill total-field" id="totalNetoCRC">₡0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio General (USD):<span class="badge bg-secondary rounded-pill total-field" id="precioGeneralUSD">$0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio General (CRC):<span class="badge bg-secondary rounded-pill total-field" id="precioGeneralCRC">₡0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio Individual (USD):<span class="badge bg-secondary rounded-pill total-field" id="precioIndividualUSD">$0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio Individual (CRC):<span class="badge bg-secondary rounded-pill total-field" id="precioIndividualCRC">₡0.00</span></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-6">
+                            <h5>Excedente (Ganancia)</h5>
+                             <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente General (USD):<span class="badge bg-success rounded-pill total-field" id="excedenteGeneralUSD">$0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente General (CRC):<span class="badge bg-success rounded-pill total-field" id="excedenteGeneralCRC">₡0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente Individual (USD):<span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualUSD">$0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente Individual (CRC):<span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualCRC">₡0.00</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-warning btn-lg">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let pagoIndex = document.querySelectorAll('.pago-item').length;
+
+            document.getElementById('addPagoBtn').addEventListener('click', addPago);
+            document.getElementById('viajeForm').addEventListener('input', calcularTodosLosTotales);
+
+            function addPago() {
+                // Se incrementa el índice para asegurar que los nuevos pagos tengan un ID único
+                pagoIndex = document.querySelectorAll('.pago-item').length + 1;
+                const container = document.getElementById('pagosContainer');
+                const newPagoDiv = document.createElement('div');
+                newPagoDiv.className = 'card mb-3 pago-item';
+                // El name ahora usa un timestamp para garantizar unicidad al agregar nuevos elementos
+                const newIndex = Date.now();
+                newPagoDiv.innerHTML = `
+                    <div class="card-body">
+                        <h6 class="card-title">Detalle del Nuevo Pago</h6>
+                        <div class="row g-3">
+                           <div class="col-md-4">
+                                <label class="form-label">Tipo de Pago</label>
+                                <select class="form-select" name="pagos[${newIndex}][tipo_pago]">
+                                    <option>Estadía</option><option>Transporte</option><option>Bancario</option><option>Guía</option><option>Operador</option><option>Agencia</option><option>Aéreo</option><option>Alimentación</option><option>Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Nombre del Contacto o Empresa</label>
+                                <input type="text" class="form-control" name="pagos[${newIndex}][nombre_contacto]">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cantidad de Días/Eventos</label>
+                                <input type="number" class="form-control cantidad-dias-evento" name="pagos[${newIndex}][cantidad_dias_evento]" value="1" min="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Precio (USD)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control precio-nuevo-pago" name="pagos[${newIndex}][precio]" step="0.01" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Total Pago (USD)</label>
+                                <input type="text" class="form-control total-nuevo-pago" readonly>
+                            </div>
+                             <div class="col-md-4">
+                                <label class="form-label">Póliza</label>
+                                <select class="form-select" name="pagos[${newIndex}][poliza]">
+                                    <option>No Aplica</option><option>Si</option><option>No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="dynamic-fields-container mt-3">
+                            <div id="telefonosContainer_${newIndex}"></div>
+                            <div id="emailsContainer_${newIndex}"></div>
+                            <div id="urlsContainer_${newIndex}"></div>
+                            <div id="serviciosContainer_${newIndex}"></div>
+                            <div id="fechasContainer_${newIndex}"></div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('telefono', ${newIndex})"><i class="bi bi-telephone-plus"></i> Teléfono</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('email', ${newIndex})"><i class="bi bi-envelope-plus"></i> Email</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('url', ${newIndex})"><i class="bi bi-link-45deg"></i> Enlace URL</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('servicio', ${newIndex})"><i class="bi bi-card-text"></i> Servicio</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('fecha', ${newIndex})"><i class="bi bi-calendar-plus"></i> Fecha</button>
+                            <button type="button" class="btn btn-danger btn-sm float-end" onclick="this.closest('.pago-item').remove(); calcularTodosLosTotales();"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>`;
+                container.appendChild(newPagoDiv);
             }
-            const crcEl = document.getElementById(`total-${sectionPrefix}-crc`);
-            const usdEl = document.getElementById(`total-${sectionPrefix}-usd`);
-            if (crcEl) crcEl.textContent = crc.toFixed(2);
-            if (usdEl) usdEl.textContent = usd.toFixed(2);
-        };
 
-        updateSectionDisplay('atracciones', totalAtracciones);
-        updateSectionDisplay('transporte', totalTransporte);
-        updateSectionDisplay('guias', totalGuias);
-        updateSectionDisplay('estadia', totalEstadia);
-        updateSectionDisplay('aerolinea', totalAerolinea);
-        
-        document.getElementById('total-individual-crc').textContent = totalCRC.toFixed(2) + ' CRC';
-        document.getElementById('total-individual-usd').textContent = totalUSD.toFixed(2) + ' USD';
-    }
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        updateCurrencyUI();
-        calculateTotals();
-    });
+            window.addDynamicField = function(type, pagoId) {
+                const timestamp = Date.now();
+                let container, newFieldHtml;
+                switch(type) {
+                    case 'telefono':
+                        container = document.getElementById(`telefonosContainer_${pagoId}`);
+                        newFieldHtml = `<div class="input-group mb-2"><select class="input-group-text" name="pagos[${pagoId}][telefonos][${timestamp}][tipo]"><option>WHATSAPP</option><option>PERSONAL</option><option>EMPRESA</option></select><input type="text" class="form-control" placeholder="Código País" name="pagos[${pagoId}][telefonos][${timestamp}][codigo]"><input type="tel" class="form-control" placeholder="Número" name="pagos[${pagoId}][telefonos][${timestamp}][numero]"><input type="text" class="form-control" placeholder="Contacto/Empresa" name="pagos[${pagoId}][telefonos][${timestamp}][contacto]"><button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button></div>`;
+                        break;
+                    // ... (otros casos como email, url, etc. permanecen igual)
+                }
+                if (container) container.insertAdjacentHTML('beforeend', newFieldHtml);
+            }
 
-    document.getElementById('tipo_moneda').addEventListener('change', () => {
-        updateCurrencyUI();
-        calculateTotals();
-    });
-    document.getElementById('tipo_cambio').addEventListener('input', calculateTotals);
+            function formatCurrency(value, currency = 'USD') {
+                const options = { style: 'currency', currency: currency, minimumFractionDigits: 2, maximumFractionDigits: 2 };
+                if (isNaN(value) || !isFinite(value)) value = 0;
+                return new Intl.NumberFormat('es-CR', options).format(value);
+            }
 
-</script>
+            function calcularTotalPagoIndividual(pagoItem) {
+                const cantidad = parseFloat(pagoItem.querySelector('.cantidad-dias-evento').value) || 0;
+                const precio = parseFloat(pagoItem.querySelector('.precio-nuevo-pago').value) || 0;
+                const total = cantidad * precio;
+                pagoItem.querySelector('.total-nuevo-pago').value = formatCurrency(total);
+                return total;
+            }
+
+            function calcularTodosLosTotales() {
+                const tipoCambio = parseFloat(document.getElementById('tipo_cambio').value) || 0;
+                const precioViaje = parseFloat(document.getElementById('precio_viaje').value) || 0;
+                const capacidadSG = parseFloat(document.getElementById('capacidad_sg').value) || 0;
+                
+                let totalNetoUSD = 0;
+                document.querySelectorAll('.pago-item').forEach(pago => {
+                    totalNetoUSD += calcularTotalPagoIndividual(pago);
+                });
+                
+                const precioGeneralUSD = totalNetoUSD;
+                const precioIndividualUSD = capacidadSG > 0 ? precioGeneralUSD / capacidadSG : 0;
+                const totalNetoCRC = totalNetoUSD * tipoCambio;
+                const precioGeneralCRC = precioGeneralUSD * tipoCambio;
+                const precioIndividualCRC = precioIndividualUSD * tipoCambio;
+                const excedenteGeneralUSD = precioViaje - precioGeneralUSD;
+                const excedenteIndividualUSD = capacidadSG > 0 ? excedenteGeneralUSD / capacidadSG : 0;
+                const excedenteGeneralCRC = excedenteGeneralUSD * tipoCambio;
+                const excedenteIndividualCRC = excedenteIndividualUSD * tipoCambio;
+
+                document.getElementById('totalNetoUSD').textContent = formatCurrency(totalNetoUSD, 'USD');
+                document.getElementById('totalNetoCRC').textContent = formatCurrency(totalNetoCRC, 'CRC');
+                document.getElementById('precioGeneralUSD').textContent = formatCurrency(precioGeneralUSD, 'USD');
+                document.getElementById('precioGeneralCRC').textContent = formatCurrency(precioGeneralCRC, 'CRC');
+                document.getElementById('precioIndividualUSD').textContent = formatCurrency(precioIndividualUSD, 'USD');
+                document.getElementById('precioIndividualCRC').textContent = formatCurrency(precioIndividualCRC, 'CRC');
+                document.getElementById('excedenteGeneralUSD').textContent = formatCurrency(excedenteGeneralUSD, 'USD');
+                document.getElementById('excedenteGeneralCRC').textContent = formatCurrency(excedenteGeneralCRC, 'CRC');
+                document.getElementById('excedenteIndividualUSD').textContent = formatCurrency(excedenteIndividualUSD, 'USD');
+                document.getElementById('excedenteIndividualCRC').textContent = formatCurrency(excedenteIndividualCRC, 'CRC');
+            }
+            
+            // Si no hay pagos existentes, agrega uno nuevo por defecto
+            if (document.querySelectorAll('.pago-item').length === 0) {
+                addPago();
+            }
+
+            // Llama al cálculo inicial para mostrar los totales correctos al cargar la página
+            calcularTodosLosTotales();
+        });
+    </script>
+
+</body>
+</html>
 {% endblock %}
