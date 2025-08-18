@@ -138,14 +138,15 @@
         {% for viaje in viajes %}
         <div class="col">
             <div class="trip-card">
-                <img src="{{ url_for('static', filename=viaje.flyer_url.replace('static/', '', 1).replace('\\', '/')) if viaje.flyer_url and viaje.flyer_url != 'None' else 'https://placehold.co/600x400/cccccc/ffffff?text=Sin+Imagen' }}" 
+                <img src="{{ url_for('static', filename=viaje.flyer_url) if viaje.flyer_url and viaje.flyer_url != 'None' else 'https://placehold.co/600x400/cccccc/ffffff?text=Sin+Imagen' }}" 
                      class="card-img-top" 
                      alt="Flyer para {{ viaje.nombre_viaje }}">
                 <div class="card-body">
                     <div>
                         <h5 class="card-title">{{ viaje.nombre_viaje }}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">{{ viaje.pais }}</h6>
-                        <p class="card-text"><strong>Precio:</strong> ${{ "{:,.2f}".format(viaje.precio_viaje_usd) }}</p>
+                        {# CORRECCIÓN: Se formatea como entero #}
+                        <p class="card-text"><strong>Precio:</strong> ${{ "{:,.0f}".format(viaje.precio_viaje_usd|int) }}</p>
                         <p class="card-text"><small class="text-muted">Creado: {{ viaje.fecha_viaje }}</small></p>
                     </div>
                     <a href="{{ url_for('intern.detalle_intern', viaje_id=viaje.id) }}" class="btn btn-view-more">Ver Más</a>

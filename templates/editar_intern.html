@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Crear Instrucción{% endblock %}
+{% block title %}Editar Viaje{% endblock %}
 {% block head_content %}
     <style>
         body {
@@ -93,7 +93,8 @@
                              <label for="precio_viaje" class="form-label">Precio del Viaje (USD)</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="precio_viaje" name="precio_viaje" step="0.01" min="0" value="{{ viaje.precio_viaje_usd }}" required>
+                                {# CORRECCIÓN: Se cambia step a 1 y se formatea el valor como entero #}
+                                <input type="number" class="form-control" id="precio_viaje" name="precio_viaje" step="1" min="0" value="{{ viaje.precio_viaje_usd|int }}" required>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -115,7 +116,8 @@
                             <label for="tipo_cambio" class="form-label">Tipo de Cambio (USD a CRC)</label>
                              <div class="input-group">
                                 <span class="input-group-text">₡</span>
-                                <input type="number" class="form-control" id="tipo_cambio" name="tipo_cambio" step="0.01" min="0" value="{{ viaje.tipo_cambio_a_crc }}" required>
+                                {# CORRECCIÓN: Se cambia step a 1 y se formatea el valor como entero #}
+                                <input type="number" class="form-control" id="tipo_cambio" name="tipo_cambio" step="1" min="0" value="{{ viaje.tipo_cambio_a_crc|int }}" required>
                             </div>
                         </div>
                     </div>
@@ -164,7 +166,8 @@
                                     <label class="form-label">Precio (USD)</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control precio-nuevo-pago" name="pagos[{{ pago_index }}][precio]" step="0.01" min="0" value="{{ pago.get('precio', 0) }}">
+                                        {# CORRECCIÓN: Se cambia step a 1 y se formatea el valor como entero #}
+                                        <input type="number" class="form-control precio-nuevo-pago" name="pagos[{{ pago_index }}][precio]" step="1" min="0" value="{{ pago.get('precio', 0)|int }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -198,14 +201,9 @@
                                     </div>
                                     {% endfor %}
                                 </div>
-                                <!-- Repetir para emails, urls, etc. si es necesario -->
                             </div>
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('telefono', {{ pago_index }})"><i class="bi bi-telephone-plus"></i> Teléfono</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('email', {{ pago_index }})"><i class="bi bi-envelope-plus"></i> Email</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('url', {{ pago_index }})"><i class="bi bi-link-45deg"></i> Enlace URL</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('servicio', {{ pago_index }})"><i class="bi bi-card-text"></i> Servicio</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('fecha', {{ pago_index }})"><i class="bi bi-calendar-plus"></i> Fecha</button>
                                 <button type="button" class="btn btn-danger btn-sm float-end" onclick="this.closest('.pago-item').remove(); calcularTodosLosTotales();"><i class="bi bi-trash"></i></button>
                             </div>
                         </div>
@@ -224,21 +222,21 @@
                         <div class="col-lg-6">
                             <h5>Costos Netos del Viaje</h5>
                             <ul class="list-group">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Total Neto (USD):<span class="badge bg-primary rounded-pill total-field" id="totalNetoUSD">$0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Total Neto (CRC):<span class="badge bg-info rounded-pill total-field" id="totalNetoCRC">₡0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio General (USD):<span class="badge bg-secondary rounded-pill total-field" id="precioGeneralUSD">$0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio General (CRC):<span class="badge bg-secondary rounded-pill total-field" id="precioGeneralCRC">₡0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio Individual (USD):<span class="badge bg-secondary rounded-pill total-field" id="precioIndividualUSD">$0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio Individual (CRC):<span class="badge bg-secondary rounded-pill total-field" id="precioIndividualCRC">₡0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Total Neto (USD):<span class="badge bg-primary rounded-pill total-field" id="totalNetoUSD">$0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Total Neto (CRC):<span class="badge bg-info rounded-pill total-field" id="totalNetoCRC">₡0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio General (USD):<span class="badge bg-secondary rounded-pill total-field" id="precioGeneralUSD">$0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio General (CRC):<span class="badge bg-secondary rounded-pill total-field" id="precioGeneralCRC">₡0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio Individual (USD):<span class="badge bg-secondary rounded-pill total-field" id="precioIndividualUSD">$0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Precio Individual (CRC):<span class="badge bg-secondary rounded-pill total-field" id="precioIndividualCRC">₡0</span></li>
                             </ul>
                         </div>
                         <div class="col-lg-6">
                             <h5>Excedente (Ganancia)</h5>
                              <ul class="list-group">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente General (USD):<span class="badge bg-success rounded-pill total-field" id="excedenteGeneralUSD">$0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente General (CRC):<span class="badge bg-success rounded-pill total-field" id="excedenteGeneralCRC">₡0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente Individual (USD):<span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualUSD">$0.00</span></li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente Individual (CRC):<span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualCRC">₡0.00</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente General (USD):<span class="badge bg-success rounded-pill total-field" id="excedenteGeneralUSD">$0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente General (CRC):<span class="badge bg-success rounded-pill total-field" id="excedenteGeneralCRC">₡0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente Individual (USD):<span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualUSD">$0</span></li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Excedente Individual (CRC):<span class="badge bg-warning text-dark rounded-pill total-field" id="excedenteIndividualCRC">₡0</span></li>
                             </ul>
                         </div>
                     </div>
@@ -256,19 +254,14 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            let pagoIndex = document.querySelectorAll('.pago-item').length;
-
             document.getElementById('addPagoBtn').addEventListener('click', addPago);
             document.getElementById('viajeForm').addEventListener('input', calcularTodosLosTotales);
 
             function addPago() {
-                // Se incrementa el índice para asegurar que los nuevos pagos tengan un ID único
-                pagoIndex = document.querySelectorAll('.pago-item').length + 1;
+                const newIndex = Date.now();
                 const container = document.getElementById('pagosContainer');
                 const newPagoDiv = document.createElement('div');
                 newPagoDiv.className = 'card mb-3 pago-item';
-                // El name ahora usa un timestamp para garantizar unicidad al agregar nuevos elementos
-                const newIndex = Date.now();
                 newPagoDiv.innerHTML = `
                     <div class="card-body">
                         <h6 class="card-title">Detalle del Nuevo Pago</h6>
@@ -291,7 +284,7 @@
                                 <label class="form-label">Precio (USD)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control precio-nuevo-pago" name="pagos[${newIndex}][precio]" step="0.01" min="0" value="0">
+                                    <input type="number" class="form-control precio-nuevo-pago" name="pagos[${newIndex}][precio]" step="1" min="0" value="0">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -308,17 +301,9 @@
                         <hr>
                         <div class="dynamic-fields-container mt-3">
                             <div id="telefonosContainer_${newIndex}"></div>
-                            <div id="emailsContainer_${newIndex}"></div>
-                            <div id="urlsContainer_${newIndex}"></div>
-                            <div id="serviciosContainer_${newIndex}"></div>
-                            <div id="fechasContainer_${newIndex}"></div>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('telefono', ${newIndex})"><i class="bi bi-telephone-plus"></i> Teléfono</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('email', ${newIndex})"><i class="bi bi-envelope-plus"></i> Email</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('url', ${newIndex})"><i class="bi bi-link-45deg"></i> Enlace URL</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('servicio', ${newIndex})"><i class="bi bi-card-text"></i> Servicio</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add" onclick="addDynamicField('fecha', ${newIndex})"><i class="bi bi-calendar-plus"></i> Fecha</button>
                             <button type="button" class="btn btn-danger btn-sm float-end" onclick="this.closest('.pago-item').remove(); calcularTodosLosTotales();"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>`;
@@ -328,18 +313,15 @@
             window.addDynamicField = function(type, pagoId) {
                 const timestamp = Date.now();
                 let container, newFieldHtml;
-                switch(type) {
-                    case 'telefono':
-                        container = document.getElementById(`telefonosContainer_${pagoId}`);
-                        newFieldHtml = `<div class="input-group mb-2"><select class="input-group-text" name="pagos[${pagoId}][telefonos][${timestamp}][tipo]"><option>WHATSAPP</option><option>PERSONAL</option><option>EMPRESA</option></select><input type="text" class="form-control" placeholder="Código País" name="pagos[${pagoId}][telefonos][${timestamp}][codigo]"><input type="tel" class="form-control" placeholder="Número" name="pagos[${pagoId}][telefonos][${timestamp}][numero]"><input type="text" class="form-control" placeholder="Contacto/Empresa" name="pagos[${pagoId}][telefonos][${timestamp}][contacto]"><button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button></div>`;
-                        break;
-                    // ... (otros casos como email, url, etc. permanecen igual)
+                if (type === 'telefono') {
+                    container = document.getElementById(`telefonosContainer_${pagoId}`);
+                    newFieldHtml = `<div class="input-group mb-2"><select class="input-group-text" name="pagos[${pagoId}][telefonos][${timestamp}][tipo]"><option>WHATSAPP</option><option>PERSONAL</option><option>EMPRESA</option></select><input type="text" class="form-control" placeholder="Código País" name="pagos[${pagoId}][telefonos][${timestamp}][codigo]"><input type="tel" class="form-control" placeholder="Número" name="pagos[${pagoId}][telefonos][${timestamp}][numero]"><input type="text" class="form-control" placeholder="Contacto/Empresa" name="pagos[${pagoId}][telefonos][${timestamp}][contacto]"><button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button></div>`;
+                    if (container) container.insertAdjacentHTML('beforeend', newFieldHtml);
                 }
-                if (container) container.insertAdjacentHTML('beforeend', newFieldHtml);
             }
 
             function formatCurrency(value, currency = 'USD') {
-                const options = { style: 'currency', currency: currency, minimumFractionDigits: 2, maximumFractionDigits: 2 };
+                const options = { style: 'currency', currency: currency, minimumFractionDigits: 0, maximumFractionDigits: 0 };
                 if (isNaN(value) || !isFinite(value)) value = 0;
                 return new Intl.NumberFormat('es-CR', options).format(value);
             }
@@ -384,12 +366,6 @@
                 document.getElementById('excedenteIndividualCRC').textContent = formatCurrency(excedenteIndividualCRC, 'CRC');
             }
             
-            // Si no hay pagos existentes, agrega uno nuevo por defecto
-            if (document.querySelectorAll('.pago-item').length === 0) {
-                addPago();
-            }
-
-            // Llama al cálculo inicial para mostrar los totales correctos al cargar la página
             calcularTodosLosTotales();
         });
     </script>

@@ -3,7 +3,7 @@
 
 import os
 import json
-from decimal import Decimal
+# Se elimina la importación de Decimal ya que no se usará
 from datetime import datetime
 from io import BytesIO
 from flask import (Blueprint, render_template, request, redirect, url_for,
@@ -29,21 +29,22 @@ VIAJES_DB = [
         "id": "1",
         "nombre_viaje": "Aventura en Bocas del Toro",
         "pais": "Panamá",
-        "flyer_url": "static/uploads/intern_flyers/panama_flyer_ejemplo.jpg",
+        "flyer_url": "uploads/intern_flyers/panama_flyer_ejemplo.jpg",
         "fecha_viaje": "2024-12-15",
         "fecha_regreso": "2024-12-22",
         "cantidad_dias": 8,
-        "precio_viaje_usd": Decimal("1250.00"),
+        # CORRECCIÓN: Se usan números enteros o flotantes en lugar de Decimal
+        "precio_viaje_usd": 1250,
         "capacidad_sg": 20,
         "capacidad_cg": 25,
         "tipo_moneda_base": "USD",
-        "tipo_cambio_a_crc": Decimal("520.50"),
+        "tipo_cambio_a_crc": 520,
         "pagos_y_servicios": [
             {
                 "tipo_pago": "Estadía",
                 "nombre_contacto": "Hotel Mar y Sol",
                 "cantidad_dias_evento": "5",
-                "precio": "100.00",
+                "precio": "100",
                 "poliza": "Si",
                 "telefonos": [
                     {"tipo": "WHATSAPP", "codigo": "+507", "numero": "1234-5678", "contacto": "Recepción"}
@@ -75,34 +76,32 @@ def crear_intern():
     global next_id
     if request.method == 'POST':
         flyer_filename = None
+        flyer_url_for_db = None
+
         if 'flyer' in request.files:
             file = request.files['flyer']
             if file and file.filename != '' and allowed_file(file.filename):
                 flyer_filename = secure_filename(file.filename)
                 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
                 file.save(os.path.join(UPLOAD_FOLDER, flyer_filename))
+                flyer_url_for_db = f"uploads/intern_flyers/{flyer_filename}"
 
-        # --- LÓGICA COMPLETA PARA PROCESAR PAGOS DINÁMICOS ---
         pagos_data = {}
         for key, value in request.form.items():
             if key.startswith('pagos['):
                 parts = key.replace(']', '').split('[')
                 pago_index = parts[1]
-                field_name = parts[2]
-                
                 if pago_index not in pagos_data:
                     pagos_data[pago_index] = {}
-                
-                if len(parts) > 3: # Maneja campos anidados como teléfonos
-                    nested_type = parts[2]
-                    nested_id = parts[3]
-                    nested_field_name = parts[4]
+                if len(parts) > 3:
+                    nested_type, nested_id, nested_field = parts[2], parts[3], parts[4]
                     if nested_type not in pagos_data[pago_index]:
                         pagos_data[pago_index][nested_type] = {}
                     if nested_id not in pagos_data[pago_index][nested_type]:
                         pagos_data[pago_index][nested_type][nested_id] = {}
-                    pagos_data[pago_index][nested_type][nested_id][nested_field_name] = value
+                    pagos_data[pago_index][nested_type][nested_id][nested_field] = value
                 else:
+                    field_name = parts[2]
                     pagos_data[pago_index][field_name] = value
         
         pagos_procesados = []
@@ -112,33 +111,34 @@ def crear_intern():
                     pago_info[nested_type] = list(pago_info[nested_type].values())
             pagos_procesados.append(pago_info)
         
-        # --- LÓGICA DE CÁLCULO REAL BASADA EN LOS PAGOS ---
-        total_neto_usd = Decimal('0.0')
+        # CORRECCIÓN: Se usan flotantes para los cálculos
+        total_neto_usd = 0.0
         for pago in pagos_procesados:
-            cantidad = Decimal(pago.get('cantidad_dias_evento', '0'))
-            precio = Decimal(pago.get('precio', '0'))
+            cantidad = float(pago.get('cantidad_dias_evento', '0'))
+            precio = float(pago.get('precio', '0'))
             total_neto_usd += cantidad * precio
         
-        capacidad_sg = Decimal(request.form.get('capacidad_sg', '1'))
-        precio_individual_usd = total_neto_usd / capacidad_sg if capacidad_sg > 0 else Decimal('0.0')
+        capacidad_sg = float(request.form.get('capacidad_sg', '1'))
+        precio_individual_usd = total_neto_usd / capacidad_sg if capacidad_sg > 0 else 0.0
 
         nuevo_viaje = {
             "id": str(next_id),
             "nombre_viaje": request.form.get('nombre_viaje'),
             "pais": request.form.get('pais'),
-            "flyer_url": os.path.join('uploads', 'intern_flyers', flyer_filename) if flyer_filename else None,
+            "flyer_url": flyer_url_for_db,
             "fecha_viaje": request.form.get('fecha_viaje'),
             "fecha_regreso": request.form.get('fecha_regreso'),
             "cantidad_dias": request.form.get('cantidad_dias', type=int),
-            "precio_viaje_usd": request.form.get('precio_viaje', type=Decimal),
+            # CORRECCIÓN: Se convierte a float
+            "precio_viaje_usd": request.form.get('precio_viaje', type=float),
             "capacidad_sg": request.form.get('capacidad_sg', type=int),
             "capacidad_cg": request.form.get('capacidad_cg', type=int),
             "tipo_moneda_base": request.form.get('tipo_moneda'),
-            "tipo_cambio_a_crc": request.form.get('tipo_cambio', type=Decimal),
+            "tipo_cambio_a_crc": request.form.get('tipo_cambio', type=float),
             "pagos_y_servicios": pagos_procesados,
             "calculos": {
-                "total_neto_usd": float(total_neto_usd),
-                "precio_individual_usd": float(precio_individual_usd)
+                "total_neto_usd": total_neto_usd,
+                "precio_individual_usd": precio_individual_usd
             }
         }
         
@@ -162,12 +162,77 @@ def detalle_intern(viaje_id):
 @intern_bp.route('/<viaje_id>/editar', methods=['GET', 'POST'])
 def editar_intern(viaje_id):
     viaje = find_viaje_by_id(viaje_id)
-    if not viaje: abort(404)
+    if not viaje:
+        abort(404)
+
     if request.method == 'POST':
-        # Aquí iría la lógica completa para actualizar el viaje
-        flash(f'Viaje "{viaje["nombre_viaje"]}" actualizado.', 'success')
+        viaje['nombre_viaje'] = request.form.get('nombre_viaje')
+        viaje['pais'] = request.form.get('pais')
+        viaje['fecha_viaje'] = request.form.get('fecha_viaje')
+        viaje['fecha_regreso'] = request.form.get('fecha_regreso')
+        viaje['cantidad_dias'] = request.form.get('cantidad_dias', type=int)
+        # CORRECCIÓN: Se convierte a float
+        viaje['precio_viaje_usd'] = request.form.get('precio_viaje', type=float)
+        viaje['capacidad_sg'] = request.form.get('capacidad_sg', type=int)
+        viaje['capacidad_cg'] = request.form.get('capacidad_cg', type=int)
+        viaje['tipo_moneda_base'] = request.form.get('tipo_moneda')
+        viaje['tipo_cambio_a_crc'] = request.form.get('tipo_cambio', type=float)
+
+        if 'flyer' in request.files:
+            file = request.files['flyer']
+            if file and file.filename != '' and allowed_file(file.filename):
+                flyer_filename = secure_filename(file.filename)
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                file.save(os.path.join(UPLOAD_FOLDER, flyer_filename))
+                viaje['flyer_url'] = f"uploads/intern_flyers/{flyer_filename}"
+
+        pagos_data = {}
+        for key, value in request.form.items():
+            if key.startswith('pagos['):
+                parts = key.replace(']', '').split('[')
+                pago_index = parts[1]
+                if pago_index not in pagos_data:
+                    pagos_data[pago_index] = {}
+                if len(parts) > 3:
+                    nested_type, nested_id, nested_field = parts[2], parts[3], parts[4]
+                    if nested_type not in pagos_data[pago_index]:
+                        pagos_data[pago_index][nested_type] = {}
+                    if nested_id not in pagos_data[pago_index][nested_type]:
+                        pagos_data[pago_index][nested_type][nested_id] = {}
+                    pagos_data[pago_index][nested_type][nested_id][nested_field] = value
+                else:
+                    field_name = parts[2]
+                    pagos_data[pago_index][field_name] = value
+        
+        pagos_procesados = []
+        for index, pago_info in pagos_data.items():
+            for nested_type in ['telefonos', 'emails', 'urls', 'servicios', 'fechas']:
+                if nested_type in pago_info and isinstance(pago_info[nested_type], dict):
+                    pago_info[nested_type] = list(pago_info[nested_type].values())
+            pagos_procesados.append(pago_info)
+        
+        viaje['pagos_y_servicios'] = pagos_procesados
+
+        # CORRECCIÓN: Se usan flotantes para los cálculos
+        total_neto_usd = 0.0
+        for pago in pagos_procesados:
+            cantidad = float(pago.get('cantidad_dias_evento', '0'))
+            precio = float(pago.get('precio', '0'))
+            total_neto_usd += cantidad * precio
+        
+        capacidad_sg = float(viaje.get('capacidad_sg', '1'))
+        precio_individual_usd = total_neto_usd / capacidad_sg if capacidad_sg > 0 else 0.0
+        
+        viaje['calculos'] = {
+            "total_neto_usd": total_neto_usd,
+            "precio_individual_usd": precio_individual_usd
+        }
+        
+        flash(f'El viaje "{viaje["nombre_viaje"]}" ha sido actualizado.', 'success')
         return redirect(url_for('intern.detalle_intern', viaje_id=viaje_id))
+
     return render_template('editar_intern.html', viaje=viaje)
+
 
 @intern_bp.route('/<viaje_id>/borrar', methods=['POST'])
 def borrar_intern(viaje_id):
@@ -215,7 +280,8 @@ def exportar_jpg(viaje_id):
     viaje = find_viaje_by_id(viaje_id)
     if not viaje: abort(404)
     flyer_path = viaje.get('flyer_url')
-    if not flyer_path or not os.path.exists(flyer_path):
+    physical_path = os.path.join('static', flyer_path) if flyer_path else None
+    if not physical_path or not os.path.exists(physical_path):
         flash('Este viaje no tiene un flyer para exportar.', 'warning')
         return redirect(url_for('intern.detalle_intern', viaje_id=viaje_id))
-    return send_file(flyer_path, as_attachment=True)
+    return send_file(physical_path, as_attachment=True)

@@ -18,7 +18,7 @@
             box-shadow: none !important;
         }
         .card-header {
-            background-color: #e9ecef;
+            background-color: #ffc107;
             font-weight: 500;
         }
         .flyer-img {
@@ -43,9 +43,6 @@
         .badge {
             font-size: 1em;
         }
-        .pago-card {
-            background-color: #fff;
-        }
         .sub-list {
             list-style-type: none;
             padding-left: 1rem;
@@ -53,6 +50,57 @@
         .sub-list li {
             margin-bottom: 0.25rem;
         }
+        .pago-item {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .pago-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        /* Estilos para los botones flotantes (FAB) */
+        .fab-container-back {
+            position: fixed;
+            bottom: 75px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .fab-container-actions {
+            position: fixed;
+            bottom: 75px;
+            right: 20px;
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .fab-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+        }
+        .fab-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+        .fab-button-back { background-color: #007bff; } /* Primary Blue */
+        .fab-button-edit { background-color: #ffc107; color: black; } /* Warning Yellow */
+        .fab-button-delete { background-color: #dc3545; } /* Danger Red */
+        .fab-button-pdf { background-color: #6f42c1; } /* Purple */
+        .fab-button-jpg { background-color: #fd7e14; } /* Orange */
+        .fab-button-txt { background-color: #17a2b8; } /* Info */
+        .fab-button-excel { background-color: #28a745; } /* Green */
     </style>
 {% endblock %}
 
@@ -64,30 +112,12 @@
             <h1 class="mb-0">{{ viaje.nombre_viaje }}</h1>
             <p class="text-muted fs-5">Destino: {{ viaje.pais }}</p>
         </div>
-        <div class="btn-toolbar" role="toolbar">
-            <div class="btn-group me-2 mb-2" role="group">
-                <a href="{{ url_for('intern.ver_intern') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
-                <a href="{{ url_for('intern.editar_intern', viaje_id=viaje.id) }}" class="btn btn-outline-primary"><i class="fas fa-pencil-alt"></i> Editar</a>
-            </div>
-            <div class="btn-group mb-2" role="group">
-                <button id="btnGroupDrop1" type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-download"></i> Exportar
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_pdf', viaje_id=viaje.id) }}">PDF</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_txt', viaje_id=viaje.id) }}">TXT</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_jpg', viaje_id=viaje.id) }}">JPG</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('intern.exportar_excel', viaje_id=viaje.id) }}">Excel</a></li>
-                </ul>
-            </div>
-        </div>
     </div>
 
     <!-- Fila Principal: Flyer y Datos Generales -->
     <div class="row g-4 mb-4">
         <div class="col-md-5">
-            {# CORRECCIÓN APLICADA: Se usa .replace() para normalizar la ruta de la imagen. #}
-            <img src="{{ url_for('static', filename=viaje.flyer_url.replace('static/', '', 1).replace('\\', '/')) if viaje.flyer_url and viaje.flyer_url != 'None' else 'https://placehold.co/800x600/cccccc/ffffff?text=Sin+Imagen' }}" 
+            <img src="{{ url_for('static', filename=viaje.flyer_url) if viaje.flyer_url and viaje.flyer_url != 'None' else 'https://placehold.co/800x600/cccccc/ffffff?text=Sin+Imagen' }}" 
                  alt="Flyer para {{ viaje.nombre_viaje }}" 
                  class="flyer-img">
         </div>
@@ -99,8 +129,8 @@
                     <li class="list-group-item"><i class="far fa-clock text-info"></i><strong>Duración:</strong> <span class="badge bg-light text-dark">{{ viaje.cantidad_dias }} Días</span></li>
                     <li class="list-group-item"><i class="fas fa-users text-success"></i><strong>Capacidad S/G:</strong> <span>{{ viaje.capacidad_sg }} personas</span></li>
                     <li class="list-group-item"><i class="fas fa-user-check text-success"></i><strong>Capacidad C/G:</strong> <span>{{ viaje.capacidad_cg }} personas</span></li>
-                    <li class="list-group-item"><i class="fas fa-money-bill-wave text-warning"></i><strong>Precio de Venta:</strong> <span class="badge bg-warning text-dark">${{ "{:,.2f}".format(viaje.precio_viaje_usd) }} USD</span></li>
-                    <li class="list-group-item"><i class="fas fa-exchange-alt text-secondary"></i><strong>Tipo de Cambio:</strong> <span>₡{{ "{:,.2f}".format(viaje.tipo_cambio_a_crc) }}</span></li>
+                    <li class="list-group-item"><i class="fas fa-money-bill-wave text-warning"></i><strong>Precio de Venta:</strong> <span class="badge bg-warning text-dark">${{ "{:,.0f}".format(viaje.precio_viaje_usd|int) }} USD</span></li>
+                    <li class="list-group-item"><i class="fas fa-exchange-alt text-secondary"></i><strong>Tipo de Cambio:</strong> <span>₡{{ "{:,.0f}".format(viaje.tipo_cambio_a_crc|int) }}</span></li>
                 </ul>
             </div>
         </div>
@@ -114,16 +144,15 @@
                 <div class="col-md-6">
                     <h5>Costos y Precios</h5>
                     <ul class="list-group">
-                        <li class="list-group-item"><strong>Total Neto:</strong> <span class="badge bg-primary">${{ "{:,.2f}".format(viaje.calculos.get('total_neto_usd', 0)) }} USD</span></li>
+                        <li class="list-group-item"><strong>Total Neto:</strong> <span class="badge bg-primary">${{ "{:,.0f}".format(viaje.calculos.get('total_neto_usd', 0)|int) }} USD</span></li>
                         {% if viaje.calculos.get('precio_individual_usd', 0) > 0 %}
-                        <li class="list-group-item"><strong>Precio Individual:</strong> <span class="badge bg-info text-dark">${{ "{:,.2f}".format(viaje.calculos.get('precio_individual_usd', 0)) }} USD</span></li>
+                        <li class="list-group-item"><strong>Precio Individual:</strong> <span class="badge bg-info text-dark">${{ "{:,.0f}".format(viaje.calculos.get('precio_individual_usd', 0)|int) }} USD</span></li>
                         {% endif %}
                     </ul>
                 </div>
                 <div class="col-md-6">
                     <h5>Excedente (Ganancia)</h5>
                     <ul class="list-group">
-                        <!-- Aquí puedes añadir la lógica para mostrar los excedentes si los calculas en el backend -->
                     </ul>
                 </div>
             </div>
@@ -135,14 +164,14 @@
         <div class="card-header">Detalle de Pagos y Servicios Registrados</div>
         <div class="card-body">
             {% for pago in viaje.pagos_y_servicios %}
-            <div class="card pago-card mb-3">
-                <div class="card-header d-flex justify-content-between">
-                    <span><strong>Tipo:</strong> {{ pago.get('tipo_pago', 'N/A') }}</span>
-                    <span><strong>Total:</strong> ${{ "{:,.2f}".format(pago.get('cantidad_dias_evento', '0')|float * pago.get('precio', '0')|float) }} USD</span>
+            <div class="pago-item">
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Tipo: {{ pago.get('tipo_pago', 'N/A') }}</span>
+                    <span>Total: ${{ "{:,.0f}".format((pago.get('cantidad_dias_evento', '0')|float * pago.get('precio', '0')|float)|int) }} USD</span>
                 </div>
-                <div class="card-body">
-                    <p><strong>Contacto:</strong> {{ pago.get('nombre_contacto', 'N/A') }}</p>
-                    <p><strong>Póliza:</strong> {{ pago.get('poliza', 'N/A') }}</p>
+                <div class="mt-2">
+                    <p class="mb-1"><strong>Contacto:</strong> {{ pago.get('nombre_contacto', 'N/A') }}</p>
+                    <p class="mb-1"><strong>Póliza:</strong> {{ pago.get('poliza', 'N/A') }}</p>
                     
                     {% if pago.get('telefonos') %}
                     <div class="mt-2">
@@ -159,6 +188,56 @@
             {% else %}
             <p class="text-muted">No hay pagos o servicios registrados para este viaje.</p>
             {% endfor %}
+        </div>
+    </div>
+</div> <!-- Cierre de .container.my-5 -->
+
+<!-- Botones flotantes (FABs) -->
+<div class="fab-container-back">
+    <a href="{{ url_for('intern.ver_intern') }}" class="fab-button fab-button-back" title="Volver">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+</div>
+
+<div class="fab-container-actions">
+    <a href="{{ url_for('intern.editar_intern', viaje_id=viaje.id) }}" class="fab-button fab-button-edit" title="Editar Viaje">
+        <i class="fas fa-pencil-alt"></i>
+    </a>
+    <!-- CORRECCIÓN: Se añade el botón de eliminar que abre el modal -->
+    <a href="#" class="fab-button fab-button-delete" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+        <i class="fas fa-trash-alt"></i>
+    </a>
+    <a href="{{ url_for('intern.exportar_excel', viaje_id=viaje.id) }}" class="fab-button fab-button-excel" title="Exportar a Excel">
+        <i class="fas fa-file-excel"></i>
+    </a>
+    <a href="{{ url_for('intern.exportar_pdf', viaje_id=viaje.id) }}" class="fab-button fab-button-pdf" title="Exportar a PDF">
+        <i class="fas fa-file-pdf"></i>
+    </a>
+    <a href="{{ url_for('intern.exportar_jpg', viaje_id=viaje.id) }}" class="fab-button fab-button-jpg" title="Exportar a JPG">
+        <i class="fas fa-file-image"></i>
+    </a>
+    <a href="{{ url_for('intern.exportar_txt', viaje_id=viaje.id) }}" class="fab-button fab-button-txt" title="Exportar a TXT">
+        <i class="fas fa-file-alt"></i>
+    </a>
+</div>
+
+<!-- CORRECCIÓN: Se añade el Modal de Confirmación para Eliminar -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar el viaje "{{ viaje.nombre_viaje }}"? Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('intern.borrar_intern', viaje_id=viaje.id) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
