@@ -1,11 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}Detalle del Viaje{% endblock %}
 {% block head_content %}
-{# 
-  NOTA: Asegúrate de que tu 'base.html' esté cargando Font Awesome para que los íconos se muestren correctamente.
-  Puedes añadir esta línea en el <head> de tu base.html si no la tienes:
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-#}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body {
             background-color: #f8f9fa;
@@ -136,23 +133,72 @@
         </div>
     </div>
 
+    <!-- Lógica de Cálculo Replicada -->
+    {% set total_neto_usd = namespace(value=0) %}
+    {% set precio_coords_usd = namespace(value=0) %}
+
+    {% for pago in viaje.pagos_y_servicios %}
+        {% set tipo_pago = pago.get('tipo_pago', '') %}
+        {% set precio_grupal = pago.get('precio_grupal', '0')|float %}
+        
+        {% if tipo_pago == 'Aéreo' %}
+            {% set precio_ida = pago.get('precio_ida', '0')|float %}
+            {% set precio_vuelta = pago.get('precio_vuelta', '0')|float %}
+            {% set precio_impuesto = pago.get('precio_impuesto', '0')|float if pago.get('ivi') == 'No' else 0 %}
+            {% set total_aereo_base = precio_ida + precio_vuelta + precio_impuesto %}
+            {% set total_neto_persona_aereo = (total_aereo_base * viaje.capacidad_cg) / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
+            {% set total_neto_usd.value = total_neto_usd.value + total_neto_persona_aereo %}
+            {% set precio_coords_usd.value = precio_coords_usd.value + total_neto_persona_aereo %}
+        {% elif precio_grupal > 0 %}
+            {% set cantidad_grupal = pago.get('cantidad_grupal', '0')|float %}
+            {% set total_individual = 0 %}
+            {% if cantidad_grupal > 0 %}
+                {% set total_individual = precio_grupal * cantidad_grupal %}
+            {% else %}
+                {% set total_individual = (precio_grupal * viaje.capacidad_cg) / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
+            {% endif %}
+            {% set neto_pp = total_individual / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
+            {% set total_neto_usd.value = total_neto_usd.value + total_individual %}
+            {% set precio_coords_usd.value = precio_coords_usd.value + neto_pp %}
+        {% else %}
+            {% set cantidad = pago.get('cantidad_dias_evento', '0')|float %}
+            {% set precio = pago.get('precio', '0')|float %}
+            {% set total_regular = (cantidad * precio * viaje.capacidad_cg) / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
+            {% set total_neto_usd.value = total_neto_usd.value + total_regular %}
+            {% set precio_coords_usd.value = precio_coords_usd.value + total_regular %}
+        {% endif %}
+    {% endfor %}
+
+    {% set excedente_pp_usd = (viaje.precio_viaje_usd - precio_coords_usd.value) %}
+    {% set excedente_pp_crc = excedente_pp_usd * viaje.tipo_cambio_a_crc %}
+    {% set excedente_general_usd = excedente_pp_usd * viaje.capacidad_sg %}
+    {% set excedente_general_crc = excedente_general_usd * viaje.tipo_cambio_a_crc %}
+    {% set precio_pp_c_guias_usd = precio_coords_usd.value %}
+    {% set precio_pp_c_guias_crc = precio_pp_c_guias_usd * viaje.tipo_cambio_a_crc %}
+    {% set precio_general_c_guias_usd = precio_pp_c_guias_usd * viaje.capacidad_sg %}
+    {% set precio_general_c_guias_crc = precio_general_c_guias_usd * viaje.tipo_cambio_a_crc %}
+
     <!-- Resumen Financiero -->
     <div class="card mb-4">
         <div class="card-header">Resumen Financiero</div>
         <div class="card-body">
             <div class="row g-4">
                 <div class="col-md-6">
-                    <h5>Costos y Precios</h5>
+                    <h5>Precios</h5>
                     <ul class="list-group">
-                        <li class="list-group-item"><strong>Total Neto:</strong> <span class="badge bg-primary">${{ "{:,.0f}".format(viaje.calculos.get('total_neto_usd', 0)|int) }} USD</span></li>
-                        {% if viaje.calculos.get('precio_individual_usd', 0) > 0 %}
-                        <li class="list-group-item"><strong>Precio Individual:</strong> <span class="badge bg-info text-dark">${{ "{:,.0f}".format(viaje.calculos.get('precio_individual_usd', 0)|int) }} USD</span></li>
-                        {% endif %}
+                        <li class="list-group-item"><strong>Precio P.P. USD C/Guias:</strong> <span class="badge bg-info text-dark">${{ "{:,.0f}".format(precio_pp_c_guias_usd|int) }} USD</span></li>
+                        <li class="list-group-item"><strong>Precio General USD C/Guias:</strong> <span class="badge bg-info text-dark">${{ "{:,.0f}".format(precio_general_c_guias_usd|int) }} USD</span></li>
+                        <li class="list-group-item"><strong>Precio P.P. CRC C/Guia:</strong> <span class="badge bg-info text-dark">₡{{ "{:,.0f}".format(precio_pp_c_guias_crc|int) }} CRC</span></li>
+                        <li class="list-group-item"><strong>Precio General CRC C/Guias:</strong> <span class="badge bg-info text-dark">₡{{ "{:,.0f}".format(precio_general_c_guias_crc|int) }} CRC</span></li>
                     </ul>
                 </div>
                 <div class="col-md-6">
                     <h5>Excedente (Ganancia)</h5>
                     <ul class="list-group">
+                        <li class="list-group-item"><strong>Excedente P.P. (USD):</strong> <span class="badge bg-success">${{ "{:,.0f}".format(excedente_pp_usd|int) }} USD</span></li>
+                        <li class="list-group-item"><strong>Excedente P.P. (CRC):</strong> <span class="badge bg-success">₡{{ "{:,.0f}".format(excedente_pp_crc|int) }} CRC</span></li>
+                        <li class="list-group-item"><strong>Excedente General (USD):</strong> <span class="badge bg-warning text-dark">${{ "{:,.0f}".format(excedente_general_usd|int) }} USD</span></li>
+                        <li class="list-group-item"><strong>Excedente General (CRC):</strong> <span class="badge bg-warning text-dark">₡{{ "{:,.0f}".format(excedente_general_crc|int) }} CRC</span></li>
                     </ul>
                 </div>
             </div>
@@ -166,19 +212,67 @@
             {% for pago in viaje.pagos_y_servicios %}
             <div class="pago-item">
                 <div class="d-flex justify-content-between fw-bold">
-                    <span>Tipo: {{ pago.get('tipo_pago', 'N/A') }}</span>
-                    <span>Total: ${{ "{:,.0f}".format((pago.get('cantidad_dias_evento', '0')|float * pago.get('precio', '0')|float)|int) }} USD</span>
+                    <span>Tipo: {{ pago.get('tipo_pago') }}</span>
                 </div>
                 <div class="mt-2">
-                    <p class="mb-1"><strong>Contacto:</strong> {{ pago.get('nombre_contacto', 'N/A') }}</p>
-                    <p class="mb-1"><strong>Póliza:</strong> {{ pago.get('poliza', 'N/A') }}</p>
+                    {% if pago.get('nombre_contacto') %}
+                    <p class="mb-1"><strong>Contacto:</strong> {{ pago.get('nombre_contacto') }}</p>
+                    {% endif %}
+                    {% if pago.get('tipo_pago') == 'Aéreo' %}
+                        {% if pago.get('aerolinea') %}
+                        <p class="mb-1"><strong>Aerolínea:</strong> {{ pago.get('aerolinea') }}</p>
+                        {% endif %}
+                        {% if pago.get('precio_ida', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Precio IDA:</strong> ${{ "{:,.0f}".format(pago.get('precio_ida', '0')|float) }}</p>
+                        {% endif %}
+                        {% if pago.get('precio_vuelta', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Precio Vuelta:</strong> ${{ "{:,.0f}".format(pago.get('precio_vuelta', '0')|float) }}</p>
+                        {% endif %}
+                        {% if pago.get('ivi') %}
+                        <p class="mb-1"><strong>I.V.I:</strong> {{ pago.get('ivi') }}</p>
+                        {% endif %}
+                        {% if pago.get('ivi') == 'No' and pago.get('precio_impuesto', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Precio Impuesto:</strong> ${{ "{:,.0f}".format(pago.get('precio_impuesto', '0')|float) }}</p>
+                        {% endif %}
+                    {% else %}
+                        {% if pago.get('cantidad_dias_evento') and pago.get('cantidad_dias_evento')|string|trim != '' %}
+                        <p class="mb-1"><strong>Cantidad de Días/Eventos:</strong> {{ pago.get('cantidad_dias_evento') }}</p>
+                        {% endif %}
+                        {% if pago.get('precio', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Precio USD | Día P.P.:</strong> ${{ "{:,.0f}".format(pago.get('precio', '0')|float) }}</p>
+                        {% endif %}
+                        {% if pago.get('total_regular', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Total USD P.P.:</strong> ${{ "{:,.0f}".format(pago.get('total_regular', '0')|float) }}</p>
+                        {% endif %}
+                        {% if pago.get('precio_grupal', '0')|float > 0 or pago.get('cantidad_grupal') %}
+                        <hr>
+                        {% endif %}
+                        {% if pago.get('precio_grupal', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Precio Grupal:</strong> ${{ "{:,.0f}".format(pago.get('precio_grupal', '0')|float) }}</p>
+                        {% endif %}
+                        {% if pago.get('cantidad_grupal') and pago.get('cantidad_grupal')|string|trim != '' %}
+                        <p class="mb-1"><strong>Cantidad:</strong> {{ pago.get('cantidad_grupal') }}</p>
+                        {% endif %}
+                        {% if pago.get('total_individual', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Total Grupal USD:</strong> ${{ "{:,.0f}".format(pago.get('total_individual', '0')|float) }}</p>
+                        {% endif %}
+                        {% if pago.get('total_grupal_cg', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Total Grupal C/G:</strong> ${{ "{:,.0f}".format(pago.get('total_grupal_cg', '0')|float) }}</p>
+                        {% endif %}
+                        {% if pago.get('neto_pp', '0')|float > 0 %}
+                        <p class="mb-1"><strong>Neto P.P.:</strong> ${{ "{:,.0f}".format(pago.get('neto_pp', '0')|float) }}</p>
+                        {% endif %}
+                    {% endif %}
+                    {% if pago.get('poliza') and pago.get('poliza') != 'No Aplica' %}
+                    <p class="mb-1"><strong>Póliza:</strong> {{ pago.get('poliza') }}</p>
+                    {% endif %}
                     
                     {% if pago.get('telefonos') %}
                     <div class="mt-2">
                         <h6><i class="fas fa-phone-alt text-muted"></i> Teléfonos:</h6>
                         <ul class="sub-list">
                             {% for tel in pago.get('telefonos', []) %}
-                            <li><strong>{{ tel.get('tipo', 'N/A') }}:</strong> {{ tel.get('codigo', '') }} {{ tel.get('numero', 'N/A') }} ({{ tel.get('contacto', 'N/A') }})</li>
+                            <li><strong>{{ tel.get('tipo', '') }}:</strong> {{ tel.get('codigo', '') }} {{ tel.get('numero', '') }} ({{ tel.get('contacto', '') }})</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -203,7 +297,6 @@
     <a href="{{ url_for('intern.editar_intern', viaje_id=viaje.id) }}" class="fab-button fab-button-edit" title="Editar Viaje">
         <i class="fas fa-pencil-alt"></i>
     </a>
-    <!-- CORRECCIÓN: Se añade el botón de eliminar que abre el modal -->
     <a href="#" class="fab-button fab-button-delete" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
         <i class="fas fa-trash-alt"></i>
     </a>
@@ -221,7 +314,7 @@
     </a>
 </div>
 
-<!-- CORRECCIÓN: Se añade el Modal de Confirmación para Eliminar -->
+<!-- Modal de Confirmación para Eliminar -->
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">

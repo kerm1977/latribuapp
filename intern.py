@@ -24,40 +24,9 @@ UPLOAD_FOLDER = 'static/uploads/intern_flyers'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 # --- SIMULACIÓN DE BASE DE DATOS ---
-VIAJES_DB = [
-    {
-        "id": "1",
-        "nombre_viaje": "Aventura en Bocas del Toro",
-        "pais": "Panamá",
-        "flyer_url": "uploads/intern_flyers/panama_flyer_ejemplo.jpg",
-        "fecha_viaje": "2024-12-15",
-        "fecha_regreso": "2024-12-22",
-        "cantidad_dias": 8,
-        # CORRECCIÓN: Se usan números enteros o flotantes en lugar de Decimal
-        "precio_viaje_usd": 1250,
-        "capacidad_sg": 20,
-        "capacidad_cg": 25,
-        "tipo_moneda_base": "USD",
-        "tipo_cambio_a_crc": 520,
-        "pagos_y_servicios": [
-            {
-                "tipo_pago": "Estadía",
-                "nombre_contacto": "Hotel Mar y Sol",
-                "cantidad_dias_evento": "5",
-                "precio": "100",
-                "poliza": "Si",
-                "telefonos": [
-                    {"tipo": "WHATSAPP", "codigo": "+507", "numero": "1234-5678", "contacto": "Recepción"}
-                ]
-            }
-        ],
-        "calculos": {
-            "total_neto_usd": 500.0,
-            "precio_individual_usd": 25.0
-        }
-    }
-]
-next_id = 2
+# Se inicializa la base de datos como una lista vacía para no tener datos de ejemplo.
+VIAJES_DB = []
+next_id = 1
 
 # --- FUNCIONES AUXILIARES ---
 def allowed_file(filename):
@@ -111,14 +80,47 @@ def crear_intern():
                     pago_info[nested_type] = list(pago_info[nested_type].values())
             pagos_procesados.append(pago_info)
         
-        # CORRECCIÓN: Se usan flotantes para los cálculos
         total_neto_usd = 0.0
+        capacidad_sg_str = request.form.get('capacidad_sg', '1')
+        capacidad_sg = float(capacidad_sg_str) if capacidad_sg_str else 1.0
+        capacidad_cg_str = request.form.get('capacidad_cg', '1')
+        capacidad_cg = float(capacidad_cg_str) if capacidad_cg_str else 1.0
+
         for pago in pagos_procesados:
-            cantidad = float(pago.get('cantidad_dias_evento', '0'))
-            precio = float(pago.get('precio', '0'))
-            total_neto_usd += cantidad * precio
+            tipo_pago = pago.get('tipo_pago')
+            
+            if tipo_pago == 'Aéreo':
+                precio_ida_str = pago.get('precio_ida', '0')
+                precio_ida = float(precio_ida_str) if precio_ida_str else 0.0
+                
+                precio_vuelta_str = pago.get('precio_vuelta', '0')
+                precio_vuelta = float(precio_vuelta_str) if precio_vuelta_str else 0.0
+                
+                precio_impuesto = 0.0
+                if pago.get('ivi') == 'No':
+                    precio_impuesto_str = pago.get('precio_impuesto', '0')
+                    precio_impuesto = float(precio_impuesto_str) if precio_impuesto_str else 0.0
+                
+                total_aereo_base = precio_ida + precio_vuelta + precio_impuesto
+                total_neto_persona_aereo = (total_aereo_base * capacidad_cg) / capacidad_sg if capacidad_sg > 0 else 0.0
+                total_neto_usd += total_neto_persona_aereo
+
+            else:
+                precio_grupal_str = pago.get('precio_grupal')
+                if precio_grupal_str:
+                    precio_grupal = float(precio_grupal_str)
+                    total_individual = (precio_grupal * capacidad_cg) / capacidad_sg if capacidad_sg > 0 else 0.0
+                    total_neto_usd += total_individual
+                else:
+                    cantidad_str = pago.get('cantidad_dias_evento', '0')
+                    cantidad = float(cantidad_str) if cantidad_str else 0.0
+                    
+                    precio_str = pago.get('precio', '0')
+                    precio = float(precio_str) if precio_str else 0.0
+
+                    total_regular = (cantidad * precio * capacidad_cg) / capacidad_sg if capacidad_sg > 0 else 0.0
+                    total_neto_usd += total_regular
         
-        capacidad_sg = float(request.form.get('capacidad_sg', '1'))
         precio_individual_usd = total_neto_usd / capacidad_sg if capacidad_sg > 0 else 0.0
 
         nuevo_viaje = {
@@ -129,7 +131,6 @@ def crear_intern():
             "fecha_viaje": request.form.get('fecha_viaje'),
             "fecha_regreso": request.form.get('fecha_regreso'),
             "cantidad_dias": request.form.get('cantidad_dias', type=int),
-            # CORRECCIÓN: Se convierte a float
             "precio_viaje_usd": request.form.get('precio_viaje', type=float),
             "capacidad_sg": request.form.get('capacidad_sg', type=int),
             "capacidad_cg": request.form.get('capacidad_cg', type=int),
@@ -171,7 +172,6 @@ def editar_intern(viaje_id):
         viaje['fecha_viaje'] = request.form.get('fecha_viaje')
         viaje['fecha_regreso'] = request.form.get('fecha_regreso')
         viaje['cantidad_dias'] = request.form.get('cantidad_dias', type=int)
-        # CORRECCIÓN: Se convierte a float
         viaje['precio_viaje_usd'] = request.form.get('precio_viaje', type=float)
         viaje['capacidad_sg'] = request.form.get('capacidad_sg', type=int)
         viaje['capacidad_cg'] = request.form.get('capacidad_cg', type=int)
@@ -213,14 +213,44 @@ def editar_intern(viaje_id):
         
         viaje['pagos_y_servicios'] = pagos_procesados
 
-        # CORRECCIÓN: Se usan flotantes para los cálculos
         total_neto_usd = 0.0
+        capacidad_sg = float(viaje.get('capacidad_sg', 1))
+        capacidad_cg = float(viaje.get('capacidad_cg', 1))
+
         for pago in pagos_procesados:
-            cantidad = float(pago.get('cantidad_dias_evento', '0'))
-            precio = float(pago.get('precio', '0'))
-            total_neto_usd += cantidad * precio
+            tipo_pago = pago.get('tipo_pago')
+            
+            if tipo_pago == 'Aéreo':
+                precio_ida_str = pago.get('precio_ida', '0')
+                precio_ida = float(precio_ida_str) if precio_ida_str else 0.0
+                
+                precio_vuelta_str = pago.get('precio_vuelta', '0')
+                precio_vuelta = float(precio_vuelta_str) if precio_vuelta_str else 0.0
+                
+                precio_impuesto = 0.0
+                if pago.get('ivi') == 'No':
+                    precio_impuesto_str = pago.get('precio_impuesto', '0')
+                    precio_impuesto = float(precio_impuesto_str) if precio_impuesto_str else 0.0
+                
+                total_aereo_base = precio_ida + precio_vuelta + precio_impuesto
+                total_neto_persona_aereo = (total_aereo_base * capacidad_cg) / capacidad_sg if capacidad_sg > 0 else 0.0
+                total_neto_usd += total_neto_persona_aereo
+            else:
+                precio_grupal_str = pago.get('precio_grupal')
+                if precio_grupal_str:
+                    precio_grupal = float(precio_grupal_str)
+                    total_individual = (precio_grupal * capacidad_cg) / capacidad_sg if capacidad_sg > 0 else 0.0
+                    total_neto_usd += total_individual
+                else:
+                    cantidad_str = pago.get('cantidad_dias_evento', '0')
+                    cantidad = float(cantidad_str) if cantidad_str else 0.0
+                    
+                    precio_str = pago.get('precio', '0')
+                    precio = float(precio_str) if precio_str else 0.0
+
+                    total_regular = (cantidad * precio * capacidad_cg) / capacidad_sg if capacidad_sg > 0 else 0.0
+                    total_neto_usd += total_regular
         
-        capacidad_sg = float(viaje.get('capacidad_sg', '1'))
         precio_individual_usd = total_neto_usd / capacidad_sg if capacidad_sg > 0 else 0.0
         
         viaje['calculos'] = {
