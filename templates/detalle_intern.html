@@ -1,338 +1,385 @@
-{% extends 'base.html' %}
-{% block title %}Detalle del Viaje{% endblock %}
-{% block head_content %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador, Facturador y Planificador</title>
+    
+    <!-- Tailwind CSS para estilos rápidos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Manifest JSON embebido para la funcionalidad PWA -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkhlcnJhbWllbnRhIGRlIENvdGl6YWNpw7NuIiwKICAic2hvcnRfbmFtZSI6ICJDdWFkcm8gQXBwIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiaHR0cHM6Ly9wbGFjZWhvbGQuY28vMTkyeDE5Mi8zMTgzOTgvZmZmZmZmP3RleHQ9QXBwIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiCiAgICB9LAogICAgewogICAgICAic3JjIjogImh0dHBzOi8vcGxhY2Vob2xkLmNvLzUxMng1MTIvMzE4Mzk4L2ZmZmZmZj90ZXh0PUFwcCIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIgogICAgfQogIF0sCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAidGhlbWVfY29sb3IiOiAiIzMxODM5OCIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZmZmZmZiIKfQo=">
+    
+    <!-- Meta tags para PWA en iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cuadro App">
+
     <style>
+        /* Estilos personalizados y para impresión */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
-            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
         }
-        .container {
-            max-width: 1200px;
+        .tab-active {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            background-color: #eef2ff;
         }
-        .card {
-            border: 1px solid #dee2e6;
-            box-shadow: none !important;
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
         }
-        .card-header {
-            background-color: #ffc107;
-            font-weight: 500;
-        }
-        .flyer-img {
-            max-width: 100%;
-            height: auto;
-            border-radius: .375rem;
-            border: 1px solid #dee2e6;
-        }
-        .list-group-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .list-group-item strong {
-            margin-right: auto;
-            padding-left: 10px;
-        }
-        .list-group-item .fas, .list-group-item .far {
-            width: 20px; /* Ancho fijo para alinear íconos */
-            text-align: center;
-        }
-        .badge {
-            font-size: 1em;
-        }
-        .sub-list {
-            list-style-type: none;
-            padding-left: 1rem;
-        }
-        .sub-list li {
-            margin-bottom: 0.25rem;
-        }
-        .pago-item {
-            border-bottom: 1px solid #eee;
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
-        }
-        .pago-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        /* Estilos para los botones flotantes (FAB) */
-        .fab-container-back {
-            position: fixed;
-            bottom: 75px;
-            left: 20px;
-            z-index: 1000;
-        }
-        .fab-container-actions {
-            position: fixed;
-            bottom: 75px;
-            right: 20px;
-            z-index: 1050;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .fab-button {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: white;
-        }
-        .fab-button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            color: white;
-        }
-        .fab-button-back { background-color: #007bff; } /* Primary Blue */
-        .fab-button-edit { background-color: #ffc107; color: black; } /* Warning Yellow */
-        .fab-button-delete { background-color: #dc3545; } /* Danger Red */
-        .fab-button-pdf { background-color: #6f42c1; } /* Purple */
-        .fab-button-jpg { background-color: #fd7e14; } /* Orange */
-        .fab-button-txt { background-color: #17a2b8; } /* Info */
-        .fab-button-excel { background-color: #28a745; } /* Green */
     </style>
-{% endblock %}
+</head>
+<body class="bg-gray-100 text-gray-800">
 
-{% block content %}
-<div class="container my-5">
-    <!-- Título y Botones de Acción -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="mb-0">{{ viaje.nombre_viaje }}</h1>
-            <p class="text-muted fs-5">Destino: {{ viaje.pais }}</p>
-        </div>
-    </div>
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8 no-print">
+            <h1 class="text-4xl font-bold text-gray-700">Herramienta de Gestión</h1>
+            <p class="text-gray-500">Crea cotizaciones, facturas y planifica tus tareas.</p>
+        </header>
 
-    <!-- Fila Principal: Flyer y Datos Generales -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-5">
-            <img src="{{ url_for('static', filename=viaje.flyer_url) if viaje.flyer_url and viaje.flyer_url != 'None' else 'https://placehold.co/800x600/cccccc/ffffff?text=Sin+Imagen' }}" 
-                 alt="Flyer para {{ viaje.nombre_viaje }}" 
-                 class="flyer-img">
+        <!-- Navegación de Pestañas -->
+        <div class="mb-6 border-b border-gray-200 no-print">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button onclick="showTab('quotes')" class="tab tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Cotizaciones</button>
+                <button onclick="showTab('invoices')" class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Facturas</button>
+                <button onclick="showTab('planning')" class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Planificación</button>
+            </nav>
         </div>
-        <div class="col-md-7">
-            <div class="card">
-                <div class="card-header">Información General</div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><i class="fas fa-calendar-alt text-primary"></i><strong>Fechas:</strong> <span>Del {{ viaje.fecha_viaje }} al {{ viaje.fecha_regreso }}</span></li>
-                    <li class="list-group-item"><i class="far fa-clock text-info"></i><strong>Duración:</strong> <span class="badge bg-light text-dark">{{ viaje.cantidad_dias }} Días</span></li>
-                    <li class="list-group-item"><i class="fas fa-users text-success"></i><strong>Capacidad S/G:</strong> <span>{{ viaje.capacidad_sg }} personas</span></li>
-                    <li class="list-group-item"><i class="fas fa-user-check text-success"></i><strong>Capacidad C/G:</strong> <span>{{ viaje.capacidad_cg }} personas</span></li>
-                    <li class="list-group-item"><i class="fas fa-money-bill-wave text-warning"></i><strong>Precio de Venta:</strong> <span class="badge bg-warning text-dark">${{ "{:,.0f}".format(viaje.precio_viaje_usd|int) }} USD</span></li>
-                    <li class="list-group-item"><i class="fas fa-exchange-alt text-secondary"></i><strong>Tipo de Cambio:</strong> <span>₡{{ "{:,.0f}".format(viaje.tipo_cambio_a_crc|int) }}</span></li>
+
+        <main>
+            <!-- Sección de Cotizaciones -->
+            <div id="quotes" class="tab-content bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">Nueva Cotización</h2>
+                <div id="print-area-quotes">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="quote-client" class="block text-sm font-medium text-gray-700">Nombre del Cliente</label>
+                            <input type="text" id="quote-client" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Ej: Juan Pérez">
+                        </div>
+                        <div>
+                            <label for="quote-date" class="block text-sm font-medium text-gray-700">Fecha</label>
+                            <input type="date" id="quote-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Cant.</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Precio Unit.</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Total</th>
+                                    <th class="w-10 no-print"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="quote-items" class="bg-white divide-y divide-gray-200">
+                                <!-- Filas de items se agregarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <button onclick="addItem('quote')" class="mt-4 text-sm text-yellow-600 hover:text-yellow-700 font-semibold no-print">+ Agregar línea</button>
+                    
+                    <div class="mt-6 flex justify-end">
+                        <div class="w-full max-w-xs">
+                            <div class="flex justify-between py-1">
+                                <span>Subtotal</span>
+                                <span id="quote-subtotal">$0.00</span>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <span>Impuestos (10%)</span>
+                                <span id="quote-tax">$0.00</span>
+                            </div>
+                            <div class="border-t mt-2 pt-2 flex justify-between font-bold text-lg">
+                                <span>Total</span>
+                                <span id="quote-total">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 text-right no-print">
+                    <button onclick="printContent('quotes')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                        Imprimir / Guardar PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sección de Facturas -->
+            <div id="invoices" class="tab-content bg-white p-6 rounded-lg shadow-md hidden">
+                <h2 class="text-2xl font-semibold mb-4">Nueva Factura</h2>
+                 <div id="print-area-invoices">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="invoice-client" class="block text-sm font-medium text-gray-700">Nombre del Cliente</label>
+                            <input type="text" id="invoice-client" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Ej: Ana Gómez">
+                        </div>
+                        <div>
+                            <label for="invoice-date" class="block text-sm font-medium text-gray-700">Fecha</label>
+                            <input type="date" id="invoice-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Cant.</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Precio Unit.</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Total</th>
+                                    <th class="w-10 no-print"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items" class="bg-white divide-y divide-gray-200">
+                                <!-- Filas de items se agregarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <button onclick="addItem('invoice')" class="mt-4 text-sm text-yellow-600 hover:text-yellow-700 font-semibold no-print">+ Agregar línea</button>
+                    
+                    <div class="mt-6 flex justify-end">
+                        <div class="w-full max-w-xs">
+                            <div class="flex justify-between py-1">
+                                <span>Subtotal</span>
+                                <span id="invoice-subtotal">$0.00</span>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <span>Impuestos (10%)</span>
+                                <span id="invoice-tax">$0.00</span>
+                            </div>
+                            <div class="border-t mt-2 pt-2 flex justify-between font-bold text-lg">
+                                <span>Total</span>
+                                <span id="invoice-total">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 text-right no-print">
+                    <button onclick="printContent('invoices')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                        Imprimir / Guardar PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sección de Planificación -->
+            <div id="planning" class="tab-content bg-white p-6 rounded-lg shadow-md hidden">
+                <h2 class="text-2xl font-semibold mb-4">Planificador de Tareas</h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="new-task-input" class="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Escribe una nueva tarea...">
+                    <button onclick="addTask()" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600">Agregar</button>
+                </div>
+                <ul id="task-list" class="space-y-3">
+                    <!-- Tareas se agregarán aquí -->
                 </ul>
             </div>
-        </div>
+        </main>
+
     </div>
 
-    <!-- Lógica de Cálculo Replicada -->
-    {% set total_neto_usd = namespace(value=0) %}
-    {% set precio_coords_usd = namespace(value=0) %}
+    <script>
+        // --- Lógica del Service Worker para PWA ---
+        if ('serviceWorker' in navigator) {
+            const swContent = `
+                const CACHE_NAME = 'cuadro-app-cache-v1';
+                const urlsToCache = [
+                    '/',
+                ];
 
-    {% for pago in viaje.pagos_y_servicios %}
-        {% set tipo_pago = pago.get('tipo_pago', '') %}
-        {% set precio_grupal = pago.get('precio_grupal', '0')|float %}
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                console.log('Opened cache');
+                                // Cache the main page itself. The path '/' should work for index.html
+                                return cache.add(location.pathname);
+                            })
+                    );
+                });
+
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request)
+                            .then(response => {
+                                if (response) {
+                                    return response;
+                                }
+                                return fetch(event.request);
+                            })
+                    );
+                });
+            `;
+            const swBlob = new Blob([swContent], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(swBlob);
+
+            navigator.serviceWorker.register(swUrl)
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(error => {
+                    console.log('ServiceWorker registration failed: ', error);
+                });
+        }
+
+        // --- Lógica de la Aplicación ---
+
+        // Navegación por pestañas
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        function showTab(tabId) {
+            tabs.forEach(tab => {
+                tab.classList.remove('tab-active');
+            });
+            event.target.classList.add('tab-active');
+
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+        }
         
-        {% if tipo_pago == 'Aéreo' %}
-            {% set precio_ida = pago.get('precio_ida', '0')|float %}
-            {% set precio_vuelta = pago.get('precio_vuelta', '0')|float %}
-            {% set precio_impuesto = pago.get('precio_impuesto', '0')|float if pago.get('ivi') == 'No' else 0 %}
-            {% set total_aereo_base = precio_ida + precio_vuelta + precio_impuesto %}
-            {% set total_neto_persona_aereo = (total_aereo_base * viaje.capacidad_cg) / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
-            {% set total_neto_usd.value = total_neto_usd.value + total_neto_persona_aereo %}
-            {% set precio_coords_usd.value = precio_coords_usd.value + total_neto_persona_aereo %}
-        {% elif precio_grupal > 0 %}
-            {% set cantidad_grupal = pago.get('cantidad_grupal', '0')|float %}
-            {% set total_individual = 0 %}
-            {% if cantidad_grupal > 0 %}
-                {% set total_individual = precio_grupal * cantidad_grupal %}
-            {% else %}
-                {% set total_individual = (precio_grupal * viaje.capacidad_cg) / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
-            {% endif %}
-            {% set neto_pp = total_individual / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
-            {% set total_neto_usd.value = total_neto_usd.value + total_individual %}
-            {% set precio_coords_usd.value = precio_coords_usd.value + neto_pp %}
-        {% else %}
-            {% set cantidad = pago.get('cantidad_dias_evento', '0')|float %}
-            {% set precio = pago.get('precio', '0')|float %}
-            {% set total_regular = (cantidad * precio * viaje.capacidad_cg) / viaje.capacidad_sg if viaje.capacidad_sg > 0 else 0 %}
-            {% set total_neto_usd.value = total_neto_usd.value + total_regular %}
-            {% set precio_coords_usd.value = precio_coords_usd.value + total_regular %}
-        {% endif %}
-    {% endfor %}
+        // Lógica para Cotizaciones y Facturas
+        function addItem(type) {
+            const itemsContainer = document.getElementById(`${type}-items`);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <input type="text" class="w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Descripción del servicio">
+                </td>
+                <td class="px-6 py-4">
+                    <input type="number" value="1" min="1" class="w-full border-gray-300 rounded-md shadow-sm text-sm quantity" oninput="calculateTotals('${type}')">
+                </td>
+                <td class="px-6 py-4">
+                    <input type="number" value="0" min="0" step="0.01" class="w-full border-gray-300 rounded-md shadow-sm text-sm price" oninput="calculateTotals('${type}')">
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 item-total">$0.00</td>
+                <td class="px-6 py-4 text-right text-sm font-medium no-print">
+                    <button onclick="removeItem(this, '${type}')" class="text-red-600 hover:text-red-900">X</button>
+                </td>
+            `;
+            itemsContainer.appendChild(row);
+            calculateTotals(type);
+        }
 
-    {% set excedente_pp_usd = (viaje.precio_viaje_usd - precio_coords_usd.value) %}
-    {% set excedente_pp_crc = excedente_pp_usd * viaje.tipo_cambio_a_crc %}
-    {% set excedente_general_usd = excedente_pp_usd * viaje.capacidad_sg %}
-    {% set excedente_general_crc = excedente_general_usd * viaje.tipo_cambio_a_crc %}
-    {% set precio_pp_c_guias_usd = precio_coords_usd.value %}
-    {% set precio_pp_c_guias_crc = precio_pp_c_guias_usd * viaje.tipo_cambio_a_crc %}
-    {% set precio_general_c_guias_usd = precio_pp_c_guias_usd * viaje.capacidad_sg %}
-    {% set precio_general_c_guias_crc = precio_general_c_guias_usd * viaje.tipo_cambio_a_crc %}
+        function removeItem(button, type) {
+            button.closest('tr').remove();
+            calculateTotals(type);
+        }
 
-    <!-- Resumen Financiero -->
-    <div class="card mb-4">
-        <div class="card-header">Resumen Financiero</div>
-        <div class="card-body">
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <h5>Precios</h5>
-                    <ul class="list-group">
-                        <li class="list-group-item"><strong>Precio P.P. USD C/Guias:</strong> <span class="badge bg-info text-dark">${{ "{:,.0f}".format(precio_pp_c_guias_usd|int) }} USD</span></li>
-                        <li class="list-group-item"><strong>Precio General USD C/Guias:</strong> <span class="badge bg-info text-dark">${{ "{:,.0f}".format(precio_general_c_guias_usd|int) }} USD</span></li>
-                        <li class="list-group-item"><strong>Precio P.P. CRC C/Guia:</strong> <span class="badge bg-info text-dark">₡{{ "{:,.0f}".format(precio_pp_c_guias_crc|int) }} CRC</span></li>
-                        <li class="list-group-item"><strong>Precio General CRC C/Guias:</strong> <span class="badge bg-info text-dark">₡{{ "{:,.0f}".format(precio_general_c_guias_crc|int) }} CRC</span></li>
-                    </ul>
+        function calculateTotals(type) {
+            let subtotal = 0;
+            const items = document.querySelectorAll(`#${type}-items tr`);
+            items.forEach(row => {
+                const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const total = quantity * price;
+                row.querySelector('.item-total').textContent = formatCurrency(total);
+                subtotal += total;
+            });
+
+            const tax = subtotal * 0.10; // 10% de impuestos
+            const total = subtotal + tax;
+
+            document.getElementById(`${type}-subtotal`).textContent = formatCurrency(subtotal);
+            document.getElementById(`${type}-tax`).textContent = formatCurrency(tax);
+            document.getElementById(`${type}-total`).textContent = formatCurrency(total);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        }
+        
+        function printContent(type) {
+            const printAreaId = `print-area-${type === 'quotes' ? 'quotes' : 'invoices'}`;
+            const printArea = document.getElementById(printAreaId);
+            const originalContent = document.body.innerHTML;
+            const printContent = printArea.innerHTML;
+            
+            // Crear un clon para no afectar el original
+            const tempDiv = document.createElement('div');
+            tempDiv.id = 'print-area';
+            tempDiv.innerHTML = printContent;
+            
+            // Ocultar el cuerpo original y agregar el área de impresión
+            document.body.innerHTML = '';
+            document.body.appendChild(tempDiv);
+            
+            window.print();
+            
+            // Restaurar el contenido original
+            document.body.innerHTML = originalContent;
+            // Re-adjuntar los event listeners que se perdieron
+            reinitializeEventListeners();
+        }
+
+        function reinitializeEventListeners() {
+            // Esta función es un placeholder. En una app compleja, necesitarías volver a
+            // adjuntar todos los listeners. Para esta app simple, un reload es más fácil
+            // y asegura que todo funcione después de imprimir.
+            window.location.reload();
+        }
+
+
+        // Lógica de Planificación
+        const taskInput = document.getElementById('new-task-input');
+        const taskList = document.getElementById('task-list');
+
+        function addTask() {
+            const taskText = taskInput.value.trim();
+            if (taskText === '') return;
+
+            const listItem = document.createElement('li');
+            listItem.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-md';
+            listItem.innerHTML = `
+                <span class="task-text">${taskText}</span>
+                <div>
+                    <button onclick="toggleTask(this)" class="text-green-500 hover:text-green-700 mr-2">✓</button>
+                    <button onclick="deleteTask(this)" class="text-red-500 hover:text-red-700">X</button>
                 </div>
-                <div class="col-md-6">
-                    <h5>Excedente (Ganancia)</h5>
-                    <ul class="list-group">
-                        <li class="list-group-item"><strong>Excedente P.P. (USD):</strong> <span class="badge bg-success">${{ "{:,.0f}".format(excedente_pp_usd|int) }} USD</span></li>
-                        <li class="list-group-item"><strong>Excedente P.P. (CRC):</strong> <span class="badge bg-success">₡{{ "{:,.0f}".format(excedente_pp_crc|int) }} CRC</span></li>
-                        <li class="list-group-item"><strong>Excedente General (USD):</strong> <span class="badge bg-warning text-dark">${{ "{:,.0f}".format(excedente_general_usd|int) }} USD</span></li>
-                        <li class="list-group-item"><strong>Excedente General (CRC):</strong> <span class="badge bg-warning text-dark">₡{{ "{:,.0f}".format(excedente_general_crc|int) }} CRC</span></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
+            `;
+            taskList.appendChild(listItem);
+            taskInput.value = '';
+        }
 
-    <!-- Detalle de Pagos y Servicios -->
-    <div class="card">
-        <div class="card-header">Detalle de Pagos y Servicios Registrados</div>
-        <div class="card-body">
-            {% for pago in viaje.pagos_y_servicios %}
-            <div class="pago-item">
-                <div class="d-flex justify-content-between fw-bold">
-                    <span>Tipo: {{ pago.get('tipo_pago') }}</span>
-                </div>
-                <div class="mt-2">
-                    {% if pago.get('nombre_contacto') %}
-                    <p class="mb-1"><strong>Contacto:</strong> {{ pago.get('nombre_contacto') }}</p>
-                    {% endif %}
-                    {% if pago.get('tipo_pago') == 'Aéreo' %}
-                        {% if pago.get('aerolinea') %}
-                        <p class="mb-1"><strong>Aerolínea:</strong> {{ pago.get('aerolinea') }}</p>
-                        {% endif %}
-                        {% if pago.get('precio_ida', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Precio IDA:</strong> ${{ "{:,.0f}".format(pago.get('precio_ida', '0')|float) }}</p>
-                        {% endif %}
-                        {% if pago.get('precio_vuelta', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Precio Vuelta:</strong> ${{ "{:,.0f}".format(pago.get('precio_vuelta', '0')|float) }}</p>
-                        {% endif %}
-                        {% if pago.get('ivi') %}
-                        <p class="mb-1"><strong>I.V.I:</strong> {{ pago.get('ivi') }}</p>
-                        {% endif %}
-                        {% if pago.get('ivi') == 'No' and pago.get('precio_impuesto', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Precio Impuesto:</strong> ${{ "{:,.0f}".format(pago.get('precio_impuesto', '0')|float) }}</p>
-                        {% endif %}
-                    {% else %}
-                        {% if pago.get('cantidad_dias_evento') and pago.get('cantidad_dias_evento')|string|trim != '' %}
-                        <p class="mb-1"><strong>Cantidad de Días/Eventos:</strong> {{ pago.get('cantidad_dias_evento') }}</p>
-                        {% endif %}
-                        {% if pago.get('precio', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Precio USD | Día P.P.:</strong> ${{ "{:,.0f}".format(pago.get('precio', '0')|float) }}</p>
-                        {% endif %}
-                        {% if pago.get('total_regular', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Total USD P.P.:</strong> ${{ "{:,.0f}".format(pago.get('total_regular', '0')|float) }}</p>
-                        {% endif %}
-                        {% if pago.get('precio_grupal', '0')|float > 0 or pago.get('cantidad_grupal') %}
-                        <hr>
-                        {% endif %}
-                        {% if pago.get('precio_grupal', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Precio Grupal:</strong> ${{ "{:,.0f}".format(pago.get('precio_grupal', '0')|float) }}</p>
-                        {% endif %}
-                        {% if pago.get('cantidad_grupal') and pago.get('cantidad_grupal')|string|trim != '' %}
-                        <p class="mb-1"><strong>Cantidad:</strong> {{ pago.get('cantidad_grupal') }}</p>
-                        {% endif %}
-                        {% if pago.get('total_individual', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Total Grupal USD:</strong> ${{ "{:,.0f}".format(pago.get('total_individual', '0')|float) }}</p>
-                        {% endif %}
-                        {% if pago.get('total_grupal_cg', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Total Grupal C/G:</strong> ${{ "{:,.0f}".format(pago.get('total_grupal_cg', '0')|float) }}</p>
-                        {% endif %}
-                        {% if pago.get('neto_pp', '0')|float > 0 %}
-                        <p class="mb-1"><strong>Neto P.P.:</strong> ${{ "{:,.0f}".format(pago.get('neto_pp', '0')|float) }}</p>
-                        {% endif %}
-                    {% endif %}
-                    {% if pago.get('poliza') and pago.get('poliza') != 'No Aplica' %}
-                    <p class="mb-1"><strong>Póliza:</strong> {{ pago.get('poliza') }}</p>
-                    {% endif %}
-                    
-                    {% if pago.get('telefonos') %}
-                    <div class="mt-2">
-                        <h6><i class="fas fa-phone-alt text-muted"></i> Teléfonos:</h6>
-                        <ul class="sub-list">
-                            {% for tel in pago.get('telefonos', []) %}
-                            <li><strong>{{ tel.get('tipo', '') }}:</strong> {{ tel.get('codigo', '') }} {{ tel.get('numero', '') }} ({{ tel.get('contacto', '') }})</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% else %}
-            <p class="text-muted">No hay pagos o servicios registrados para este viaje.</p>
-            {% endfor %}
-        </div>
-    </div>
-</div> <!-- Cierre de .container.my-5 -->
+        function toggleTask(button) {
+            const taskText = button.closest('li').querySelector('.task-text');
+            taskText.classList.toggle('line-through');
+            taskText.classList.toggle('text-gray-400');
+        }
 
-<!-- Botones flotantes (FABs) -->
-<div class="fab-container-back">
-    <a href="{{ url_for('intern.ver_intern') }}" class="fab-button fab-button-back" title="Volver">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-</div>
+        function deleteTask(button) {
+            button.closest('li').remove();
+        }
+        
+        taskInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                addTask();
+            }
+        });
 
-<div class="fab-container-actions">
-    <a href="{{ url_for('intern.editar_intern', viaje_id=viaje.id) }}" class="fab-button fab-button-edit" title="Editar Viaje">
-        <i class="fas fa-pencil-alt"></i>
-    </a>
-    <a href="#" class="fab-button fab-button-delete" title="Eliminar Viaje" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
-        <i class="fas fa-trash-alt"></i>
-    </a>
-    <a href="{{ url_for('intern.exportar_excel', viaje_id=viaje.id) }}" class="fab-button fab-button-excel" title="Exportar a Excel">
-        <i class="fas fa-file-excel"></i>
-    </a>
-    <a href="{{ url_for('intern.exportar_pdf', viaje_id=viaje.id) }}" class="fab-button fab-button-pdf" title="Exportar a PDF">
-        <i class="fas fa-file-pdf"></i>
-    </a>
-    <a href="{{ url_for('intern.exportar_jpg', viaje_id=viaje.id) }}" class="fab-button fab-button-jpg" title="Exportar a JPG">
-        <i class="fas fa-file-image"></i>
-    </a>
-    <a href="{{ url_for('intern.exportar_txt', viaje_id=viaje.id) }}" class="fab-button fab-button-txt" title="Exportar a TXT">
-        <i class="fas fa-file-alt"></i>
-    </a>
-</div>
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('quote-date').valueAsDate = new Date();
+            document.getElementById('invoice-date').valueAsDate = new Date();
+            addItem('quote');
+            addItem('invoice');
+        });
 
-<!-- Modal de Confirmación para Eliminar -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                ¿Estás seguro de que deseas eliminar el viaje "{{ viaje.nombre_viaje }}"? Esta acción no se puede deshacer.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form action="{{ url_for('intern.borrar_intern', viaje_id=viaje.id) }}" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">Eliminar</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% endblock %}
+    </script>
+</body>
+</html>
