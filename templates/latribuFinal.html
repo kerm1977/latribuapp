@@ -342,7 +342,7 @@
             const addItemButton = document.getElementById(`add-item-${type}`);
             const saveButton = document.getElementById(`save-${type}-floating`);
             const whatsappButton = document.getElementById('whatsapp-share-button');
-
+            
             const isFormValid = clientInput.value.trim() !== '' &&
                               dateInput.value.trim() !== '' &&
                               eventNameInput.value.trim() !== '' &&
@@ -710,7 +710,7 @@
                 const isPriceEmpty = priceInput.value.trim() === '' || parseFloat(priceInput.value) === 0;
 
                 if (!lastItem.classList.contains('is-locked') && isDescriptionEmpty && isPriceEmpty) {
-                    descriptionInput.focus();
+                    if (focus) descriptionInput.focus();
                     return;
                 }
             }
@@ -975,7 +975,7 @@
             document.getElementById('invoice-event-price').addEventListener('blur', () => {
                 const itemsContainer = document.getElementById('invoice-items');
                 if (currentlyUpdatingIndex === null && itemsContainer.children.length === 0 && !document.getElementById('add-item-invoice').disabled) {
-                    addItem('invoice');
+                    addItem('invoice', true);
                 }
             });
 
