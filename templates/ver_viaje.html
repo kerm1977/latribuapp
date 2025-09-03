@@ -1,0 +1,686 @@
+{% extends 'base.html' %}
+
+{% block title %}Ver Viajes{% endblock %}
+
+{% block head_content %}
+<style>
+    /* Estilos para los botones de acción flotantes (FAB) - Estilo Perfil */
+    .fab-container {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        z-index: 1050;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+
+    .fab-button {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem; /* Tamaño del ícono */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        margin-top: 10px;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .fab-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .fab-button.fab-edit {
+        background-color: #007bff; /* Primary color */
+    }
+    .fab-button.fab-edit:hover {
+        background-color: #0056b3;
+    }
+
+    .fab-button.fab-delete {
+        background-color: #dc3545; /* Danger color */
+    }
+     .fab-button.fab-delete:hover {
+        background-color: #c82333;
+    }
+
+    /* Clase para deshabilitar los botones con estilos correctos */
+    .fab-button.disabled {
+        pointer-events: none;
+        background-color: #6c757d;
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+</style>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+
+{% block content %}
+<div class="container mt-5 mb-5">
+
+    <!-- Sección de Login -->
+    <div id="loginContainer">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white text-center">
+                        <h4 class="mb-0"><i class="fas fa-lock me-2"></i> Acceso Restringido</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label"><b>Usuario (MAYÚSCULAS)</b></label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label"><b>Contraseña (minúsculas)</b></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-check my-3">
+                                <input class="form-check-input" type="checkbox" id="rememberMe">
+                                <label class="form-check-label" for="rememberMe">
+                                    Recordar en este dispositivo
+                                </label>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-warning btn-block">Entrar</button>
+                            </div>
+                            <hr class="my-3">
+                            <div class="text-center">
+                                <small class="text-muted">ADMINISTRADOR PARA TRANSAVI</small>
+                            </div>
+                            <div id="loginError" class="text-danger mt-3 text-center" style="display: none;">
+                                Usuario o contraseña incorrectos.
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido principal de la página (inicialmente oculto) -->
+    <div id="mainContent" style="display: none;">
+        {% set hay_sin_precio = namespace(value=false) %}
+        {% set hay_con_precio = namespace(value=false) %}
+        {% set priced_viajes = [] %}
+        {% for viaje in viajes %}
+            {% if not viaje.precio or viaje.precio <= 0 %}
+                {% set hay_sin_precio.value = true %}
+            {% else %}
+                {% set hay_con_precio.value = true %}
+                {% set _ = priced_viajes.append(viaje) %}
+            {% endif %}
+        {% endfor %}
+
+        <div class="p-3 mb-3 rounded bg-light d-flex justify-content-between align-items-center">
+            <h1 class="text-center mb-0 h4"><i class="fas fa-route me-2"></i>Visualizador de Viajes</h1>
+            {% if session.logged_in and session.role == 'Superuser' %}
+            <a href="{{ url_for('transporte.crear_viaje') }}" class="btn btn-warning">
+                <i class="fas fa-plus-circle me-1"></i> Crear Nuevo Viaje
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="row">
+            <div class="col-md-5">
+                <label for="categoriaSelector" class="form-label">
+                    <b>
+                        {% if hay_sin_precio.value %}
+                            Selecciona una Caminata para agregar su Precio:
+                        {% else %}
+                            Selecciona una categoría para ver sus detalles:
+                        {% endif %}
+                    </b>
+                </label>
+                <select class="form-select" id="categoriaSelector">
+                    <option value="">-- Elige un viaje --</option>
+                    {% set todas_las_etiquetas = [] %}
+                    {% for viaje in viajes %}
+                        {% if viaje.categoria not in todas_las_etiquetas %}
+                            {% set _ = todas_las_etiquetas.append(viaje.categoria) %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for categoria_nombre in todas_las_etiquetas | sort %}
+                        {% set viaje_representativo = (viajes|selectattr('categoria', 'equalto', categoria_nombre)|first) %}
+                        {% set tiene_precio = viaje_representativo.precio and viaje_representativo.precio > 0 %}
+                        <option value="{{ viaje_representativo.id }}">
+                            {{ categoria_nombre }} 
+                            {% if tiene_precio %}
+                                ✓
+                            {% else %}
+                                <span class="text-danger">❌</span>
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <!-- Mensaje de alerta para caminatas sin precio -->
+        {% if hay_sin_precio.value %}
+        <div class="row">
+             <div class="col-md-5">
+                <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    ¡Hay nuevas caminatas por agregar precio!
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- NUEVA LISTA DE PRECIOS ASIGNADOS -->
+        {% if hay_con_precio.value %}
+        {% set province_colors = {
+            'San José': {'bg': 'rgba(255, 99, 132, 0.2)', 'border': 'rgba(255, 99, 132, 1)'},
+            'Alajuela': {'bg': 'rgba(54, 162, 235, 0.2)', 'border': 'rgba(54, 162, 235, 1)'},
+            'Cartago': {'bg': 'rgba(255, 206, 86, 0.2)', 'border': 'rgba(255, 206, 86, 1)'},
+            'Heredia': {'bg': 'rgba(75, 192, 192, 0.2)', 'border': 'rgba(75, 192, 192, 1)'},
+            'Guanacaste': {'bg': 'rgba(153, 102, 255, 0.2)', 'border': 'rgba(153, 102, 255, 1)'},
+            'Puntarenas': {'bg': 'rgba(255, 159, 64, 0.2)', 'border': 'rgba(255, 159, 64, 1)'},
+            'Limón': {'bg': 'rgba(100, 220, 100, 0.2)', 'border': 'rgba(100, 220, 100, 1)'},
+            'Sin Provincia': {'bg': 'rgba(201, 203, 207, 0.2)', 'border': 'rgba(201, 203, 207, 1)'}
+        } %}
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>Precios Asignados:</h5>
+                <ul class="list-group">
+                    {% set last_province = namespace(value=None) %}
+                    {% for viaje in priced_viajes|sort(attribute='provincia') %}
+                        {% set current_province = viaje.provincia or 'Sin Provincia' %}
+                        {% set province_slug = current_province|replace(' ', '-')|lower %}
+                        {% if current_province != last_province.value %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: {{ province_colors.get(current_province, {}).bg }};">
+                                <strong>{{ current_province }}</strong>
+                                <button class="btn btn-sm btn-outline-secondary py-0 px-2 toggle-province" data-province="{{ province_slug }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </li>
+                            {% set last_province.value = current_province %}
+                        {% endif %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center viaje-item provincia-{{ province_slug }}">
+                            <div>
+                                <strong>{{ viaje.categoria }}</strong>
+                            </div>
+                            <span class="badge bg-success rounded-pill fs-6">₡{{ "{:,.0f}".format(viaje.precio) }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <!-- GRÁFICO DE PRECIOS -->
+                <h5 class="mt-4 mt-md-0">Gráfico de Precios por Provincia:</h5>
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
+
+        <hr>
+
+        <!-- Área para mostrar la información del viaje seleccionado -->
+        <div id="detalleViajeContainer" class="mt-4" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 id="detalleTitulo" class="mb-0"></h3>
+                </div>
+                <div class="card-body">
+                    <div id="infoViaje">
+                       <!-- El contenido se cargará aquí con JavaScript -->
+                    </div>
+                    
+                    <!-- Campo para agregar precio -->
+                    <div class="row mt-4 align-items-end">
+                        <div class="col-sm-6 col-md-5">
+                            <label for="precioViaje" class="form-label"><b>Agregar/Editar Precio</b></label>
+                            <div class="input-group">
+                                 <span class="input-group-text">₡</span>
+                                 <input type="number" class="form-control" id="precioViaje" placeholder="Ej: 15000" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-7">
+                            <button class="btn btn-warning" id="guardarPrecioBtn"><i class="fas fa-save"></i> Guardar</button>
+                            <button type="button" class="btn btn-danger" id="borrarPrecioBtn"><i class="fas fa-trash-alt"></i> Borrar Precio</button>
+                            <button type="button" class="btn btn-secondary ms-2" id="cerrarDetalleBtn"><i class="fas fa-times-circle"></i> Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones flotantes (SOLO PARA SUPERUSUARIOS) -->
+{% if session.logged_in and session.role == 'Superuser' %}
+<div id="adminFabContainer" class="fab-container" style="display: none;"> <!-- Inicia oculto, JS lo mostrará -->
+    <a id="editarBtn" href="#" class="fab-button fab-edit" title="Editar Viaje"><i class="fas fa-edit"></i></a>
+    <button id="borrarBtn" type="button" class="fab-button fab-delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" title="Eliminar Viaje">
+        <i class="fas fa-trash-alt"></i>
+    </button>
+</div>
+{% endif %}
+
+
+<!-- Modal de Confirmación de Borrado -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar permanentemente este viaje? Esta acción no se puede deshacer.
+        <strong id="modalViajeNombre"></strong>
+      </div>
+      <div class="modal-footer">
+        <form action="{{ url_for('transporte.borrar_viaje') }}" method="POST">
+            <input type="hidden" name="viaje_id" id="viaje_id_a_borrar">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Toast Notification -->
+<div id="customToast" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100; display: none;">
+    <div id="toastContent" class="toast align-items-center text-white border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <!-- Message will be inserted here -->
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Check for 'loggedin' param to bypass login form on redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const mainContent = document.getElementById('mainContent');
+    const loginContainer = document.getElementById('loginContainer');
+    const adminFabContainer = document.getElementById('adminFabContainer');
+
+    // Muestra el contenido principal si el usuario es Superuser o si se redirige desde el login de TRANSAVI
+    if (("{{ session.logged_in }}" === "True" && "{{ session.role }}" === "Superuser") || urlParams.get('loggedin') === 'true') {
+        loginContainer.style.display = 'none';
+        mainContent.style.display = 'block';
+    }
+
+    // Muestra los botones flotantes de admin SOLO si el usuario es Superuser
+    if ("{{ session.logged_in }}" === "True" && "{{ session.role }}" === "Superuser") {
+        if(adminFabContainer) adminFabContainer.style.display = 'flex';
+    }
+
+
+    // --- Lógica para la Notificación Toast ---
+    const customToast = document.getElementById('customToast');
+    const toastContent = document.getElementById('toastContent');
+    const toastBody = customToast.querySelector('.toast-body');
+    let toastTimeout;
+
+    function showToast(message, type = 'success') {
+        clearTimeout(toastTimeout); // Clear previous timeout if any
+        toastBody.textContent = message;
+        
+        toastContent.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-dark');
+
+        if (type === 'success') {
+            toastContent.classList.add('bg-success');
+        } else if (type === 'error') {
+            toastContent.classList.add('bg-danger');
+        } else { // info or warning
+            toastContent.classList.add('bg-warning', 'text-dark');
+        }
+        
+        customToast.style.display = 'block';
+        
+        toastTimeout = setTimeout(() => {
+            customToast.style.display = 'none';
+        }, 3000);
+    }
+    
+    customToast.querySelector('.btn-close').addEventListener('click', () => {
+        customToast.style.display = 'none';
+        clearTimeout(toastTimeout);
+    });
+
+    // --- Lógica del formulario de Login de TRANSAVI ---
+    const loginForm = document.getElementById('loginForm');
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    const usernameInput = document.getElementById('username');
+    const loginError = document.getElementById('loginError');
+    const rememberMeCheck = document.getElementById('rememberMe');
+
+    // Cargar credenciales guardadas
+    if (localStorage.getItem('transavi_username') && localStorage.getItem('transavi_password')) {
+        usernameInput.value = localStorage.getItem('transavi_username');
+        passwordInput.value = localStorage.getItem('transavi_password');
+        rememberMeCheck.checked = true;
+    }
+
+    // Convertir a mayúsculas y minúsculas automáticamente
+    usernameInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+
+    passwordInput.addEventListener('input', function() {
+        this.value = this.value.toLowerCase();
+    });
+
+    togglePassword.addEventListener('click', function () {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const user = usernameInput.value;
+        const pass = passwordInput.value;
+
+        if (user === 'TRANSAVI' && pass === 'latribu2025') {
+            // Guardar o borrar credenciales
+            if (rememberMeCheck.checked) {
+                localStorage.setItem('transavi_username', user);
+                localStorage.setItem('transavi_password', pass);
+            } else {
+                localStorage.removeItem('transavi_username');
+                localStorage.removeItem('transavi_password');
+            }
+
+            loginContainer.style.display = 'none';
+            mainContent.style.display = 'block';
+
+            // Ocultar botones de admin para TRANSAVI (ya que no es superuser)
+             if(adminFabContainer) adminFabContainer.style.display = 'none';
+
+        } else {
+            loginError.style.display = 'block';
+        }
+    });
+
+    // --- Lógica existente para ver viajes ---
+    const selector = document.getElementById('categoriaSelector');
+    const container = document.getElementById('detalleViajeContainer');
+    const infoDiv = document.getElementById('infoViaje');
+    const titulo = document.getElementById('detalleTitulo');
+    const precioInput = document.getElementById('precioViaje');
+    const guardarPrecioBtn = document.getElementById('guardarPrecioBtn');
+    const borrarPrecioBtn = document.getElementById('borrarPrecioBtn');
+    const cerrarDetalleBtn = document.getElementById('cerrarDetalleBtn');
+    const editarBtn = document.getElementById('editarBtn');
+    const borrarBtn = document.getElementById('borrarBtn');
+    const viajeIdInputModal = document.getElementById('viaje_id_a_borrar');
+    const viajeNombreModal = document.getElementById('modalViajeNombre');
+
+    let currentViajeId = null;
+
+    selector.addEventListener('change', function() {
+        const viajeId = this.value;
+        if (!viajeId) {
+            container.style.display = 'none';
+            currentViajeId = null;
+            // Deshabilitar botones si no hay selección
+            if (editarBtn) editarBtn.classList.add('disabled');
+            if (borrarBtn) borrarBtn.classList.add('disabled');
+            return;
+        }
+
+        currentViajeId = viajeId;
+
+        // Habilitar botones al seleccionar
+        if (editarBtn) editarBtn.classList.remove('disabled');
+        if (borrarBtn) borrarBtn.classList.remove('disabled');
+
+
+        fetch(`/viajes/api/get-viaje-data/${viajeId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                titulo.textContent = data.categoria;
+                
+                let htmlContent = `<dl class="row">`;
+                if(data.nombre_lugar) htmlContent += `<dt class="col-sm-3">Lugar:</dt><dd class="col-sm-9">${data.nombre_lugar}</dd>`;
+                if(data.provincia) htmlContent += `<dt class="col-sm-3">Provincia:</dt><dd class="col-sm-9">${data.provincia}</dd>`;
+                if(data.fecha_requerida && data.fecha && data.hora) htmlContent += `<dt class="col-sm-3">Fecha y Hora:</dt><dd class="col-sm-9">${data.fecha} ${data.hora}</dd>`;
+                if(data.nota) htmlContent += `<dt class="col-sm-3">Nota:</dt><dd class="col-sm-9" style="white-space: pre-wrap;">${data.nota}</dd>`;
+                if(data.recoger_en) {
+                    const puntosRecogida = data.recoger_en.split(/\\n|\n/)
+                        .map(line => line.trim().replace(/^\d+\.\s*/, ''))
+                        .filter(line => line)
+                        .map((line, index) => `${index + 1}. ${line}`)
+                        .join('<br>');
+                    htmlContent += `<dt class="col-sm-3">Puntos de Recogida:</dt><dd class="col-sm-9">${puntosRecogida}</dd>`;
+                }
+                
+                htmlContent += `<hr class="my-3">`;
+
+                if(data.nombre_entrega) htmlContent += `<dt class="col-sm-3">Nombre Entrega:</dt><dd class="col-sm-9">${data.nombre_entrega}</dd>`;
+                if(data.punto_entrega) htmlContent += `<dt class="col-sm-3">Punto Entrega:</dt><dd class="col-sm-9">${data.punto_entrega}</dd>`;
+                if(data.url_mapa_entrega) htmlContent += `<dt class="col-sm-3">Mapa Entrega:</dt><dd class="col-sm-9"><a href="${data.url_mapa_entrega}" target="_blank">Ver mapa</a></dd>`;
+
+                htmlContent += `<hr class="my-3">`;
+
+                if(data.nombre_destino) htmlContent += `<dt class="col-sm-3">Nombre Destino:</dt><dd class="col-sm-9">${data.nombre_destino}</dd>`;
+                if(data.punto_destino) htmlContent += `<dt class="col-sm-3">Punto Destino:</dt><dd class="col-sm-9">${data.punto_destino}</dd>`;
+                if(data.url_mapa_destino) htmlContent += `<dt class="col-sm-3">Mapa Destino:</dt><dd class="col-sm-9"><a href="${data.url_mapa_destino}" target="_blank">Ver mapa</a></dd>`;
+                
+                htmlContent += `</dl>`;
+
+                infoDiv.innerHTML = htmlContent;
+                precioInput.value = data.precio || '';
+                
+                // Solo si los botones existen (para Superuser)
+                if(editarBtn) {
+                    const editUrl = `{{ url_for('transporte.crear_viaje') }}?id=${data.id}`;
+                    editarBtn.setAttribute('href', editUrl);
+                }
+                if(viajeIdInputModal) viajeIdInputModal.value = data.id;
+                if(viajeNombreModal) viajeNombreModal.textContent = data.categoria;
+
+                container.style.display = 'block';
+
+                // *** NUEVA LÓGICA PARA ENFOCAR EL INPUT DE PRECIO ***
+                if (precioInput) {
+                    precioInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    precioInput.focus();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching viaje data:', error);
+                showToast('No se pudo cargar la información del viaje.', 'error');
+                container.style.display = 'none';
+            });
+    });
+
+    // Estado inicial de los botones
+    if (editarBtn) editarBtn.classList.add('disabled');
+    if (borrarBtn) borrarBtn.classList.add('disabled');
+
+
+    function updatePrice(priceValue) {
+        if (currentViajeId === null) {
+            showToast('Por favor, selecciona un viaje primero.', 'warning');
+            return;
+        }
+
+        fetch("{{ url_for('transporte.guardar_precio') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentViajeId, precio: priceValue })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Redirigir para que la página se actualice con los nuevos datos
+                window.location.href = "{{ url_for('transporte.ver_viaje') }}?loggedin=true";
+            } else {
+                showToast('Error: ' + (data.message || 'No se pudo guardar el precio.'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al guardar el precio:', error);
+            showToast('Ocurrió un error de comunicación con el servidor.', 'error');
+        });
+    }
+
+    guardarPrecioBtn.addEventListener('click', function() {
+        const precio = parseInt(precioInput.value, 10);
+        if (isNaN(precio) || precio < 0) {
+            showToast('Ingresa un precio válido (número entero, no negativo).', 'warning');
+            return;
+        }
+        updatePrice(precio);
+    });
+
+    borrarPrecioBtn.addEventListener('click', function() {
+        updatePrice(0); // Set price to 0 to clear it
+    });
+
+    cerrarDetalleBtn.addEventListener('click', function() {
+        container.style.display = 'none';
+        selector.value = '';
+        currentViajeId = null;
+    });
+
+    // --- LÓGICA PARA EL GRÁFICO DE PRECIOS ---
+    {% if hay_con_precio.value %}
+        // 1. Definir colores
+        const provinceColors = {
+            'San José': {'bg': 'rgba(255, 99, 132, 0.2)', 'border': 'rgba(255, 99, 132, 1)'},
+            'Alajuela': {'bg': 'rgba(54, 162, 235, 0.2)', 'border': 'rgba(54, 162, 235, 1)'},
+            'Cartago': {'bg': 'rgba(255, 206, 86, 0.2)', 'border': 'rgba(255, 206, 86, 1)'},
+            'Heredia': {'bg': 'rgba(75, 192, 192, 0.2)', 'border': 'rgba(75, 192, 192, 1)'},
+            'Guanacaste': {'bg': 'rgba(153, 102, 255, 0.2)', 'border': 'rgba(153, 102, 255, 1)'},
+            'Puntarenas': {'bg': 'rgba(255, 159, 64, 0.2)', 'border': 'rgba(255, 159, 64, 1)'},
+            'Limón': {'bg': 'rgba(100, 220, 100, 0.2)', 'border': 'rgba(100, 220, 100, 1)'},
+            'Sin Provincia': {'bg': 'rgba(201, 203, 207, 0.2)', 'border': 'rgba(201, 203, 207, 1)'}
+        };
+
+        // 2. Agrupar precios por provincia
+        {% set prices_by_province = {} %}
+        {% for viaje in priced_viajes %}
+            {% set province = viaje.provincia or 'Sin Provincia' %}
+            {% if province not in prices_by_province %}
+                {% set _ = prices_by_province.update({province: []}) %}
+            {% endif %}
+            {% set _ = prices_by_province[province].append(viaje.precio) %}
+        {% endfor %}
+
+        // 3. Calcular promedios
+        {% set chart_labels = [] %}
+        {% set chart_averages = [] %}
+        {% set background_colors = [] %}
+        {% set border_colors = [] %}
+        {% for province, prices in prices_by_province|dictsort %}
+            {% set _ = chart_labels.append(province) %}
+            {% set total = namespace(value=0) %}
+            {% for price in prices %}
+                {% set total.value = total.value + price %}
+            {% endfor %}
+            {% set average = total.value / prices|length %}
+            {% set _ = chart_averages.append(average) %}
+            {% set color_info = province_colors.get(province) %}
+            {% set _ = background_colors.append(color_info.bg) %}
+            {% set _ = border_colors.append(color_info.border) %}
+        {% endfor %}
+
+        // 4. Renderizar el gráfico
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const chartData = {
+            labels: [{% for label in chart_labels %}'{{ label | e }}',{% endfor %}],
+            datasets: [{
+                label: 'Precio Promedio (₡)',
+                data: [{% for avg in chart_averages %}{{ avg }},{% endfor %}],
+                backgroundColor: [{% for color in background_colors %}'{{ color }}',{% endfor %}],
+                borderColor: [{% for color in border_colors %}'{{ color }}',{% endfor %}],
+                borderWidth: 1
+            }]
+        };
+
+        const priceChart = new Chart(ctx, {
+            type: 'bar', // Cambiado a gráfico de barras
+            data: chartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false // Ocultar leyenda para un look más limpio
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '₡' + new Intl.NumberFormat('es-CR').format(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    {% endif %}
+
+    // --- LÓGICA PARA OCULTAR/MOSTRAR VIAJES POR PROVINCIA ---
+    document.querySelectorAll('.toggle-province').forEach(button => {
+        button.addEventListener('click', function() {
+            const province = this.dataset.province;
+            const icon = this.querySelector('i');
+            const viajesOfProvince = document.querySelectorAll(`.viaje-item.provincia-${province}`);
+            
+            const isHidden = icon.classList.contains('fa-eye-slash');
+
+            viajesOfProvince.forEach(viaje => {
+                viaje.style.display = isHidden ? 'flex' : 'none';
+            });
+
+            icon.classList.toggle('fa-eye', isHidden);
+            icon.classList.toggle('fa-eye-slash', !isHidden);
+        });
+    });
+});
+</script>
+{% endblock %}
+

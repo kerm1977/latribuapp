@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if viaje %}
+        Editar Viaje - {{ viaje.categoria }}
+    {% else %}
+        Crear Nuevo Viaje
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="card" style="border: 1px solid #dee2e6;"> <!-- Card sin sombra, solo borde -->
+        <div class="card-header bg-light">
+            <h1 class="card-title text-center mb-0">
+                {% if viaje %}
+                    <i class="fas fa-edit me-2"></i>Editar Caminata
+                {% else %}
+                    <i class="fas fa-plus-circle me-2"></i>Creador de Caminatas
+                {% endif %}
+            </h1>
+        </div>
+        <div class="card-body">
+            
+            <!-- Título condicional para El Camino de Costa Rica -->
+            <h2 id="camino-costa-rica-title" class="text-center text-success fw-bold" style="display: none;">
+                El Camino de Costa Rica
+            </h2>
+
+            <!-- Formulario principal -->
+            <form method="POST" action="{{ url_for('transporte.crear_viaje', id=viaje.id if viaje else None) }}" id="viajeForm">
+
+                <!-- Fila para agregar etiquetas y seleccionar categoría -->
+                <div class="row g-3 mb-4 align-items-end">
+                    <div class="col-md-6">
+                        <label for="nueva_etiqueta_nombre" class="form-label"><b>1. Crear Nueva Etiqueta (Opcional)</b></label>
+                        <div class="input-group">
+                            <input type="text" id="nueva_etiqueta_nombre" class="form-control" placeholder="Ej: Aventura de Montaña">
+                            <button class="btn btn-outline-secondary" type="button" id="btnAgregarEtiqueta"><i class="fas fa-plus"></i> Guardar Etiqueta</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="categoria" class="form-label"><b>2. Seleccionar Categoría</b></label>
+                        <div class="input-group">
+                            <select class="form-select" id="categoria" name="categoria" required>
+                                <option value="" disabled {% if not viaje %}selected{% endif %}>-- Elige una categoría --</option>
+                                <optgroup label="El Camino de Costa Rica">
+                                    {% set etapas = ['Etapa 1a', 'Etapa 1b', 'Etapas 1a&1b', 'Etapa 2', 'Etapa 3', 'Etapa 4', 'Etapa 3&4', 'Etapa 5', 'Etapa 6', 'Etapa 7', 'Etapa 8', 'Etapa 9', 'Etapa 10', 'Etapa 11', 'Etapa 12', 'Etapa 13', 'Etapa 14', 'Etapa 15', 'Etapa 14&15', 'Etapa 16'] %}
+                                    {% for etapa in etapas %}
+                                        <option value="{{ etapa }}" {% if viaje and viaje.categoria == etapa %}selected{% endif %}>{{ etapa }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Etiquetas Personalizadas" id="etiquetas-personalizadas-group">
+                                    {% for etiqueta in etiquetas %}
+                                         <option value="{{ etiqueta.nombre }}" {% if viaje and viaje.categoria == etiqueta.nombre %}selected{% endif %}>{{ etiqueta.nombre }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            </select>
+                            <button class="btn btn-outline-danger" type="button" id="btnEliminarEtiqueta" title="Eliminar etiqueta seleccionada">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+                <h4 class="mb-3"><b>3. Detalles del Viaje</b></h4>
+
+                <!-- Fila para Nombre, Provincia y Fecha -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="nombre_lugar" class="form-label">Nombre del Lugar</label>
+                        <input type="text" class="form-control" id="nombre_lugar" name="nombre_lugar" value="{{ viaje.nombre_lugar or '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="provincia" class="form-label">Provincia</label>
+                        <select class="form-select" id="provincia" name="provincia">
+                            <option value="" disabled {% if not viaje %}selected{% endif %}>-- Seleccionar --</option>
+                            {% set provincias = ['Limón', 'Cartago', 'San José', 'Puntarenas', 'Alajuela', 'Heredia', 'Guanacaste'] %}
+                            {% for p in provincias %}
+                                <option value="{{ p }}" {% if viaje and viaje.provincia == p %}selected{% endif %}>{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row g-3 mb-3">
+                     <div class="col-md-6">
+                        <label class="form-label">¿Requiere Fecha y Hora?</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="fecha_radio" id="fecha_si" value="Si" {% if viaje and viaje.fecha_requerida %}checked{% endif %}>
+                                <label class="form-check-label" for="fecha_si">Sí</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="fecha_radio" id="fecha_no" value="No" {% if not viaje or not viaje.fecha_requerida %}checked{% endif %}>
+                                <label class="form-check-label" for="fecha_no">No</label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Contenedor para fecha y hora (inicialmente oculto) -->
+                    <div id="fecha-hora-container" class="col-md-6" style="display: {% if viaje and viaje.fecha_requerida %}block{% else %}none{% endif %};">
+                        <div class="row">
+                            <div class="col-6">
+                                 <label for="fecha" class="form-label">Fecha</label>
+                                 <input type="date" class="form-control" id="fecha" name="fecha" value="{{ viaje.fecha_hora.strftime('%Y-%m-%d') if viaje and viaje.fecha_hora else '' }}">
+                            </div>
+                            <div class="col-6">
+                                <label for="hora" class="form-label">Hora</label>
+                                <input type="time" class="form-control" id="hora" name="hora" value="{{ viaje.fecha_hora.strftime('%H:%M') if viaje and viaje.fecha_hora else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Textareas para Nota y Ruta de viaje -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="nota" class="form-label">Nota Adicional</label>
+                        <textarea class="form-control" id="nota" name="nota" rows="5">{{ viaje.nota or '' }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="recoger_en" class="form-label">Ruta de viaje (Un punto por línea)</label>
+                        <textarea class="form-control" id="recoger_en" name="recoger_en" rows="5">{{ viaje.recoger_en or '' }}</textarea>
+                        <small class="form-text text-muted">Cada punto de la ruta se numerará automáticamente.</small>
+                    </div>
+                </div>
+                
+                <hr>
+
+                <!-- SECCIÓN SIMPLIFICADA DE RUTA -->
+                <div class="p-3 mb-3 bg-light rounded border">
+                    <h5 class="mb-3"><i class="fas fa-map-marked-alt me-2"></i>Punto de Encuentro</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre_entrega" class="form-label">Nombre del Lugar</label>
+                            <input type="text" class="form-control" id="nombre_entrega" name="nombre_entrega" value="{{ viaje.nombre_entrega or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="punto_entrega" class="form-label">Dirección o Punto de Referencia</label>
+                            <input type="text" class="form-control" id="punto_entrega" name="punto_entrega" value="{{ viaje.punto_entrega or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="url_mapa_entrega" class="form-label">URL del Mapa (Google Maps, Waze, etc.)</label>
+                            <input type="url" class="form-control" id="url_mapa_entrega" name="url_mapa_entrega" value="{{ viaje.url_mapa_entrega or '' }}" placeholder="https://...">
+                        </div>
+                    </div>
+                </div>
+                
+                {# <!-- CÓDIGO ANTERIOR COMENTADO POR SI SE NECESITA -->
+                <!-- NUEVA SECCIÓN UNIFICADA DE RUTA -->
+                <!--
+                <div class="p-3 mb-3 bg-light rounded border">
+                    <h5 class="mb-3"><i class="fas fa-route me-2"></i>Ruta del Viaje: Inicio a Final</h5>
+                    
+                    <h6 class="mt-3 text-muted">Punto de Entrega / Inicio</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre_entrega" class="form-label">Nombre del Lugar de Inicio</label>
+                            <input type="text" class="form-control" id="nombre_entrega" name="nombre_entrega" value="{{ viaje.nombre_entrega or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="punto_entrega" class="form-label">Dirección o Punto de Referencia</label>
+                            <input type="text" class="form-control" id="punto_entrega" name="punto_entrega" value="{{ viaje.punto_entrega or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="url_mapa_entrega" class="form-label">URL del Mapa (Google Maps, Waze, etc.)</label>
+                            <input type="url" class="form-control" id="url_mapa_entrega" name="url_mapa_entrega" value="{{ viaje.url_mapa_entrega or '' }}" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mt-3 text-muted">Punto de Destino / Final</h6>
+                     <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre_destino" class="form-label">Nombre del Lugar Final</label>
+                            <input type="text" class="form-control" id="nombre_destino" name="nombre_destino" value="{{ viaje.nombre_destino or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="punto_destino" class="form-label">Dirección o Punto de Referencia</label>
+                            <input type="text" class="form-control" id="punto_destino" name="punto_destino" value="{{ viaje.punto_destino or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="url_mapa_destino" class="form-label">URL del Mapa (Google Maps, Waze, etc.)</label>
+                            <input type="url" class="form-control" id="url_mapa_destino" name="url_mapa_destino" value="{{ viaje.url_mapa_destino or '' }}" placeholder="https://...">
+                        </div>
+                    </div>
+                </div>
+                -->
+                <!-- CÓDIGO ANTERIOR COMENTADO POR SI SE NECESITA -->
+                <!-- Sección de Punto de Entrega -->
+                <!--
+                <div class="p-3 mb-3 bg-light rounded border">
+                    <h5 class="mb-3"><i class="fas fa-map-pin me-2"></i>Punto de Entrega / Inicio</h5>
+                    <div class="row g-3">
+                        ...
+                    </div>
+                </div>
+                -->
+
+                <!-- Sección de Punto de Destino -->
+                <!--
+                <div class="p-3 bg-light rounded border">
+                    <h5 class="mb-3"><i class="fas fa-flag-checkered me-2"></i>Punto de Destino / Final</h5>
+                     <div class="row g-3">
+                        ...
+                    </div>
+                </div>
+                -->
+                #}
+                
+                <!-- Botones de Acción -->
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{{ url_for('transporte.ver_viaje') }}" class="btn btn-secondary me-2">Cancelar</a>
+                    {% if viaje %}
+                    <button type="button" class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                        <i class="fas fa-trash-alt"></i> Borrar
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>
+                        {% if viaje %}
+                            Guardar Cambios
+                        {% else %}
+                            Guardar y Crear Viaje
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Borrado -->
+{% if viaje %}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar permanentemente el viaje <strong>"{{ viaje.categoria }}"</strong>? Esta acción no se puede deshacer.
+      </div>
+      <div class="modal-footer">
+        <form action="{{ url_for('transporte.borrar_viaje') }}" method="POST">
+            <input type="hidden" name="viaje_id" value="{{ viaje.id }}">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- LÓGICA PARA TÍTULO CONDICIONAL ---
+    const categoriaSelect = document.getElementById('categoria');
+    const caminoTitle = document.getElementById('camino-costa-rica-title');
+    const nombreLugarInput = document.getElementById('nombre_lugar');
+
+    function checkCategoria() {
+        const selectedOption = categoriaSelect.options[categoriaSelect.selectedIndex];
+        const selectedText = selectedOption.text;
+        
+        if (selectedText.toLowerCase().startsWith('etapa')) {
+            caminoTitle.style.display = 'block';
+            // Autocompletar "Nombre de Lugar" solo si está vacío
+            if (nombreLugarInput.value.trim() === '') {
+                nombreLugarInput.value = selectedText;
+            }
+        } else {
+            caminoTitle.style.display = 'none';
+        }
+    }
+    
+    categoriaSelect.addEventListener('change', checkCategoria);
+    checkCategoria(); // Comprobar al cargar la página por si hay un valor preseleccionado
+
+    // --- LÓGICA PARA AGREGAR ETIQUETAS CON AJAX (Fetch API) ---
+    const btnAgregarEtiqueta = document.getElementById('btnAgregarEtiqueta');
+    const nuevaEtiquetaInput = document.getElementById('nueva_etiqueta_nombre');
+
+    btnAgregarEtiqueta.addEventListener('click', function() {
+        const nombreEtiqueta = nuevaEtiquetaInput.value.trim();
+        if (nombreEtiqueta === '') {
+            alert('Por favor, escribe un nombre para la etiqueta.');
+            return;
+        }
+
+        fetch("{{ url_for('transporte.agregar_etiqueta') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ etiqueta_nombre: nombreEtiqueta })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Agregar la nueva etiqueta al select
+                const etiquetasGroup = document.getElementById('etiquetas-personalizadas-group');
+                const newOption = document.createElement('option');
+                newOption.value = data.etiqueta.nombre;
+                newOption.textContent = data.etiqueta.nombre;
+                etiquetasGroup.appendChild(newOption);
+                
+                // Seleccionar la nueva etiqueta
+                newOption.selected = true;
+                
+                // Disparar el evento 'change' para que se actualice el título si es necesario
+                categoriaSelect.dispatchEvent(new Event('change'));
+
+                // Limpiar el input
+                nuevaEtiquetaInput.value = '';
+                alert(data.message || 'Etiqueta agregada con éxito.');
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo agregar la etiqueta.'));
+            }
+        })
+        .catch(error => {
+            console.error('Error en la solicitud Fetch:', error);
+            alert('Ocurrió un error de comunicación con el servidor.');
+        });
+    });
+
+    // --- LÓGICA PARA ELIMINAR ETIQUETAS ---
+    const btnEliminarEtiqueta = document.getElementById('btnEliminarEtiqueta');
+    
+    function eliminarEtiqueta(nombre, forzar = false) {
+        fetch("{{ url_for('transporte.eliminar_etiqueta') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ etiqueta_nombre: nombre, force: forzar })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Eliminar la opción del selector y recargar para reflejar cambios
+                alert(data.message || 'Operación completada.');
+                window.location.reload(); 
+            } else {
+                // Si la etiqueta está en uso y no se está forzando
+                if (data.in_use && !forzar) {
+                    const forzarConfirm = confirm(`ADVERTENCIA: ${data.message}\n\nSi continúas, los viajes afectados quedarán como "Sin Categoría".\n\n¿Deseas forzar el borrado de todas formas?`);
+                    if (forzarConfirm) {
+                        eliminarEtiqueta(nombre, true); // Llamada recursiva para forzar
+                    }
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo eliminar la etiqueta.'));
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error en la solicitud Fetch:', error);
+            alert('Ocurrió un error de comunicación con el servidor.');
+        });
+    }
+
+    btnEliminarEtiqueta.addEventListener('click', function() {
+        const selectedOption = categoriaSelect.options[categoriaSelect.selectedIndex];
+        if (!selectedOption || selectedOption.value === "" || selectedOption.disabled) {
+            alert('Por favor, selecciona una etiqueta personalizada para eliminar.');
+            return;
+        }
+
+        const etiquetaNombre = selectedOption.value;
+        const parentLabel = selectedOption.parentElement.label;
+
+        if (parentLabel !== 'Etiquetas Personalizadas') {
+            alert('Solo puedes eliminar etiquetas personalizadas. Las etapas de "El Camino de Costa Rica" no se pueden borrar.');
+            return;
+        }
+
+        const confirm1 = confirm(`¿Estás seguro de que quieres intentar eliminar la etiqueta "${etiquetaNombre}"?`);
+        if (confirm1) {
+            eliminarEtiqueta(etiquetaNombre, false); // Intento de borrado normal inicial
+        }
+    });
+
+
+    // --- LÓGICA PARA MOSTRAR/OCULTAR FECHA Y HORA ---
+    const fechaHoraContainer = document.getElementById('fecha-hora-container');
+    const fechaInputs = document.querySelectorAll('input[name="fecha_radio"]');
+
+    fechaInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value === 'Si') {
+                fechaHoraContainer.style.display = 'block';
+            } else {
+                fechaHoraContainer.style.display = 'none';
+            }
+        });
+    });
+
+    // --- LÓGICA PARA NUMERAR TEXTAREA "RECOGER EN" ---
+    const recogerEnTextarea = document.getElementById('recoger_en');
+
+    recogerEnTextarea.addEventListener('input', function() {
+        let lines = this.value.split('\n');
+        let numberedLines = lines.map((line, index) => {
+            // Quitar numeración y guiones existentes para recalcular
+            let cleanLine = line.replace(/^\d+\.\s*/, '').replace(/^-+\s*/, '').trim();
+            if (cleanLine) {
+                return `${index + 1}. ${cleanLine}`;
+            }
+            return '';
+        }).filter(line => line.trim() !== ''); // Eliminar líneas vacías
+
+        // No actualizar si el usuario está borrando para evitar saltos
+        if (event.inputType !== 'deleteContentBackward' && event.inputType !== 'deleteContentForward') {
+             this.value = numberedLines.join('\n');
+        }
+    });
+});
+</script>
+{% endblock %}
+

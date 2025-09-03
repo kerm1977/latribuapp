@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle de {{ viaje.categoria }}{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos para los botones de acción flotantes */
+    .fab-container {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        z-index: 1050;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+
+    .fab-container .fab {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        margin-top: 10px; /* Espacio entre botones */
+    }
+    
+    .fab-container .fab:hover {
+        transform: scale(1.1);
+    }
+    
+    /* Estilos para el botón principal y las opciones de compartir */
+    .fab-share-options {
+        display: none; /* Oculto por defecto */
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+
+    .fab-container:hover .fab-share-options {
+        display: flex; /* Mostrar al hacer hover en el contenedor */
+    }
+
+    .fab.fab-share {
+        background-color: #17a2b8; /* Info color */
+    }
+
+    .fab.fab-edit {
+        background-color: #007bff; /* Primary color */
+    }
+
+    .fab.fab-delete {
+        background-color: #dc3545; /* Danger color */
+    }
+    
+    .fab.fab-pdf { background-color: #e63946; }
+    .fab.fab-png { background-color: #f77f00; }
+    .fab.fab-jpg { background-color: #fca311; }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="card" id="viaje-card-export" style="border: 1px solid #dee2e6;">
+        <div class="card-header bg-light">
+            <h1 class="card-title text-center mb-0">
+                {{ viaje.categoria }}
+            </h1>
+        </div>
+        <div class="card-body">
+
+            {% if viaje.categoria.lower().startswith('etapa') %}
+            <h2 class="text-center text-success fw-bold mb-4">
+                El Camino de Costa Rica
+            </h2>
+            {% endif %}
+
+            <dl class="row">
+                {% if viaje.nombre_lugar %}
+                    <dt class="col-sm-3">Lugar:</dt>
+                    <dd class="col-sm-9">{{ viaje.nombre_lugar }}</dd>
+                {% endif %}
+
+                {% if viaje.provincia %}
+                    <dt class="col-sm-3">Provincia:</dt>
+                    <dd class="col-sm-9">{{ viaje.provincia }}</dd>
+                {% endif %}
+
+                {% if viaje.fecha_requerida and viaje.fecha_hora %}
+                    <dt class="col-sm-3">Fecha y Hora:</dt>
+                    <dd class="col-sm-9">{{ viaje.fecha_hora.strftime('%d de %B de %Y, %I:%M %p') }}</dd>
+                {% endif %}
+
+                {% if viaje.precio and viaje.precio > 0 %}
+                    <dt class="col-sm-3">Precio:</dt>
+                    <dd class="col-sm-9 fw-bold fs-5 text-success">₡{{ "{:,.0f}".format(viaje.precio) }}</dd>
+                {% endif %}
+                
+                {% if viaje.nota %}
+                    <dt class="col-sm-3">Nota:</dt>
+                    <dd class="col-sm-9" style="white-space: pre-wrap;">{{ viaje.nota }}</dd>
+                {% endif %}
+
+                {% if viaje.recoger_en %}
+                    <dt class="col-sm-3">Se recogerá en:</dt>
+                    <dd class="col-sm-9">
+                        <ul class="list-unstyled">
+                            {% for punto in viaje.recoger_en.split('\n') %}
+                                {% if punto.strip() %}
+                                     <li><i class="fas fa-map-marker-alt text-muted me-2"></i>{{ punto.strip().replace('-', '').strip() }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </dd>
+                {% endif %}
+
+                <!-- Sección de Entrega -->
+                {% if viaje.nombre_entrega or viaje.punto_entrega or viaje.url_mapa_entrega %}
+                    <dt class="col-12 mt-3"><h5 class="border-bottom pb-2">Punto de Entrega / Inicio</h5></dt>
+                    {% if viaje.nombre_entrega %}
+                        <dt class="col-sm-3">Nombre:</dt>
+                        <dd class="col-sm-9">{{ viaje.nombre_entrega }}</dd>
+                    {% endif %}
+                    {% if viaje.punto_entrega %}
+                        <dt class="col-sm-3">Dirección:</dt>
+                        <dd class="col-sm-9">{{ viaje.punto_entrega }}</dd>
+                    {% endif %}
+                    {% if viaje.url_mapa_entrega %}
+                        <dt class="col-sm-3">Mapa:</dt>
+                        <dd class="col-sm-9"><a href="{{ viaje.url_mapa_entrega }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-map-marked-alt me-1"></i> Ver en Mapa</a></dd>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Sección de Destino -->
+                {% if viaje.nombre_destino or viaje.punto_destino or viaje.url_mapa_destino %}
+                    <dt class="col-12 mt-3"><h5 class="border-bottom pb-2">Punto de Destino / Final</h5></dt>
+                     {% if viaje.nombre_destino %}
+                        <dt class="col-sm-3">Nombre:</dt>
+                        <dd class="col-sm-9">{{ viaje.nombre_destino }}</dd>
+                    {% endif %}
+                    {% if viaje.punto_destino %}
+                        <dt class="col-sm-3">Dirección:</dt>
+                        <dd class="col-sm-9">{{ viaje.punto_destino }}</dd>
+                    {% endif %}
+                    {% if viaje.url_mapa_destino %}
+                        <dt class="col-sm-3">Mapa:</dt>
+                        <dd class="col-sm-9"><a href="{{ viaje.url_mapa_destino }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-map-marked-alt me-1"></i> Ver en Mapa</a></dd>
+                    {% endif %}
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+</div>
+
+<!-- Contenedor de Botones Flotantes -->
+<div class="fab-container">
+    <!-- Opciones de compartir (inicialmente ocultas) -->
+    <div class="fab-share-options">
+        <a href="{{ url_for('transporte.exportar_viaje', id=viaje.id, formato='pdf') }}" class="fab fab-pdf" title="Exportar a PDF"><i class="fas fa-file-pdf"></i></a>
+        <a href="{{ url_for('transporte.exportar_viaje', id=viaje.id, formato='png') }}" class="fab fab-png" title="Exportar a PNG"><i class="fas fa-file-image"></i></a>
+        <a href="{{ url_for('transporte.exportar_viaje', id=viaje.id, formato='jpg') }}" class="fab fab-jpg" title="Exportar a JPG"><i class="fas fa-file-photo-video"></i></a>
+    </div>
+
+    <!-- Botones de acción principales -->
+    <a href="#" class="fab fab-share" title="Compartir"><i class="fas fa-share-alt"></i></a>
+    <a href="{{ url_for('transporte.crear_viaje', id=viaje.id) }}" class="fab fab-edit" title="Editar Viaje"><i class="fas fa-edit"></i></a>
+    <button type="button" class="fab fab-delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" title="Eliminar Viaje">
+        <i class="fas fa-trash-alt"></i>
+    </button>
+</div>
+
+<!-- Modal de Confirmación de Borrado -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar permanentemente el viaje <strong>"{{ viaje.categoria }}"</strong>? Esta acción no se puede deshacer.
+      </div>
+      <div class="modal-footer">
+        <form action="{{ url_for('transporte.borrar_viaje') }}" method="POST">
+            <input type="hidden" name="viaje_id" value="{{ viaje.id }}">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

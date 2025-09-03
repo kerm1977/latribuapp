@@ -36,6 +36,7 @@ from intern import intern_bp # <--- ASEGÚRATE DE QUE ESTA LÍNEA EXISTA Y NO ES
 from version import version_bp, Version 
 from files import files_bp # Importa el Blueprint de Files
 from btns import btns_bp # Importa el Blueprint desde btns.py (ASUMIMOS QUE btns.py EXISTE)
+from transporte import transporte_bp
 
 
 
@@ -570,6 +571,8 @@ app.register_blueprint(files_bp, url_prefix='/files')
 app.register_blueprint(btns_bp) # REGISTRO DEL BLUEPRINT DE BTNS
 app.register_blueprint(polizas_bp) # <-- NUEVA LÍNEA
 app.register_blueprint(intern_bp, url_prefix='/intern')
+app.register_blueprint(transporte_bp) # <-- AÑADIR ESTA LÍNEA
+
 
 # --- AÑADE ESTAS DOS LÍNEAS PARA CONECTAR OAUTH ---
 init_oauth(app)

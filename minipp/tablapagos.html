@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pagos JyK</title>
+    <meta name="description" content="Aplicación para la gestión de pagos de caminatas nacionales.">
+    <meta name="theme-color" content="#d4e1f5">
+
+    <!-- Estilos CSS Integrados -->
+    <style>
+        /* -------------------
+         * Variables y Reseteo General
+         * ------------------- */
+        :root {
+            --color-primario: #a2c4c9;
+            --color-secundario: #d4e1f5;
+            --color-fondo: #f0f4f8;
+            --color-texto: #333333;
+            --color-acento: #f5b9a2;
+            --color-exito: #a2d5ab;
+            --color-error: #f5a2a2;
+            --color-blanco: #ffffff;
+            --sombra-suave: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --borde-radio: 12px;
+        }
+
+        /* Modos de Tema */
+        .dark-mode { --color-primario: #5a7a7d; --color-secundario: #34495e; --color-fondo: #1c2833; --color-texto: #d4e1f5; --color-acento: #e67e22; --color-blanco: #2c3e50; }
+        .sepia-mode { --color-primario: #a1887f; --color-secundario: #d7ccc8; --color-fondo: #f5f1ee; --color-texto: #5d4037; --color-acento: #ffab91; --color-blanco: #efebe9; }
+        .bw-mode { --color-primario: #555555; --color-secundario: #cccccc; --color-fondo: #f0f0f0; --color-texto: #000000; --color-acento: #888888; --color-exito: #777777; --color-error: #555555; --color-blanco: #ffffff; }
+        .pastel-alt-mode { --color-primario: #b2d8d8; --color-secundario: #f0e6e6; --color-fondo: #f7f3e9; --color-texto: #6c6c6c; --color-acento: #f3c1c6; --color-exito: #c1e1c1; --color-error: #f5caca; --color-blanco: #ffffff; }
+
+        /* Reseteo y Estilos Base */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; }
+        body { background-color: var(--color-fondo); color: var(--color-texto); transition: background-color 0.3s, color 0.3s; line-height: 1.6; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+
+        /* -------------------
+         * Contenedores y Layout
+         * ------------------- */
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .content-section { background-color: var(--color-blanco); padding: 1.5rem; border-radius: var(--borde-radio); margin-bottom: 1.5rem; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-secundario); padding-bottom: 1rem; margin-bottom: 1rem; }
+        .section-title { color: var(--color-primario); margin: 0; }
+        
+        .item-card { border: 1px solid var(--color-secundario); border-radius: var(--borde-radio); padding: 1rem; padding-top: 50px; margin-top: 1rem; display: grid; grid-template-columns: 1fr; gap: 1rem; position: relative; }
+        .card-top-row { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+        @media (min-width: 768px) { .card-top-row { grid-template-columns: repeat(3, 1fr); } }
+        
+        .price-details-container { display: flex; flex-direction: column; gap: 1rem; }
+        @media (min-width: 768px) { .price-details-container { flex-direction: row; align-items: center; } }
+
+        .total-display { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: var(--color-exito); margin-bottom: 1rem; }
+        .grupal-total-formula { font-weight: bold; color: var(--color-acento); }
+        @media (min-width: 768px) { .total-display, .grupal-total-formula { padding-bottom: 0.8rem; } }
+
+        /* -------------------
+         * Formularios y Botones
+         * ------------------- */
+        .form-group { margin-bottom: 1.5rem; position: relative; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--color-secundario); border-radius: 8px; background-color: var(--color-fondo); color: var(--color-texto); transition: border-color 0.3s; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-acento); }
+        
+        .btn { padding: 0.8rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-primary { background-color: var(--color-primario); color: var(--color-blanco); }
+        .btn-secondary { background-color: var(--color-secundario); color: var(--color-texto); }
+        .btn-add-item { background-color: var(--color-exito); color: var(--color-blanco); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 24px; cursor: pointer; flex-shrink: 0; transition: background-color 0.3s, transform 0.2s; }
+        .btn-add-item:hover { background-color: #82c98d; transform: scale(1.1); }
+        .btn-delete-item { position: absolute; top: 10px; right: 10px; background-color: var(--color-error); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s, transform 0.2s; }
+        .btn-delete-item:hover { background-color: #d32f2f; transform: scale(1.1); }
+        .btn-delete-item svg { fill: white; width: 18px; height: 18px; }
+        .btn-delete-field { position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer; padding: 5px; opacity: 0.6; transition: opacity 0.2s; }
+        .btn-delete-field:hover { opacity: 1; }
+        .btn-delete-field svg { width: 16px; height: 16px; fill: var(--color-error); }
+        .btn-collapse-item { position: absolute; top: 8px; left: 10px; background-color: var(--color-secundario); color: var(--color-texto); border: none; border-radius: 8px; width: auto; padding: 6px 10px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s, transform 0.2s; font-size: 0.8rem; }
+        .btn-collapse-item:hover { background-color: var(--color-primario); transform: scale(1.05); }
+
+        /* -------------------
+         * Pestañas y Navegación
+         * ------------------- */
+        .tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid var(--color-secundario); }
+        .tab-link { padding: 1rem 1.5rem; cursor: pointer; font-weight: 600; border: none; background: none; color: var(--color-texto); border-bottom: 3px solid transparent; }
+        .tab-link.active { color: var(--color-acento); border-bottom-color: var(--color-acento); }
+        .tab-content { display: none; animation: fadeIn 0.5s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* -------------------
+         * Modales y UI Extras
+         * ------------------- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; visibility: hidden; opacity: 0; transition: visibility 0s 0.3s, opacity 0.3s; }
+        .modal-overlay.visible { visibility: visible; opacity: 1; transition: visibility 0s, opacity 0.3s; }
+        .modal-content { background-color: var(--color-blanco); padding: 2rem; border-radius: var(--borde-radio); width: 90%; max-width: 500px; text-align: center; transform: scale(0.9); transition: transform 0.3s; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-content h3 { margin-bottom: 1rem; }
+        .modal-content p { margin-bottom: 1.5rem; }
+        .modal-buttons { display: flex; justify-content: center; gap: 1rem; }
+        .modal-btn { padding: 0.7rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-accept { background-color: var(--color-primario); color: var(--color-blanco); }
+        .btn-confirm { background-color: var(--color-error); color: #fff; }
+        .btn-cancel { background-color: var(--color-secundario); color: var(--color-texto); }
+        
+        #theme-toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 1001; background: var(--color-blanco); border: none; border-radius: 50%; width: 48px; height: 48px; box-shadow: var(--sombra-suave); cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        #theme-toggle-btn svg { width: 24px; height: 24px; fill: var(--color-texto); }
+        
+        /* Estilos para colapsar */
+        .item-card .collapsible-content { display: block; }
+        .item-card.collapsed .collapsible-content { display: none; }
+        .collapsed-summary { display: none; }
+        .item-card.collapsed .collapsed-summary { display: flex; flex-direction: column; align-items: center; padding: 0; }
+        .collapsed-summary h4 { color: var(--color-primario); font-size: 1.1rem; margin-top: 0.5rem; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 45px; }
+        .collapsed-summary .total-display { text-align: center; width: 100%; }
+        
+        #tipo-cambio-wrapper { display: none; }
+        .crc-conversion { display: none; text-align: right; color: var(--color-texto); margin-top: -0.75rem; margin-bottom: 1rem; }
+
+        /* Estilos de Eventos Guardados */
+        #eventos-guardados-list { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .evento-guardado-btn { background-color: var(--color-blanco); border: 1px solid var(--color-secundario); padding: 1rem; border-radius: var(--borde-radio); cursor: pointer; text-align: left; flex-grow: 1; display: flex; justify-content: space-between; align-items: center; }
+        .evento-guardado-btn:hover { border-color: var(--color-primario); background-color: #fdfdfd; }
+        .evento-guardado-btn div { display: flex; flex-direction: column; }
+        .evento-guardado-btn strong { color: var(--color-primario); }
+        .evento-guardado-btn small { color: var(--color-exito); font-weight: bold; }
+        .btn-delete-evento { background-color: var(--color-error); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-left: 1rem; }
+        .btn-delete-evento:hover { background-color: #d32f2f; }
+        .btn-delete-evento svg { width: 14px; height: 14px; fill: white; }
+
+        /* -------------------
+         * Responsividad
+         * ------------------- */
+        @media (max-width: 768px) {
+            .container { margin: 10px auto; padding: 10px; }
+            .tabs { font-size: 0.9rem; }
+            .tab-link { padding: 0.8rem 1rem; }
+            #theme-toggle-btn { top: 10px; right: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Contenedor de la Aplicación Principal -->
+    <div id="app-container" class="container">
+
+        <!-- Pestañas de Navegación -->
+        <div class="tabs">
+            <button class="tab-link active" data-tab="nacionales">TABLA DE PAGOS</button>
+        </div>
+
+        <!-- Contenido de Pagos Nacionales -->
+        <div id="tab-nacionales" class="tab-content active">
+            <div class="content-section">
+                <div class="section-header">
+                    <h3 class="section-title">Eventos Guardados</h3>
+                </div>
+                <div id="eventos-guardados-list"></div>
+            </div>
+
+            <div class="content-section">
+                <div class="section-header">
+                    <h3 class="section-title">Información General del Evento</h3>
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="nuevo-evento-btn" class="btn btn-secondary">Nuevo Evento</button>
+                        <button id="guardar-evento-btn" class="btn btn-primary">Guardar Evento</button>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <select id="currency-selector">
+                                <option value="CRC">CRC (₡)</option>
+                                <option value="USD">USD ($)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label for="evento-nombre">Nombre del Evento</label>
+                        <input type="text" id="evento-nombre">
+                    </div>
+                     <div class="form-group">
+                        <label for="evento-precio">Precio del Evento</label>
+                        <input type="number" id="evento-precio" value="0" min="0">
+                    </div>
+                     <div class="form-group">
+                        <label for="evento-capacidad-cg">Capacidad C/G</label>
+                        <input type="number" id="evento-capacidad-cg" value="0" min="0">
+                    </div>
+                     <div class="form-group">
+                        <label for="evento-capacidad-sg">Capacidad S/G</label>
+                        <input type="number" id="evento-capacidad-sg" value="0" min="0">
+                    </div>
+                    <div class="form-group" id="tipo-cambio-wrapper">
+                        <label for="tipo-cambio">Tipo de Cambio</label>
+                        <input type="number" id="tipo-cambio" value="500" min="1">
+                    </div>
+                    <div class="form-group" id="total-conversion-container">
+                        <label id="total-conversion-label">Total en USD</label>
+                        <p id="total-conversion" style="font-weight: bold; font-size: 1.2rem; color: var(--color-primario); margin-top: 8px;">$0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-section">
+                <div class="section-header">
+                    <h3 class="section-title">Lista de Pagos</h3>
+                    <button class="btn-add-item" data-category="transporte-nacional">+</button>
+                </div>
+                <div id="transporte-nacional-list"></div>
+            </div>
+
+            <div class="content-section">
+                <h3 class="section-title">Totales</h3>
+                <div class="total-display">
+                    <strong>TOTALES POR PERSONA:</strong> 
+                    <span id="grand-total-nacionales">0</span>
+                </div>
+                <div class="crc-conversion" id="grand-total-nacionales-crc-wrapper">
+                    <small>TOTAL POR PERSONA CRC: <span id="grand-total-nacionales-crc">0</span></small>
+                </div>
+
+                <div class="total-display">
+                    <strong>DIFERENCIA:</strong> 
+                    <span id="diferencia-nacionales">0</span>
+                </div>
+                 <div class="crc-conversion" id="diferencia-nacionales-crc-wrapper">
+                    <small>DIFERENCIA CRC: <span id="diferencia-nacionales-crc">0</span></small>
+                </div>
+
+                <div class="total-display">
+                    <strong>DIFERENCIA GENERAL:</strong> 
+                    <span id="diferencia-general-nacionales">0</span>
+                </div>
+                <div class="crc-conversion" id="diferencia-general-nacionales-crc-wrapper">
+                    <small>DIFERENCIA GENERAL CRC: <span id="diferencia-general-nacionales-crc">0</span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles de Accesibilidad -->
+    <button id="theme-toggle-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.49 10 10-4.49 10-10 10zm0-18c-4.41 0-8 3.59-8 8s3.59 8 8 8 8-3.59 8-8-3.59-8-8-8zM13 1h-2v3h2V1zm0 19h-2v3h2v-3zM20.49 4.93l-1.41 1.41-1.06-1.06 1.41-1.41 1.06 1.06zM6.08 17.92l-1.06 1.06 1.41 1.41 1.06-1.06-1.41-1.41zM23 11v2h-3v-2h3zM4 11v2H1v-2h3zM17.92 6.08l1.06-1.06-1.41-1.41-1.06 1.06 1.41 1.41zM4.93 20.49l-1.41-1.41 1.06 1.06-1.41 1.41-1.06-1.06z"/></svg>
+    </button>
+    
+    <!-- Modal de Notificación General -->
+    <div id="notification-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="notification-title">Notificación</h3>
+            <p id="notification-message"></p>
+            <div class="modal-buttons">
+                <button id="notification-accept-btn" class="modal-btn btn-accept">Aceptar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmación de Borrado -->
+    <div id="delete-confirm-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="delete-confirm-title">Confirmar Borrado</h3>
+            <p id="delete-confirm-message">¿Estás seguro de que deseas borrar este elemento?</p>
+            <div class="modal-buttons">
+                <button id="delete-confirm-btn" class="modal-btn btn-confirm">Sí, borrar</button>
+                <button id="delete-cancel-btn" class="modal-btn btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lógica de la Aplicación -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // --- CONSTANTES Y CONFIGURACIÓN ---
+        const DB_NAME = 'PagosAppDB';
+        const DB_VERSION = 2;
+        let db;
+        let currentCurrency = 'CRC';
+        let currentEventId = null;
+        
+        const airlinesData = {
+            "Arajet": "hablemos@arajet.com",
+            "AeroMexico": "Call Center: 2440-1354 / 2440-1378, Web: www.aeromexico.com",
+            "Air Canada": "Call Center: 0800-032-0066, Web: www.aircanada.com",
+            "Air Transat": "Web: http://www.airtransat.com",
+            "AirFrance": "Call Center: 2539-7413, Web: www.airfrance.cr",
+            "Alaska": "Call Center: 1-800-252-7522, Web: www. alaskaair.com",
+            "American Airlines": "Call Center: 2420-1217, Web: www.aa.com",
+            "Avianca": "Call Center: 4002-3320, Web: www. avianca.com",
+            "British Airlines": "Call Center: 2441-2537, Web: www.britishairways.com",
+            "Costa Rica Green Airways": "Call Center: 4070-0771, Web: www. costaricagreenair.com",
+            "Copa Airlines": "Call Center: 800-044-0005, Web: www.copa.com",
+            "Delta Airlines": "Call Center: 2257-4141, Web: www.delta.com",
+            "Frontier": "Call Center: 2435-9262, Web: www.flyfrontier.com",
+            "GOL": "Call Center: +55 11 3471 2973, Web: www.voegol.com.br",
+            "Edelweiss": "Call Center: 1-877-359-7947, Web: www.flyedelweiss.com",
+            "Iberojet": "Call Center: 6414-1180, Web: www.iberojet.com",
+            "Iberia": "Call Center: 2036-0069, Web: www.iberia.com",
+            "LATAM": "Call Center: 2257-5745, Web: www.latamairlines.com",
+            "Lufthansa": "Call Center: 2442-7502, Web: www.lufthansa.com",
+            "KLM": "Call Center: 2430-4748, Web: www.klm.com",
+            "jetBlue": "Call Center: 0-800-012-1666, Web: www.jetblue.com",
+            "SANSA": "Call Center: 2290-4100, Web: www.flysansa.com",
+            "Southwest": "Call Center: 0-800-012-1917, Web: www. espanol.southwest.com",
+            "Spirit": "Call Center: 4000-1887, Web: www.spirit.com",
+            "United": "Call Center: 0-800-044-0005, Web: www.united.com",
+            "Volaris": "Call Center: 4002-7462, Web: www.volaris.com",
+            "Wingo": "Call Center: 0-571-307-8133, Web: www.wingo.com"
+        };
+
+        // --- SELECTORES DEL DOM ---
+        const tabs = document.querySelectorAll('.tab-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const addItemBtns = document.querySelectorAll('.btn-add-item');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const eventoNombre = document.getElementById('evento-nombre');
+        const eventoPrecio = document.getElementById('evento-precio');
+        const eventoCapacidadCG = document.getElementById('evento-capacidad-cg');
+        const eventoCapacidadSG = document.getElementById('evento-capacidad-sg');
+        const tipoCambioInput = document.getElementById('tipo-cambio');
+        const tipoCambioWrapper = document.getElementById('tipo-cambio-wrapper');
+        const totalConversionLabel = document.getElementById('total-conversion-label');
+        const totalConversionDisplay = document.getElementById('total-conversion');
+        const totalConversionContainer = document.getElementById('total-conversion-container');
+        const currencySelector = document.getElementById('currency-selector');
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+        const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+        const deleteConfirmMessage = document.getElementById('delete-confirm-message');
+        const grandTotalNacionalesCrc = document.getElementById('grand-total-nacionales-crc');
+        const diferenciaNacionalesCrc = document.getElementById('diferencia-nacionales-crc');
+        const diferenciaGeneralNacionalesCrc = document.getElementById('diferencia-general-nacionales-crc');
+        const crcConversionWrappers = document.querySelectorAll('.crc-conversion');
+        const guardarEventoBtn = document.getElementById('guardar-evento-btn');
+        const nuevoEventoBtn = document.getElementById('nuevo-evento-btn');
+        const eventosGuardadosList = document.getElementById('eventos-guardados-list');
+
+
+        let elementToDelete = null;
+        let deleteConfirmStep = 0;
+
+        // --- CONFIGURACIÓN DE INDEXEDDB ---
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (event) => { console.error('Error al abrir IndexedDB:', event.target.error); reject('Error de base de datos'); };
+                request.onsuccess = (event) => { db = event.target.result; console.log('Base de datos abierta exitosamente.'); resolve(); };
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('pagosNacionales')) { db.createObjectStore('pagosNacionales', { keyPath: 'id', autoIncrement: true }); }
+                    if (!db.objectStoreNames.contains('eventos')) { db.createObjectStore('eventos', { keyPath: 'id', autoIncrement: true }); }
+                };
+            });
+        }
+
+        // --- MANEJO DE FORMULARIOS Y UI ---
+        document.body.addEventListener('input', (e) => {
+            if (e.target.matches('.phone-input')) {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            }
+            if (e.target.matches('#evento-precio, #tipo-cambio')) {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            }
+        });
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(item => item.classList.remove('active'));
+                tab.classList.add('active');
+                const targetTab = document.getElementById(`tab-${tab.dataset.tab}`);
+                tabContents.forEach(content => content.classList.remove('active'));
+                if(targetTab) targetTab.classList.add('active');
+            });
+        });
+        
+        function updateFieldSelectorsForCurrency() {
+            const allFieldSelectors = document.querySelectorAll('.field-selector');
+            allFieldSelectors.forEach(selector => {
+                const airlineOption = selector.querySelector('option[value="aerolinea"]');
+                const card = selector.closest('.item-card');
+                if (currentCurrency === 'USD') {
+                    if (!airlineOption) {
+                        const option = document.createElement('option');
+                        option.value = 'aerolinea';
+                        option.textContent = 'Aerolínea';
+                        selector.options[0].insertAdjacentElement('afterend', option);
+                    }
+                } else { 
+                    if (airlineOption) {
+                        airlineOption.remove();
+                    }
+                    const airlineField = card.querySelector('[data-field-name="aerolinea"]');
+                    if (airlineField) {
+                        airlineField.remove();
+                        togglePriceVisibility(card);
+                    }
+                }
+            });
+        }
+        
+        currencySelector.addEventListener('change', (e) => {
+            currentCurrency = e.target.value;
+            if (currentCurrency === 'USD') {
+                tipoCambioWrapper.style.display = 'block';
+                totalConversionLabel.textContent = 'Total en CRC';
+                totalConversionContainer.style.display = 'block';
+            } else { 
+                tipoCambioWrapper.style.display = 'none';
+                totalConversionContainer.style.display = 'none';
+            }
+            
+            updateFieldSelectorsForCurrency();
+            updateAllTotals();
+        });
+
+        function togglePriceVisibility(card) {
+            if (!card) return;
+            const airlineField = card.querySelector('[data-field-name="aerolinea"]');
+            const pricePerPersonInput = card.querySelector('.item-price-per-person');
+            if (pricePerPersonInput) {
+                const priceGroup = pricePerPersonInput.closest('.form-group');
+                if (priceGroup) {
+                    priceGroup.style.display = airlineField ? 'none' : 'block';
+                }
+            }
+        }
+
+        // --- LÓGICA PARA AÑADIR Y ELIMINAR ITEMS Y PRECIOS DINÁMICOS ---
+        addItemBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.category;
+                const listContainer = document.getElementById(`${category}-list`);
+                if (listContainer) {
+                    const lastItem = listContainer.lastElementChild;
+                    if (lastItem) {
+                        const nombreInput = lastItem.querySelector('input[required]');
+                        if (nombreInput && nombreInput.value.trim() === '') {
+                            showNotification('Por favor, completa el campo "Nombre" del último pago antes de agregar uno nuevo.');
+                            return;
+                        }
+                    }
+                    const newItemWrapper = document.createElement('div');
+                    newItemWrapper.innerHTML = createItemHTML();
+                    listContainer.appendChild(newItemWrapper.firstElementChild);
+                    calculateGrandTotal(category);
+                }
+            });
+        });
+
+        document.body.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-delete-item')) {
+                openDeleteModal(e.target.closest('.item-card'));
+            }
+            if (e.target.closest('.btn-collapse-item')) {
+                const button = e.target.closest('.btn-collapse-item');
+                const card = button.closest('.item-card');
+                if (card) {
+                    card.classList.toggle('collapsed');
+                    const isCollapsed = card.classList.contains('collapsed');
+                    button.textContent = isCollapsed ? 'Mostrar' : 'Ocultar';
+                    if (isCollapsed) {
+                        updateTotals(card.querySelector('input')); 
+                    }
+                }
+            }
+            if (e.target.closest('.btn-delete-field')) {
+                const formGroup = e.target.closest('.form-group');
+                if (formGroup) {
+                    const fieldName = formGroup.dataset.fieldName;
+                    const itemCard = formGroup.closest('.item-card');
+                    if (itemCard) {
+                        if (fieldName) {
+                            const selector = itemCard.querySelector('.field-selector');
+                            const option = selector.querySelector(`option[value="${fieldName}"]`);
+                            if (option) option.disabled = false;
+                        }
+                        formGroup.remove();
+                        if (fieldName === 'aerolinea') {
+                            togglePriceVisibility(itemCard);
+                        }
+                        updateTotals(itemCard.querySelector('input')); 
+                    }
+                }
+            }
+        });
+
+        function createItemHTML() {
+            const uniqueId = `item-${Date.now()}-${Math.random()}`;
+            let airlineOptionHTML = '';
+            if (currentCurrency === 'USD') {
+                airlineOptionHTML = `<option value="aerolinea">Aerolínea</option>`;
+            }
+            return `
+                <div class="item-card" id="${uniqueId}">
+                    <button class="btn-collapse-item" aria-label="Colapsar pago">Ocultar</button>
+                    <button class="btn-delete-item" aria-label="Eliminar pago"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                    
+                    <div class="collapsed-summary"></div>
+
+                    <div class="collapsible-content">
+                        <div class="card-top-row">
+                            <div class="form-group"><label for="nombre-${uniqueId}">Nombre</label><input type="text" id="nombre-${uniqueId}" class="item-nombre" required></div>
+                            <div class="form-group"><label for="tipo-precio-${uniqueId}">Tipo de Precio</label><select id="tipo-precio-${uniqueId}" class="price-type-selector"><option value="persona">Precio por Persona</option><option value="grupal">Precio Grupal</option></select></div>
+                            <div class="form-group"><label for="field-selector-${uniqueId}">Añadir Campo</label><select id="field-selector-${uniqueId}" class="field-selector" data-card-id="${uniqueId}"><option value="">Seleccionar...</option>${airlineOptionHTML}<option value="descripcion">Descripción</option><option value="telefono">Teléfono</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="fecha">Fecha</option><option value="cantidad">Cantidad</option><option value="tipo_pago">Tipo de Pago</option><option value="guias">Guías</option><option value="nombre_encargado">Nombre Encargado</option><option value="telefono_encargado">Teléfono Encargado</option><option value="nota">Nota</option><option value="impuesto">Impuesto</option></select></div>
+                        </div>
+                        <div class="dynamic-fields-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;"></div>
+                        <div class="price-section" style="border-top: 1px solid var(--color-secundario); margin-top: 1rem; padding-top: 1rem;">
+                            <div class="price-details-container">
+                                <div class="form-group"><label for="precio-persona-${uniqueId}">Precio p/p</label><input type="number" id="precio-persona-${uniqueId}" class="item-price-per-person" min="0" value="0"></div>
+                                <div class="total-display"><strong>TOTAL:</strong> <span class="total-amount">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        function createAirlineFieldsHTML(cardId) {
+            const airlineOptions = Object.keys(airlinesData).map(name => `<option value="${name}">${name}</option>`).join('');
+            const fieldId = `aerolinea-${cardId}`;
+            const deleteButton = `<button type="button" class="btn-delete-field" aria-label="Eliminar campo"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
+
+            return `
+                <div class="form-group" data-field-name="aerolinea" style="grid-column: 1 / -1;">
+                     <label for="${fieldId}-selector">Aerolínea</label>
+                     <select id="${fieldId}-selector" class="airline-selector">
+                        <option value="">Seleccione una aerolínea...</option>
+                        ${airlineOptions}
+                     </select>
+                     ${deleteButton}
+                     <p id="${fieldId}-info" class="airline-info-display" style="margin-top: 0.5rem; background-color: var(--color-secundario); padding: 0.8rem; border-radius: 8px; min-height: 40px; color: var(--color-texto); font-size: 0.9rem;"></p>
+                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <div class="form-group"><label for="${fieldId}-boleto-ida">Boleto de Ida</label><input type="number" id="${fieldId}-boleto-ida" class="airline-price" value="0" min="0"></div>
+                        <div class="form-group"><label for="${fieldId}-boleto-vuelta">Boleto de Vuelta</label><input type="number" id="${fieldId}-boleto-vuelta" class="airline-price" value="0" min="0"></div>
+                        <div class="form-group"><label for="${fieldId}-precio-asiento">Precio del Asiento</label><input type="number" id="${fieldId}-precio-asiento" class="airline-price" value="0" min="0"></div>
+                        <div class="form-group"><label for="${fieldId}-equipaje-basico">Equipaje Básico</label><input type="number" id="${fieldId}-equipaje-basico" class="airline-price" value="0" min="0"></div>
+                        <div class="form-group"><label for="${fieldId}-equipaje-medio">Equipaje Medio</label><input type="number" id="${fieldId}-equipaje-medio" class="airline-price" value="0" min="0"></div>
+                        <div class="form-group"><label for="${fieldId}-equipaje-full">Equipaje Full</label><input type="number" id="${fieldId}-equipaje-full" class="airline-price" value="0" min="0"></div>
+                        <div class="form-group"><label for="${fieldId}-precio-opcional">Precio Opcional</label><input type="number" id="${fieldId}-precio-opcional" class="airline-price" value="0" min="0"></div>
+                     </div>
+                </div>
+            `;
+        }
+
+        function generateFieldHTML(fieldName, cardId) {
+            const fieldId = `${fieldName}-${cardId}`;
+            let label = '';
+            let inputHTML = '';
+            const deleteButton = `<button type="button" class="btn-delete-field" aria-label="Eliminar campo"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
+
+            switch (fieldName) {
+                case 'aerolinea':
+                    return createAirlineFieldsHTML(cardId);
+                case 'descripcion': label = 'Descripción'; inputHTML = `<input type="text" id="${fieldId}">`; break;
+                case 'telefono': label = 'Teléfono'; inputHTML = `<input type="tel" id="${fieldId}" class="phone-input" maxlength="8">`; break;
+                case 'whatsapp': label = 'WhatsApp'; inputHTML = `<input type="tel" id="${fieldId}" class="phone-input" maxlength="8">`; break;
+                case 'email': label = 'Email'; inputHTML = `<input type="email" id="${fieldId}">`; break;
+                case 'fecha': label = 'Fecha'; inputHTML = `<input type="date" id="${fieldId}">`; break;
+                case 'cantidad': label = 'Cantidad'; inputHTML = `<input type="number" id="${fieldId}" class="item-quantity" value="1" min="1">`; break;
+                case 'tipo_pago': label = 'Tipo de Pago'; inputHTML = `<select id="${fieldId}"><option value="efectivo">Efectivo</option><option value="sinpe">SINPE</option><option value="transferencia">Transferencia</option></select>`; break;
+                case 'guias': label = 'Guías'; inputHTML = `<input type="text" id="${fieldId}">`; break;
+                case 'nombre_encargado': label = 'Nombre Encargado'; inputHTML = `<input type="text" id="${fieldId}">`; break;
+                case 'telefono_encargado': label = 'Teléfono Encargado'; inputHTML = `<input type="tel" id="${fieldId}" class="phone-input" maxlength="8">`; break;
+                case 'nota': label = 'Nota'; inputHTML = `<textarea id="${fieldId}" rows="3"></textarea>`; break;
+                case 'impuesto':
+                    label = 'Impuesto';
+                    inputHTML = `<select id="${fieldId}" class="impuesto-selector"><option value="no">No</option><option value="si">Sí</option></select>
+                        <div class="form-group monto-impuesto-container" style="display: none; margin-top: 1rem; margin-bottom: 0;">
+                            <label for="monto-${fieldId}">Monto Impuesto</label><input type="number" id="monto-${fieldId}" min="0" value="0">
+                        </div>`;
+                    break;
+                default: return '';
+            }
+            return `<div class="form-group" data-field-name="${fieldName}"><label for="${fieldId}">${label}</label>${inputHTML}${deleteButton}</div>`;
+        }
+
+        document.body.addEventListener('change', (e) => {
+            if (e.target.matches('.field-selector')) {
+                const select = e.target;
+                const fieldName = select.value;
+                const cardId = select.dataset.cardId;
+                if (!fieldName || !cardId) return;
+                const card = document.getElementById(cardId);
+                if (card) {
+                    const container = card.querySelector('.dynamic-fields-container');
+                    container.insertAdjacentHTML('beforeend', generateFieldHTML(fieldName, cardId));
+                    const optionToDisable = select.querySelector(`option[value="${fieldName}"]`);
+                    if (optionToDisable) optionToDisable.disabled = true;
+                    select.value = '';
+                    if (fieldName === 'aerolinea') {
+                        togglePriceVisibility(card);
+                    }
+                    updateTotals(card.querySelector('input'));
+                }
+            }
+            if (e.target.matches('.impuesto-selector')) {
+                const montoContainer = e.target.nextElementSibling;
+                if (montoContainer) montoContainer.style.display = e.target.value === 'si' ? 'block' : 'none';
+            }
+            if (e.target.matches('.price-type-selector')) {
+                updatePriceFields(e.target);
+            }
+            if (e.target.matches('.airline-selector')) {
+                const selectedAirline = e.target.value;
+                const infoDisplay = e.target.closest('.form-group').querySelector('.airline-info-display');
+                if (infoDisplay) {
+                    infoDisplay.textContent = airlinesData[selectedAirline] || '';
+                }
+            }
+        });
+
+        document.body.addEventListener('input', (e) => {
+            const card = e.target.closest('.item-card');
+            if (card) {
+                updateTotals(e.target);
+            } else {
+                calculateGrandTotal('transporte-nacional-list');
+            }
+        });
+        
+        const globalCalculationFields = [eventoPrecio, eventoCapacidadCG, eventoCapacidadSG, tipoCambioInput];
+        globalCalculationFields.forEach(field => {
+            if (field) field.addEventListener('input', () => {
+                updateAllTotals();
+            });
+        });
+
+        function updatePriceFields(selectElement) {
+            const itemCard = selectElement.closest('.item-card');
+            const priceSection = itemCard.querySelector('.price-section');
+            const uniqueId = itemCard.id;
+            const currencySymbol = currentCurrency === 'CRC' ? '₡' : '$';
+            if (selectElement.value === 'persona') {
+                priceSection.innerHTML = `<div class="price-details-container"><div class="form-group"><label for="precio-persona-${uniqueId}">Precio p/p</label><input type="number" id="precio-persona-${uniqueId}" class="item-price-per-person" min="0" value="0"></div><div class="total-display"><strong>TOTAL:</strong> <span class="total-amount">${currencySymbol}0</span></div></div>`;
+            } else {
+                priceSection.innerHTML = `<div class="price-details-container"><div class="form-group"><label for="precio-grupal-${uniqueId}">Precio Grupal</label><input type="number" id="precio-grupal-${uniqueId}" class="item-price-grupal" min="0" value="0"></div><div class="grupal-total-formula"><strong>TOTAL:</strong> <span class="grupal-amount">${currencySymbol}0</span></div></div>`;
+            }
+            togglePriceVisibility(itemCard);
+            updateTotals(selectElement);
+        }
+        
+        // --- INICIO MODIFICACION: Lógica de cálculo actualizada ---
+        function calculateBaseTotal(card, type) {
+            const capacidadCG = parseFloat(eventoCapacidadCG?.value) || 0;
+            const capacidadSG = parseFloat(eventoCapacidadSG?.value) || 0;
+            const airlineField = card.querySelector('[data-field-name="aerolinea"]');
+
+            if (capacidadSG === 0) return 0;
+
+            // Lógica de cálculo exclusiva para aerolínea
+            if (airlineField) {
+                let totalAerolineaCalculado = 0;
+                const airlinePriceInputs = card.querySelectorAll('.airline-price');
+                
+                airlinePriceInputs.forEach(input => {
+                    const precioIndividual = parseFloat(input.value) || 0;
+                    // Aplicando la fórmula a cada item individualmente y sumando
+                    totalAerolineaCalculado += (precioIndividual * capacidadCG) / capacidadSG;
+                });
+                
+                return totalAerolineaCalculado;
+            }
+            
+            // Lógica original para otros tipos de pago (sin aerolínea)
+            let precio = 0;
+            if (type === 'persona') {
+                precio = parseFloat(card.querySelector('.item-price-per-person')?.value) || 0;
+                return precio * capacidadCG / capacidadSG;
+            } else { // grupal
+                precio = parseFloat(card.querySelector('.item-price-grupal')?.value) || 0;
+                return precio / capacidadSG;
+            }
+        }
+        // --- FIN MODIFICACION ---
+
+
+        function formatCurrency(amount, currency = currentCurrency) {
+            const symbol = currency === 'CRC' ? '₡' : '$';
+            const value = Math.round(amount);
+            return `${symbol}${value}`;
+        }
+
+        function updateTotals(element) {
+            const card = element.closest('.item-card');
+            if (!card) return;
+
+            togglePriceVisibility(card); 
+
+            const priceType = card.querySelector('.price-type-selector').value;
+            const baseTotal = calculateBaseTotal(card, priceType);
+            const cantidadInput = card.querySelector('.item-quantity');
+            
+            const totalDisplay = card.querySelector('.total-display, .grupal-total-formula');
+            const totalSpan = card.querySelector('.total-amount, .grupal-amount');
+            
+            let finalTotal = baseTotal;
+            let label = "TOTAL:";
+
+            if (cantidadInput) {
+                const cantidad = parseFloat(cantidadInput.value) || 1;
+                finalTotal = baseTotal * cantidad;
+                label = "TOTAL X CANTIDAD:";
+            }
+
+            if(totalDisplay && totalSpan) {
+                totalDisplay.querySelector('strong').textContent = label;
+                totalSpan.textContent = formatCurrency(finalTotal);
+            }
+            
+            const summaryContainer = card.querySelector('.collapsed-summary');
+            if (summaryContainer) {
+                const nombre = card.querySelector('.item-nombre').value || 'Sin Nombre';
+                summaryContainer.innerHTML = `<div class="total-display"><strong>${label}</strong> ${formatCurrency(finalTotal)}</div><h4>${nombre}</h4>`;
+            }
+            
+            const category = card.parentElement.id;
+            calculateGrandTotal(category);
+        }
+
+        function calculateGrandTotal(category) {
+            if (!category) return;
+            const list = document.getElementById(category);
+            const categoryName = 'nacionales';
+            const totalContainer = document.getElementById(`grand-total-${categoryName}`);
+            const diferenciaContainer = document.getElementById(`diferencia-${categoryName}`);
+            const diferenciaGeneralContainer = document.getElementById(`diferencia-general-${categoryName}`);
+
+            if (!list || !totalContainer || !diferenciaContainer || !diferenciaGeneralContainer) return;
+
+            let grandTotal = 0;
+            const cards = list.querySelectorAll('.item-card');
+
+            cards.forEach(card => {
+                const baseTotal = calculateBaseTotal(card, card.querySelector('.price-type-selector').value);
+                const cantidadInput = card.querySelector('.item-quantity');
+                if (cantidadInput) {
+                    const cantidad = parseFloat(cantidadInput.value) || 1;
+                    grandTotal += baseTotal * cantidad;
+                } else {
+                    grandTotal += baseTotal;
+                }
+            });
+
+            const precioDelEvento = parseFloat(eventoPrecio.value) || 0;
+            const diferencia = precioDelEvento - grandTotal;
+            const capacidadSG = parseFloat(eventoCapacidadSG.value) || 0;
+            const diferenciaGeneral = diferencia * capacidadSG;
+
+            totalContainer.textContent = formatCurrency(grandTotal);
+            diferenciaContainer.textContent = formatCurrency(diferencia);
+            diferenciaGeneralContainer.textContent = formatCurrency(diferenciaGeneral);
+
+            const tipoCambio = parseFloat(tipoCambioInput.value) || 1;
+            if (currentCurrency === 'USD') {
+                const totalInCRC = precioDelEvento * tipoCambio;
+                totalConversionDisplay.textContent = `₡${Math.round(totalInCRC)}`;
+                
+                grandTotalNacionalesCrc.textContent = `₡${Math.round(grandTotal * tipoCambio)}`;
+                diferenciaNacionalesCrc.textContent = `₡${Math.round(diferencia * tipoCambio)}`;
+                diferenciaGeneralNacionalesCrc.textContent = `₡${Math.round(diferenciaGeneral * tipoCambio)}`;
+                crcConversionWrappers.forEach(wrapper => wrapper.style.display = 'block');
+
+            } else { 
+                const totalInUSD = precioDelEvento / tipoCambio;
+                totalConversionDisplay.textContent = `$${Math.round(totalInUSD)}`;
+                crcConversionWrappers.forEach(wrapper => wrapper.style.display = 'none');
+            }
+        }
+
+        function updateAllTotals() {
+            document.querySelectorAll('.item-card').forEach(card => {
+                updateTotals(card.querySelector('input'));
+            });
+            calculateGrandTotal('transporte-nacional-list');
+        }
+        
+        // --- LÓGICA DE MODALES ---
+        const notificationModal = document.getElementById('notification-modal');
+        function showNotification(message) {
+            notificationModal.querySelector('#notification-message').textContent = message;
+            notificationModal.classList.add('visible');
+        }
+        notificationModal.querySelector('#notification-accept-btn').addEventListener('click', () => notificationModal.classList.remove('visible'));
+
+        function openDeleteModal(element) {
+            elementToDelete = element;
+            deleteConfirmStep = 1;
+            deleteConfirmMessage.textContent = `Confirmación 1 de 3. ¿Estás seguro?`;
+            deleteConfirmModal.classList.add('visible');
+        }
+
+        function closeDeleteModal() {
+            deleteConfirmModal.classList.remove('visible');
+            elementToDelete = null;
+            deleteConfirmStep = 0;
+        }
+
+        deleteCancelBtn.addEventListener('click', closeDeleteModal);
+        deleteConfirmBtn.addEventListener('click', () => {
+            deleteConfirmStep++;
+            if (deleteConfirmStep === 2) {
+                deleteConfirmMessage.textContent = `Confirmación 2 de 3. ¿Realmente quieres borrarlo?`;
+            } else if (deleteConfirmStep === 3) {
+                deleteConfirmMessage.textContent = `ÚLTIMA OPORTUNIDAD. ¿Borrar permanentemente?`;
+            } else if (deleteConfirmStep > 3) {
+                if (elementToDelete) {
+                    const category = elementToDelete.parentElement.id;
+                    elementToDelete.remove();
+                    calculateGrandTotal(category);
+                }
+                closeDeleteModal();
+            }
+        });
+
+        // --- LÓGICA DE TEMAS ---
+        const themes = ['pastel-mode', 'dark-mode', 'sepia-mode', 'bw-mode', 'pastel-alt-mode'];
+        function applyTheme(theme) {
+            document.body.className = theme === 'pastel-mode' ? '' : theme;
+            localStorage.setItem('theme', theme);
+        }
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = localStorage.getItem('theme') || 'pastel-mode';
+            const availableThemes = themes.filter(t => t !== currentTheme);
+            const nextTheme = availableThemes[Math.floor(Math.random() * availableThemes.length)];
+            applyTheme(nextTheme);
+        });
+
+        // --- LÓGICA DE EVENTOS (GUARDAR/CARGAR/BORRAR) ---
+        
+        nuevoEventoBtn.addEventListener('click', () => {
+            currentEventId = null;
+            eventoNombre.value = '';
+            eventoPrecio.value = '0';
+            eventoCapacidadCG.value = '0';
+            eventoCapacidadSG.value = '0';
+            document.getElementById('transporte-nacional-list').innerHTML = '';
+            updateAllTotals();
+            showNotification('Formulario limpiado. Listo para un nuevo evento.');
+        });
+
+        guardarEventoBtn.addEventListener('click', () => {
+            const nombre = eventoNombre.value.trim();
+            if (!nombre) {
+                showNotification('Por favor, ingresa un nombre para el evento antes de guardar.');
+                return;
+            }
+
+            const pagos = [];
+            document.querySelectorAll('#transporte-nacional-list .item-card').forEach(card => {
+                const pago = {
+                    nombre: card.querySelector('.item-nombre').value,
+                    tipoPrecio: card.querySelector('.price-type-selector').value,
+                    precioPersona: card.querySelector('.item-price-per-person')?.value || '0',
+                    precioGrupal: card.querySelector('.item-price-grupal')?.value || '0',
+                    dynamicFields: {}
+                };
+                card.querySelectorAll('.dynamic-fields-container .form-group').forEach(group => {
+                    const fieldName = group.dataset.fieldName;
+                    const input = group.querySelector('input, select, textarea');
+                    if (fieldName && input) {
+                        pago.dynamicFields[fieldName] = input.value;
+                    }
+                });
+                pagos.push(pago);
+            });
+
+            const evento = {
+                nombre: nombre,
+                precio: eventoPrecio.value,
+                capacidadCG: eventoCapacidadCG.value,
+                capacidadSG: eventoCapacidadSG.value,
+                tipoCambio: tipoCambioInput.value,
+                moneda: currentCurrency,
+                pagos: pagos
+            };
+
+            const transaction = db.transaction(['eventos'], 'readwrite');
+            const store = transaction.objectStore('eventos');
+            
+            if (currentEventId) {
+                evento.id = currentEventId;
+            }
+
+            const request = currentEventId ? store.put(evento) : store.add(evento);
+
+            request.onsuccess = () => {
+                showNotification(`Evento "${nombre}" guardado exitosamente.`);
+                loadEvents();
+                if (!currentEventId) {
+                    currentEventId = request.result;
+                }
+            };
+            request.onerror = (e) => {
+                showNotification('Error al guardar el evento.');
+                console.error('Error al guardar:', e.target.error);
+            };
+        });
+
+        function loadEvents() {
+            eventosGuardadosList.innerHTML = '';
+            const transaction = db.transaction(['eventos'], 'readonly');
+            const store = transaction.objectStore('eventos');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const eventos = request.result;
+                eventos.forEach(evento => {
+                    const btn = document.createElement('button');
+                    btn.className = 'evento-guardado-btn';
+                    btn.dataset.eventId = evento.id;
+                    
+                    let grandTotal = 0;
+                    evento.pagos.forEach(pago => {
+                         const capacidadCG = parseFloat(evento.capacidadCG) || 0;
+                         const capacidadSG = parseFloat(evento.capacidadSG) || 0;
+                         if (capacidadSG > 0) {
+                            let baseTotal = 0;
+                            if (pago.tipoPrecio === 'persona') {
+                                baseTotal = (parseFloat(pago.precioPersona) || 0) * capacidadCG / capacidadSG;
+                            } else {
+                                baseTotal = (parseFloat(pago.precioGrupal) || 0) / capacidadSG;
+                            }
+                            const cantidad = parseFloat(pago.dynamicFields.cantidad) || 1;
+                            grandTotal += baseTotal * cantidad;
+                         }
+                    });
+
+                    btn.innerHTML = `
+                        <div>
+                            <strong>${evento.nombre}</strong>
+                            <small>TOTAL P/P: ${formatCurrency(grandTotal, evento.moneda)}</small>
+                        </div>
+                        <button class="btn-delete-evento" data-event-id="${evento.id}" aria-label="Eliminar Evento">
+                            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>`;
+                    
+                    btn.addEventListener('click', (e) => {
+                        if (e.target.closest('.btn-delete-evento')) {
+                            e.stopPropagation();
+                            deleteEvent(evento.id);
+                        } else {
+                            loadEventData(evento.id);
+                        }
+                    });
+                    eventosGuardadosList.appendChild(btn);
+                });
+            };
+        }
+
+        function loadEventData(id) {
+            const transaction = db.transaction(['eventos'], 'readonly');
+            const store = transaction.objectStore('eventos');
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                const evento = request.result;
+                if (!evento) return;
+
+                currentEventId = evento.id;
+                eventoNombre.value = evento.nombre;
+                eventoPrecio.value = evento.precio;
+                eventoCapacidadCG.value = evento.capacidadCG;
+                eventoCapacidadSG.value = evento.capacidadSG;
+                tipoCambioInput.value = evento.tipoCambio;
+                currencySelector.value = evento.moneda;
+                
+                currencySelector.dispatchEvent(new Event('change'));
+
+                const pagosList = document.getElementById('transporte-nacional-list');
+                pagosList.innerHTML = '';
+
+                evento.pagos.forEach(pago => {
+                    const newItemWrapper = document.createElement('div');
+                    newItemWrapper.innerHTML = createItemHTML();
+                    const card = newItemWrapper.firstElementChild;
+                    
+                    card.querySelector('.item-nombre').value = pago.nombre;
+                    card.querySelector('.price-type-selector').value = pago.tipoPrecio;
+                    updatePriceFields(card.querySelector('.price-type-selector'));
+
+                    if (pago.tipoPrecio === 'persona') {
+                        card.querySelector('.item-price-per-person').value = pago.precioPersona;
+                    } else {
+                        card.querySelector('.item-price-grupal').value = pago.precioGrupal;
+                    }
+
+                    const dynamicFieldsContainer = card.querySelector('.dynamic-fields-container');
+                    const fieldSelector = card.querySelector('.field-selector');
+
+                    for (const fieldName in pago.dynamicFields) {
+                        dynamicFieldsContainer.insertAdjacentHTML('beforeend', generateFieldHTML(fieldName, card.id));
+                        const input = dynamicFieldsContainer.querySelector(`#${fieldName}-${card.id}`);
+                        if (input) {
+                            input.value = pago.dynamicFields[fieldName];
+                        }
+                        const optionToDisable = fieldSelector.querySelector(`option[value="${fieldName}"]`);
+                        if (optionToDisable) optionToDisable.disabled = true;
+                    }
+                    
+                    togglePriceVisibility(card); 
+                    pagosList.appendChild(card);
+                });
+
+                updateAllTotals();
+                showNotification(`Evento "${evento.nombre}" cargado.`);
+            };
+        }
+
+        function deleteEvent(id) {
+            if (!confirm('¿Estás seguro de que quieres borrar este evento permanentemente?')) return;
+
+            const transaction = db.transaction(['eventos'], 'readwrite');
+            const store = transaction.objectStore('eventos');
+            const request = store.delete(id);
+
+            request.onsuccess = () => {
+                showNotification('Evento borrado.');
+                if (currentEventId === id) {
+                   nuevoEventoBtn.click();
+                }
+                loadEvents();
+            };
+        }
+        
+        // --- INICIALIZACIÓN DE LA APP ---
+        async function initializeApp() {
+            applyTheme(localStorage.getItem('theme') || 'pastel-mode');
+            await initDB();
+            loadEvents();
+            currencySelector.dispatchEvent(new Event('change'));
+        }
+
+        initializeApp();
+    });
+    </script>
+</body>
+</html>

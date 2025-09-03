@@ -184,6 +184,12 @@
                             <span class="text-only-desktop">Acerca de Nosotros</span>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('transporte.ver_viaje') }}">
+                            <i class="fas fa-bus-alt icon-only-mobile"></i> <!-- Icono de bus -->
+                            <span class="text-only-desktop">Ver Viajes</span>
+                        </a>
+                    </li>
                   
                            
                     {% if session.logged_in %}
@@ -194,8 +200,6 @@
                                     Más Opciones
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                    <!-- ENLACE NUEVO AÑADIDO -->
-                                    
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ url_for('pagos.ver_pagos') }}">Pagos</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('polizas.ver_polizas') }}">Pólizas</a></li>
@@ -204,8 +208,8 @@
                                     <li><a class="dropdown-item" href="{{ url_for('contactos.ver_contactos') }}">Ver Contactos</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('proyecto.ver_proyectos') }}">Gestor de Proyectos</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('notas.ver_notas') }}">Gestor de Notas</a></li>
-                                    <!-- LÍNEA CORREGIDA -->
                                     <li><a class="dropdown-item" href="{{ url_for('intern.ver_intern') }}">Planificador Internacional</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('transporte.ver_viaje') }}">Visualizador de Viajes</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('btns.crear_btns') }}">Configurar Botón Flotante</a></li>
                                     <li><a class="dropdown-item" href="https://www.pythonanywhere.com/user/kenth1977/">Pythonanywhere</a></li>
                                     <li><a class="dropdown-item" href="https://gpx.studio/app#10.16/9.6134/-83.8223">GPX Studio</a></li>
