@@ -42,6 +42,7 @@ from intern import intern_bp
 from files import files_bp
 from btns import btns_bp
 from transporte import transporte_bp
+from rifas import rifas_bp
 
 
 # ---------------------------------------------------------------------------- #
@@ -386,6 +387,7 @@ app.register_blueprint(btns_bp)
 app.register_blueprint(polizas_bp)
 app.register_blueprint(intern_bp, url_prefix='/intern')
 app.register_blueprint(transporte_bp)
+app.register_blueprint(rifas_bp, url_prefix='/rifas')
 app.register_blueprint(oauth_bp) # Blueprint para OAuth
 
 
@@ -398,6 +400,8 @@ if __name__ == '__main__':
         # db.create_all() # Generalmente manejado por Flask-Migrate
         pass
     app.run(host='0.0.0.0', debug=True, port=3030)
+
+
 
 
 

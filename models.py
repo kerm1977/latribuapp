@@ -1,4 +1,3 @@
-# models.py
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
@@ -13,7 +12,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 
-# --- TABLAS DE ASOCIACIÓN ---
+# --- TABELAS DE ASSOCIAÇÃO ---
 note_viewers = db.Table('note_viewers',
     db.Column('note_id', db.Integer, db.ForeignKey('note.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -29,7 +28,7 @@ playlist_songs = db.Table('playlist_songs',
     db.Column('song_id', db.Integer, db.ForeignKey('song.id'), primary_key=True)
 )
 
-# --- MODELOS DE LA APLICACIÓN ---
+# --- MODELOS DE APLICAÇÃO ---
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -141,7 +140,7 @@ class Note(db.Model):
     )
 
     def __repr__(self):
-        return f"Note('{self.title}', Creator ID: {self.creator_id}, Public: {self.is_public}, Color: {self.background_color})"
+        return f"Note('{self.title}', Creator ID: {self.creator_id}, Public: {self.is_public}, Color: {self.background_color}')"
 
 class Caminata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -306,8 +305,6 @@ class Instruction(db.Model):
     lugar_salida = db.Column(db.String(255), nullable=True)
     fecha_salida = db.Column(db.Date, nullable=True)
     hora_salida = db.Column(db.Time, nullable=True)
-    fecha_caminata = db.Column(db.Date, nullable=True)
-    hora_inicio_caminata = db.Column(db.Time, nullable=True)
     recogemos_en = db.Column(db.Text, nullable=True)
     hidratacion = db.Column(db.String(20), nullable=True)
     litros_hidratacion = db.Column(db.String(20), nullable=True)
@@ -486,3 +483,6 @@ class Beneficiario(db.Model):
 
     def __repr__(self):
         return f'<Beneficiario {self.nombre} para Póliza {self.poliza_id}>'
+        
+
+

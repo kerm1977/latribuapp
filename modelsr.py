@@ -1,46 +1,40 @@
-# Dentro de tu archivo models.py, busca la clase User y modifica la línea del email.
-
-# models.py
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
-from datetime import datetime, date, time # Importar date y time para manejar fechas y horas
-import json # Importar json para los campos de texto que almacenarán listas/diccionarios
+from datetime import datetime, date, time
+import json
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from flask import current_app
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean, Date, Time, Index, UniqueConstraint
+from sqlalchemy.orm import relationship
 
-# Importa los tipos de columnas directamente desde SQLAlchemy
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean, Date, Time
-from sqlalchemy.orm import relationship # Necesario para definir relaciones
-
-# Instanciamos SQLAlchemy, Bcrypt y Migrate aquí.
-# Estas instancias serán importadas por app.py y luego inicializadas con la aplicación.
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 
-# Tabla de asociación para la relación muchos-a-muchos entre Note y User
-# para los usuarios autorizados a ver una nota.
+# --- TABELAS DE ASSOCIAÇÃO ---
 note_viewers = db.Table('note_viewers',
     db.Column('note_id', db.Integer, db.ForeignKey('note.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
-# NUEVA: Tabla de asociación para la relación muchos-a-muchos entre Caminata y User (para participantes)
 caminata_participantes = db.Table('caminata_participantes',
     db.Column('caminata_id', db.Integer, db.ForeignKey('caminata.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
-# Tabla de asociación para la relación muchos-a-muchos entre Song y Playlist
 playlist_songs = db.Table('playlist_songs',
     db.Column('playlist_id', db.Integer, db.ForeignKey('playlist.id'), primary_key=True),
     db.Column('song_id', db.Integer, db.ForeignKey('song.id'), primary_key=True)
 )
 
+# --- MODELOS DE APLICAÇÃO ---
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    username = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    password = db.Column(db.String(200), nullable=True) 
     nombre = db.Column(db.String(100), nullable=False)
     primer_apellido = db.Column(db.String(100), nullable=False)
     telefono = db.Column(db.String(20), nullable=False)
@@ -51,387 +45,211 @@ class User(db.Model):
     empresa = db.Column(db.String(100), nullable=True)
     cedula = db.Column(db.String(20), nullable=True)
     direccion = db.Column(db.String(200), nullable=True)
-    # MODIFICACIÓN CLAVE: Eliminar unique=True para permitir múltiples None
-    email = db.Column(db.String(120), nullable=True) 
     actividad = db.Column(db.String(100), nullable=True)
     capacidad = db.Column(db.String(50), nullable=True)
     participacion = db.Column(db.String(100), nullable=True)
-    fecha_cumpleanos = db.Column(db.Date, nullable=True) # Nuevo campo
-    tipo_sangre = db.Column(db.String(5), nullable=True) # Nuevo campo
-    poliza = db.Column(db.String(100), nullable=True) # Nuevo campo
-    aseguradora = db.Column(db.String(100), nullable=True) # Nuevo campo
-    alergias = db.Column(db.Text, nullable=True) # Nuevo campo
-    enfermedades_cronicas = db.Column(db.Text, nullable=True) # Nuevo campo
-    role = db.Column(db.String(50), nullable=False, default='Usuario Regular') # Nuevo campo para roles
-    last_login_at = db.Column(db.DateTime, nullable=True) # Nuevo campo para la última vez que inició sesión
+    fecha_cumpleanos = db.Column(db.Date, nullable=True)
+    tipo_sangre = db.Column(db.String(5), nullable=True)
+    poliza = db.Column(db.String(100), nullable=True)
+    aseguradora = db.Column(db.String(100), nullable=True)
+    alergias = db.Column(db.Text, nullable=True)
+    enfermedades_cronicas = db.Column(db.Text, nullable=True)
+    role = db.Column(db.String(50), nullable=False, default='Usuario Regular')
+    last_login_at = db.Column(db.DateTime, nullable=True)
+    oauth_logins = db.relationship('OAuthSignIn', backref='user', lazy=True, cascade="all, delete-orphan")
+    __table_args__ = (
+        UniqueConstraint('username', name='uq_user_username'),
+        UniqueConstraint('email', name='uq_user_email'),
+    )
 
-    # ... (el resto de tu modelo User si hay más campos)
+    def get_reset_token(self, expires_sec=1800):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id})
+
+    @staticmethod
+    def verify_reset_token(token, expires_sec=1800):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, max_age=expires_sec)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
 
     def __repr__(self):
         return f'<User {self.username}>'
 
-# MODELO Project (existente)
+class OAuthSignIn(db.Model):
+    __tablename__ = 'oauth_signin'
+    id = db.Column(db.Integer, primary_key=True)
+    provider = db.Column(db.String(50), nullable=False)
+    provider_user_id = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    __table_args__ = (
+        UniqueConstraint('provider', 'provider_user_id', name='uq_oauth_signin_provider_user_id'),
+    )
+
+    def __repr__(self):
+        return f'<OAuthSignIn {self.provider} para {self.user.username}>'
+
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre_proyecto = db.Column(db.String(255), nullable=False)
-    imagen_proyecto_url = db.Column(db.String(255), nullable=True) # Para guardar la URL de la imagen
-
-    # Relacionado con la propuesta
-    propuesta_por = db.Column(db.String(100), nullable=True) # Jenny Ceciliano Cordoba, Kenneth Ruiz Matamoros, Otro
-    
-    # Campo para el invitado (relación con User)
+    imagen_proyecto_url = db.Column(db.String(255), nullable=True)
+    propuesta_por = db.Column(db.String(100), nullable=True)
     nombre_invitado_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    nombre_invitado = db.relationship('User', foreign_keys=[nombre_invitado_id]) # Relación con el modelo User
-
+    nombre_invitado = db.relationship('User', foreign_keys=[nombre_invitado_id])
     provincia = db.Column(db.String(50), nullable=True)
     fecha_actividad_propuesta = db.Column(db.Date, nullable=True)
-    dificultad = db.Column(db.String(50), nullable=True) # No Aplica, Iniciante, Básico, Intermedio, Avanzado, Técnico
-
-    transporte_terrestre = db.Column(db.String(50), nullable=True) # Autobús, Buseta, Auto, Moto, 4x4
-    transporte_acuatico = db.Column(db.String(2), nullable=True) # Si/No aplica
-    transporte_aereo = db.Column(db.String(2), nullable=True) # Si/No aplica
-    precio_entrada_aplica = db.Column(db.String(2), nullable=True) # Si/No aplica
-
+    dificultad = db.Column(db.String(50), nullable=True)
+    transporte_terrestre = db.Column(db.String(50), nullable=True)
+    transporte_acuatico = db.Column(db.String(2), nullable=True)
+    transporte_aereo = db.Column(db.String(2), nullable=True)
+    precio_entrada_aplica = db.Column(db.String(2), nullable=True)
     nombre_lugar = db.Column(db.String(255), nullable=True)
     contacto_lugar = db.Column(db.String(255), nullable=True)
     telefono_lugar = db.Column(db.String(20), nullable=True)
-    tipo_terreno = db.Column(db.String(50), nullable=True) # No aplica, Asfalto, Acuatico, Lastre, Arena, Montañoso
-    mas_tipo_terreno = db.Column(db.Text, nullable=True) # Campo adicional para especificar más tipos de terreno
-
+    tipo_terreno = db.Column(db.String(50), nullable=True)
+    mas_tipo_terreno = db.Column(db.Text, nullable=True)
     presupuesto_total = db.Column(db.Float, nullable=True)
     costo_entrada = db.Column(db.Float, nullable=True)
     costo_guia = db.Column(db.Float, nullable=True)
     costo_transporte = db.Column(db.Float, nullable=True)
-
-    nombres_acompanantes = db.Column(db.Text, nullable=True) # Para múltiples nombres, separados por comas o similar
+    nombres_acompanantes = db.Column(db.Text, nullable=True)
     recomendaciones = db.Column(db.Text, nullable=True)
     notas_adicionales = db.Column(db.Text, nullable=True)
-    
-    # Autofecha de creado de nota (fecha de creación del proyecto)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     fecha_ultima_actualizacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
 
     def __repr__(self):
         return f"Project('{self.nombre_proyecto}', '{self.propuesta_por}', '{self.fecha_actividad_propuesta}')"
 
-# MODELO Note (existente, con nueva columna)
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
-    image_url = db.Column(db.String(255), nullable=True) # URL de la imagen de la nota
-    content = db.Column(db.Text, nullable=True) # Contenido de la nota con formato HTML
-
+    image_url = db.Column(db.String(255), nullable=True)
+    content = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
-
-    # Campo para indicar si la nota es pública
     is_public = db.Column(db.Boolean, default=False, nullable=False)
-
-    # NUEVO CAMPO: Para almacenar el color de fondo de la nota
-    background_color = db.Column(db.String(20), default='#FFFFFF', nullable=False) # Valor por defecto blanco
-
-    # Relación con el usuario que crea la nota
-    # CORRECCIÓN: Añadir ondelete='CASCADE' y passive_deletes=True
+    background_color = db.Column(db.String(20), default='#FFFFFF', nullable=False)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     creator = db.relationship('User', backref=db.backref('created_notes', lazy=True, cascade="all, delete-orphan"), foreign_keys=[creator_id])
-
-    # Relación muchos-a-muchos con usuarios que pueden ver una nota
-    # secondary apunta a la tabla de asociación definida arriba
     authorized_viewers = db.relationship(
         'User', secondary=note_viewers, lazy='subquery',
         backref=db.backref('viewable_notes', lazy=True)
     )
 
     def __repr__(self):
-        return f"Note('{self.title}', Creator ID: {self.creator_id}, Public: {self.is_public}, Color: {self.background_color})"
+        return f"Note('{self.title}', Creator ID: {self.creator_id}, Public: {self.is_public}, Color: {self.background_color}')"
 
-# NUEVO MODELO: InternationalTravel
-class InternationalTravel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    
-    # Selector de Contactos registrados
-    contact_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    contact = db.relationship('User', backref='international_travels', foreign_keys=[contact_id])
-    
-    # Si no existe contacto registrado
-    nombre_contacto_manual = db.Column(db.String(100), nullable=True)
-    apellido_contacto_manual = db.Column(db.String(100), nullable=True)
-    telefono_contacto_manual = db.Column(db.String(20), nullable=True)
-    email_contacto_manual = db.Column(db.String(120), nullable=True)
-
-    # Información General
-    # MODIFICADO: Cambiado a db.Text para almacenar JSON de múltiples selecciones
-    declaracion_tarjetas = db.Column(db.Text, nullable=True)
-    fecha_reporte = db.Column(db.Date, nullable=True) # NUEVO CAMPO: Fecha de Reporte
-    vigencia_pasaporte = db.Column(db.String(255), nullable=True) # Ahora es Código de Reporte
-
-    # País Destino América
-    # MODIFICADO: Cambiado a db.Text para almacenar JSON de múltiples selecciones
-    pais_destino_america = db.Column(db.Text, nullable=True)
-
-    # Vuelo de IDA
-    aerolinea_ida = db.Column(db.String(100), nullable=True)
-    fecha_vuelo_ida = db.Column(db.Date, nullable=True)
-    hora_salida_ida = db.Column(db.Time, nullable=True) # Ej: "14:30"
-    hora_llegada_ida = db.Column(db.Time, nullable=True)
-    numero_vuelo_ida = db.Column(db.String(50), nullable=True)
-    codigo_confirmacion_ida = db.Column(db.String(50), nullable=True)
-    numero_asiento_ida = db.Column(db.String(20), nullable=True)
-    check_in_ida = db.Column(db.String(255), nullable=True) # URL o info
-    check_out_ida = db.Column(db.String(255), nullable=True) # URL o info
-    total_tickete_ida = db.Column(db.Float, nullable=True)
-    impuesto_incluido_ida = db.Column(db.String(10), nullable=True) # "No Aplica", "Si"
-    nombre_aeropuerto_ida = db.Column(db.String(255), nullable=True)
-    paises_escala_ida = db.Column(db.String(255), nullable=True) # Puede ser una lista separada por comas
-    aeropuerto_escala_ida = db.Column(db.String(255), nullable=True)
-    carga_permitida_maleta_mano_ida = db.Column(db.String(50), nullable=True) # Ej: "10kg"
-    precio_maleta_mano_ida = db.Column(db.Float, nullable=True)
-    necesita_visa_ida = db.Column(db.String(10), nullable=True) # "No Aplica", "Si"
-    telefono1_aeropuerto_ida = db.Column(db.String(20), nullable=True)
-    telefono2_aeropuerto_ida = db.Column(db.String(20), nullable=True)
-    telefono1_aerolinea_ida = db.Column(db.String(20), nullable=True)
-    telefono2_aerolinea_ida = db.Column(db.String(20), nullable=True)
-    telefono1_embajada_consulado_ida = db.Column(db.String(20), nullable=True)
-    telefono2_embajada_consulado_ida = db.Column(db.String(20), nullable=True)
-
-    # Vuelo de Vuelta
-    aerolinea_vuelta = db.Column(db.String(100), nullable=True)
-    fecha_vuelo_vuelta = db.Column(db.Date, nullable=True)
-    hora_salida_vuelta = db.Column(db.Time, nullable=True)
-    hora_llegada_vuelta = db.Column(db.Time, nullable=True)
-    cantidad_dias_vuelta = db.Column(db.Integer, nullable=True)
-    numero_vuelo_vuelta = db.Column(db.String(50), nullable=True)
-    codigo_confirmacion_vuelta = db.Column(db.String(50), nullable=True)
-    numero_asiento_vuelta = db.Column(db.String(20), nullable=True)
-    check_in_vuelta = db.Column(db.String(255), nullable=True)
-    check_out_vuelta = db.Column(db.String(255), nullable=True)
-    total_tickete_pp_vuelta = db.Column(db.Float, nullable=True)
-    impuesto_incluido_vuelta = db.Column(db.String(10), nullable=True)
-    nombre_aeropuerto_vuelta = db.Column(db.String(255), nullable=True)
-    paises_escala_vuelta = db.Column(db.String(255), nullable=True)
-    aeropuerto_escala_vuelta = db.Column(db.String(255), nullable=True)
-    carga_permitida_maleta_mano_vuelta = db.Column(db.String(50), nullable=True)
-    precio_maleta_mano_vuelta = db.Column(db.Float, nullable=True)
-    necesita_visa_vuelta = db.Column(db.String(10), nullable=True)
-    telefono1_aeropuerto_vuelta = db.Column(db.String(20), nullable=True)
-    telefono2_aeropuerto_vuelta = db.Column(db.String(20), nullable=True)
-    telefono1_aerolinea_vuelta = db.Column(db.String(20), nullable=True)
-    telefono2_aerolinea_vuelta = db.Column(db.String(20), nullable=True)
-    telefono1_embajada_consulado_vuelta = db.Column(db.String(20), nullable=True)
-    telefono2_embajada_consulado_vuelta = db.Column(db.String(20), nullable=True)
-    otro_telefono_vuelta = db.Column(db.String(20), nullable=True)
-    nombre_estadia_vuelta = db.Column(db.String(255), nullable=True)
-    telefono1_estadia_vuelta = db.Column(db.String(20), nullable=True)
-    telefono2_estadia_vuelta = db.Column(db.String(20), nullable=True)
-
-    # Vuelo con Escala (Nota)
-    otra_aerolinea_escala = db.Column(db.String(100), nullable=True)
-    fecha_vuelo_escala = db.Column(db.Date, nullable=True)
-    hora_salida_escala = db.Column(db.Time, nullable=True)
-    hora_llegada_escala = db.Column(db.Time, nullable=True)
-    numero_vuelo_escala = db.Column(db.String(50), nullable=True)
-    codigo_confirmacion_escala = db.Column(db.String(50), nullable=True)
-    numero_asiento_escala = db.Column(db.String(20), nullable=True)
-    enlace_telefono_check_in_escala = db.Column(db.String(255), nullable=True)
-    enlace_telefono_check_out_escala = db.Column(db.String(255), nullable=True)
-    total_tickete_pp_escala = db.Column(db.Float, nullable=True)
-    impuesto_incluido_escala = db.Column(db.String(10), nullable=True)
-    nombre_aeropuerto_escala = db.Column(db.String(255), nullable=True)
-    paises_escala_escala = db.Column(db.String(255), nullable=True)
-    aeropuerto_escala_escala = db.Column(db.String(255), nullable=True)
-    carga_permitida_maleta_mano_escala = db.Column(db.String(50), nullable=True)
-    precio_maleta_mano_escala = db.Column(db.Float, nullable=True)
-    necesita_visa_escala = db.Column(db.String(10), nullable=True)
-    telefono1_aeropuerto_escala = db.Column(db.String(20), nullable=True)
-    telefono2_aeropuerto_escala = db.Column(db.String(20), nullable=True)
-    telefono1_aerolinea_escala = db.Column(db.String(20), nullable=True)
-    telefono2_aerolinea_escala = db.Column(db.String(20), nullable=True)
-    telefono1_embajada_consulado_escala = db.Column(db.String(20), nullable=True)
-    telefono2_embajada_consulado_escala = db.Column(db.String(20), nullable=True)
-    otro_telefono_escala = db.Column(db.String(20), nullable=True)
-    nombre_estadia_escala = db.Column(db.String(255), nullable=True)
-    telefono1_estadia_escala = db.Column(db.String(20), nullable=True)
-    telefono2_estadia_escala = db.Column(db.String(20), nullable=True)
-    otros_detalles_escala = db.Column(db.Text, nullable=True)
-
-    # Otros Teléfonos y Estadías
-    otro_telefono = db.Column(db.String(20), nullable=True) # Este es el 'Otro Teléfono' global
-    nombre_estadia = db.Column(db.String(255), nullable=True) # Este es el 'Nombre Estadía' global
-    telefono1_estadia = db.Column(db.String(20), nullable=True) # Este es el 'Teléfono 1 Estadía' global
-    telefono2_estadia = db.Column(db.String(20), nullable=True) # Este es el 'Teléfono 2 Estadía' global
-    estadia_email = db.Column(db.String(120), nullable=True)
-
-    otra_estadia_nombre = db.Column(db.String(255), nullable=True)
-    telefono1_otra_estadia = db.Column(db.String(20), nullable=True)
-    telefono2_otra_estadia = db.Column(db.String(20), nullable=True)
-
-    # Tour Operador / Guía
-    nombre_tour_operador = db.Column(db.String(255), nullable=True)
-    telefono_tour_operador1 = db.Column(db.String(20), nullable=True)
-    telefono_tour_operador2 = db.Column(db.String(20), nullable=True)
-    email_tour_operador = db.Column(db.String(120), nullable=True)
-    total_operador_pp = db.Column(db.Float, nullable=True)
-
-    # Contacto de Transporte
-    contacto_transporte_responsable = db.Column(db.String(255), nullable=True)
-    contacto_transporte_telefono = db.Column(db.String(20), nullable=True)
-    contacto_transporte_otro_telefono = db.Column(db.String(20), nullable=True)
-    contacto_transporte_otros_detalles = db.Column(db.Text, nullable=True)
-
-    # Checklist de recordatorios (como una cadena de texto JSON o similar, o tabla separada si es muy complejo)
-    recordatorios_json = db.Column(db.Text, nullable=True) # Almacenará un JSON de [{'text': 'item', 'completed': False}]
-
-    # Notas generales
-    notas_generales_ckeditor = db.Column(db.Text, nullable=True) # Para CKEditor content
-
-    # Fechas de creación y actualización
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
-
-    def __repr__(self):
-        return f"InternationalTravel(ID: {self.id}, País Destino: {self.pais_destino_america})"
-
-# NUEVO MODELO: Caminata
 class Caminata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    finalizada = db.Column(db.Boolean, nullable=False, server_default='0')
     imagen_caminata_url = db.Column(db.String(255), nullable=True)
     actividad = db.Column(db.String(100), nullable=False)
-    
-    # CAMBIO CRUCIAL: 'pais' renombrado a 'etapa'
     etapa = db.Column(db.String(255), nullable=True)
-    
-    # --- INICIO DE LA MODIFICACIÓN ---
-    moneda = db.Column(db.String(10), nullable=False, default='CRC') # NUEVO CAMPO PARA LA MONEDA
-    # --- FIN DE LA MODIFICACIÓN ---
-    
     nombre = db.Column(db.String(255), nullable=False)
+    moneda = db.Column(db.String(10), nullable=False, server_default='CRC', default='CRC')
     precio = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.Date, nullable=False)
-    
-    # Campos de tiempo y costos que deben coincidir con HTML/caminatas.py
-    hora = db.Column(db.Time, nullable=True) # De crear_caminatas.html
-    hora_salida = db.Column(db.Time, nullable=True) # De editar_caminatas.html y caminatas.py
-    hora_regreso = db.Column(db.Time, nullable=True) # De editar_caminatas.html
-    
-    costo_b = db.Column(db.Float, nullable=True) # De crear_caminatas.html
-    costo_c = db.Column(db.Float, nullable=True) # De crear_caminatas.html
-    costo_extranjeros = db.Column(db.Float, nullable=True) # De crear_caminatas.html
-
+    hora = db.Column(db.Time, nullable=True)
+    hora_salida = db.Column(db.Time, nullable=True)
+    hora_regreso = db.Column(db.Time, nullable=True)
+    costo_b = db.Column(db.Float, nullable=True)
+    costo_c = db.Column(db.Float, nullable=True)
+    costo_extranjeros = db.Column(db.Float, nullable=True)
     lugar_salida = db.Column(db.String(255), nullable=True)
     dificultad = db.Column(db.String(50), nullable=True)
     distancia = db.Column(db.Float, nullable=True)
-    
-    # CAMBIO CRUCIAL: Capacidad minima y maxima a tipo String
     capacidad_minima = db.Column(db.String(50), nullable=True)
     capacidad_maxima = db.Column(db.String(50), nullable=True)
-    
     nombre_guia = db.Column(db.String(255), nullable=True)
     se_requiere = db.Column(db.String(100), nullable=True)
     provincia = db.Column(db.String(50), nullable=True)
-    tipo_terreno = db.Column(db.Text, nullable=True)  # Almacenar como JSON
+    tipo_terreno = db.Column(db.Text, nullable=True)
     otras_senas_terreno = db.Column(db.Text, nullable=True)
-    tipo_transporte = db.Column(db.Text, nullable=True)  # Almacenar como JSON
-    incluye = db.Column(db.Text, nullable=True)  # Almacenar como JSON
-    cuenta_con = db.Column(db.Text, nullable=True)  # Almacenar como JSON
+    tipo_transporte = db.Column(db.Text, nullable=True)
+    incluye = db.Column(db.Text, nullable=True)
+    cuenta_con = db.Column(db.Text, nullable=True)
     tipo_clima = db.Column(db.String(100), nullable=True)
     altura_maxima = db.Column(db.Float, nullable=True)
     altura_minima = db.Column(db.Float, nullable=True)
-    
-    # Desniveles adicionales de editar_caminatas.html
-    desnivel = db.Column(db.Float, nullable=True) # General desnivel, de crear_caminatas.html
+    desnivel = db.Column(db.Float, nullable=True)
     desnivel_positivo = db.Column(db.Float, nullable=True)
     desnivel_negativo = db.Column(db.Float, nullable=True)
-
     altura_positiva = db.Column(db.Float, nullable=True)
     altura_negativa = db.Column(db.Float, nullable=True)
-    
-    # Renombrado de 'otros_datos_ckeditor' a 'otros_datos' para consistencia con caminatas.py
-    otros_datos = db.Column(db.Text, nullable=True) 
-
-    duracion_horas = db.Column(db.Float, nullable=True) # De crear_caminatas.html
-
+    otros_datos = db.Column(db.Text, nullable=True)
+    duracion_horas = db.Column(db.Float, nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     fecha_modificacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
-
-    # Relación muchos-a-muchos con usuarios que participan en la caminata
     participantes = db.relationship(
         'User', secondary=caminata_participantes, lazy='subquery',
         backref=db.backref('caminatas_participa', lazy=True)
     )
-
-    # Relación uno a muchos con AbonoCaminata
     abonos = db.relationship('AbonoCaminata', backref='caminata', lazy=True, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"Caminata('{self.nombre}', '{self.fecha}', '{self.actividad}')"
 
-    # NUEVO: Añadir índices para mejorar el rendimiento de las consultas
     __table_args__ = (
-        db.Index('idx_caminata_fecha_desc', fecha.desc()), # Índice para ordenar por fecha descendente
-        db.Index('idx_caminata_actividad', actividad),       # Índice para filtrar por actividad
+        db.Index('idx_caminata_fecha_desc', fecha.desc()),
+        db.Index('idx_caminata_actividad', actividad),
     )
 
-
-# NUEVO MODELO: AbonoCaminata
 class AbonoCaminata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     caminata_id = db.Column(db.Integer, db.ForeignKey('caminata.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # Usuario que realiza el abono
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='abonos_realizados')
-
-    opcion = db.Column(db.String(50), nullable=False) # Pago Total, Reserva, Abono
+    opcion = db.Column(db.String(50), nullable=False)
     cantidad_acompanantes = db.Column(db.Integer, default=0, nullable=False)
-    nombres_acompanantes = db.Column(db.Text, nullable=True) # JSON de nombres de acompañantes
-    monto_abono = db.Column(db.Float, nullable=False)
+    nombres_acompanantes = db.Column(db.Text, nullable=True)
+    monto_abono_crc = db.Column(db.Float, default=0)
+    monto_abono_usd = db.Column(db.Float, default=0)
+    tipo_cambio_bcr = db.Column(db.Float, nullable=True)
     fecha_abono = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    periodo_cancela = db.Column(db.Date, nullable=True)
 
     def __repr__(self):
-        return f"AbonoCaminata(Caminata: {self.caminata_id}, User: {self.user_id}, Monto: {self.monto_abono})"
+        return f"AbonoCaminata(Caminata: {self.caminata_id}, User: {self.user_id}, CRC: {self.monto_abono_crc}, USD: {self.monto_abono_usd})"
 
-# Modelo para "Pagos" (NUEVO)
 class Pagos(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Usuario que creó el pago
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     nombre_caminata = db.Column(db.String(255), nullable=False)
     flyer_imagen_url = db.Column(db.String(255), nullable=True)
     precio_paquete = db.Column(db.Float, default=0)
     capacidad = db.Column(db.Integer, default=0)
     tipo_cambio = db.Column(db.Float, default=0)
-
-    # Transporte
     precio_buseta = db.Column(db.Float, default=0)
     cantidad_busetas = db.Column(db.Integer, default=0)
     precio_acuatico = db.Column(db.Float, default=0)
     cantidad_acuatico = db.Column(db.Integer, default=0)
     precio_aereo = db.Column(db.Float, default=0)
     cantidad_aereo = db.Column(db.Integer, default=0)
-    # NUEVOS CAMPOS AÑADIDOS PARA "OTROS TRANSPORTE"
     precio_otros_transporte = db.Column(db.Float, default=0)
     cantidad_otros_transporte = db.Column(db.Integer, default=0)
     descripcion_otros_transporte = db.Column(db.String(255), nullable=True)
-
-    # Otros Generales (Guías)
     precio_guias = db.Column(db.Float, default=0)
-    precio_guia_por_persona = db.Column(db.Float, default=0) # NUEVO CAMPO
+    precio_guia_por_persona = db.Column(db.Float, default=0)
     cantidad_guias = db.Column(db.Integer, default=0)
-
-    # Otros Personales
     precio_estadia = db.Column(db.Float, default=0)
-    cantidad_dias_estadia = db.Column(db.Integer, default=1) # Se inicializa en 1
+    cantidad_dias_estadia = db.Column(db.Integer, default=1)
     precio_impuestos = db.Column(db.Float, default=0)
     precio_banos = db.Column(db.Float, default=0)
     precio_servicios_sanitarios = db.Column(db.Float, default=0)
     precio_desayuno = db.Column(db.Float, default=0)
-    cantidad_dias_desayuno = db.Column(db.Integer, default=1) # Se inicializa en 1
+    cantidad_dias_desayuno = db.Column(db.Integer, default=1)
     precio_merienda = db.Column(db.Float, default=0)
-    cantidad_dias_merienda = db.Column(db.Integer, default=1) # Se inicializa en 1
+    cantidad_dias_merienda = db.Column(db.Integer, default=1)
     precio_almuerzo = db.Column(db.Float, default=0)
-    cantidad_dias_almuerzo = db.Column(db.Integer, default=1) # Se inicializa en 1
+    cantidad_dias_almuerzo = db.Column(db.Integer, default=1)
     precio_acarreo = db.Column(db.Float, default=0)
     precio_cafe = db.Column(db.Float, default=0)
-    cantidad_dias_cafe = db.Column(db.Integer, default=1) # Se inicializa en 1
+    cantidad_dias_cafe = db.Column(db.Integer, default=1)
     precio_cena = db.Column(db.Float, default=0)
-    cantidad_dias_cena = db.Column(db.Integer, default=1) # Se inicializa en 1
+    cantidad_dias_cena = db.Column(db.Integer, default=1)
     precio_entrada = db.Column(db.Float, default=0)
     precio_reconocimiento = db.Column(db.Float, default=0)
     precio_permisos = db.Column(db.Float, default=0)
@@ -444,8 +262,6 @@ class Pagos(db.Model):
     descripcion_otros3_personales = db.Column(db.String(255), nullable=True)
     precio_otros4_personales = db.Column(db.Float, default=0)
     descripcion_otros4_personales = db.Column(db.String(255), nullable=True)
-
-    # Totales (calculados y almacenados para referencia rápida)
     total_general_transporte = db.Column(db.Float, default=0)
     total_individual_transporte = db.Column(db.Float, default=0)
     total_general_guias = db.Column(db.Float, default=0)
@@ -455,87 +271,59 @@ class Pagos(db.Model):
     total_individual_total = db.Column(db.Float, default=0)
     ganancia_pp = db.Column(db.Float, default=0)
     ganancia_gral = db.Column(db.Float, default=0)
-
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    fecha_actualizacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True) # Añadir fecha_actualizacion
+    fecha_actualizacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
 
     def __repr__(self):
         return f'<Pagos {self.nombre_caminata}>'
 
-# NUEVO MODELO: CalendarEvent
 class CalendarEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    
-    flyer_imagen_url = db.Column(db.String(255), nullable=True) # Opcional
+    flyer_imagen_url = db.Column(db.String(255), nullable=True)
     nombre_actividad = db.Column(db.String(255), nullable=False)
     fecha_actividad = db.Column(db.Date, nullable=False)
-    hora_actividad = db.Column(db.Time, nullable=True) # Nullable si es evento de todo el día
-    descripcion = db.Column(db.Text, nullable=True) # Para CKEditor Full
-    
-    # Etiqueta del evento (Evento de La Tribu, Evento Externo, Fechas de Cumpleaños, Celebraciones)
-    nombre_etiqueta = db.Column(db.String(50), nullable=False) 
-    
-    es_todo_el_dia = db.Column(db.Boolean, default=False, nullable=False) # Si se selecciona, advierte
-    
-    # Almacenar correos electrónicos como JSON (lista de strings)
-    correos_notificacion = db.Column(db.Text, nullable=True) 
-
+    hora_actividad = db.Column(db.Time, nullable=True)
+    descripcion = db.Column(db.Text, nullable=True)
+    nombre_etiqueta = db.Column(db.String(50), nullable=False)
+    es_todo_el_dia = db.Column(db.Boolean, default=False, nullable=False)
+    correos_notificacion = db.Column(db.Text, nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     fecha_modificacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
-
-    # Relación con el usuario que crea el evento
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     creator = db.relationship('User', backref='created_calendar_events', foreign_keys=[creator_id])
 
     def __repr__(self):
         return f"CalendarEvent('{self.nombre_actividad}', '{self.fecha_actividad}', '{self.hora_actividad}')"
 
-# NUEVO MODELO: Instruction
 class Instruction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    
-    # Relación con la Caminata (SELECT CON LAS CAMINATAS QUE EXISTEN ACTIVAS)
     caminata_id = db.Column(db.Integer, db.ForeignKey('caminata.id'), nullable=False)
     caminata = db.relationship('Caminata', backref='instrucciones')
-
-    dificultad = db.Column(db.String(50), nullable=True) # Iniciante, Básico, Intermedio, Avanzado, Técnico
+    dificultad = db.Column(db.String(50), nullable=True)
     distancia = db.Column(db.Float, nullable=True)
-    capacidad = db.Column(db.String(20), nullable=True) # 14, 17, 28, 31, 42
-    lugar_salida = db.Column(db.String(255), nullable=True) # Parque de Tres Ríos - Escuela, etc.
+    capacidad = db.Column(db.String(20), nullable=True)
+    lugar_salida = db.Column(db.String(255), nullable=True)
     fecha_salida = db.Column(db.Date, nullable=True)
     hora_salida = db.Column(db.Time, nullable=True)
-    fecha_caminata = db.Column(db.Date, nullable=True)
-    hora_inicio_caminata = db.Column(db.Time, nullable=True)
-    
-    # UN INPUT LLAMADO RECOGEMOS EN: QUE PERMITA IR AGREGANDO ELEMENTOS (JSON)
-    recogemos_en = db.Column(db.Text, nullable=True) # Almacenar como JSON de strings
-
-    # PARA EL CAMINO:
-    hidratacion = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    litros_hidratacion = db.Column(db.String(20), nullable=True) # ej. "2.lts"
-    tennis_ligera = db.Column(db.String(20), nullable=True) # SI
-    tennis_runner = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    tennis_hiking_baja = db.Column(db.String(20), nullable=True) # OPCIONAL
-    zapato_cana_media = db.Column(db.String(20), nullable=True) # OPCIONAL
-    zapato_cana_alta = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    bastones = db.Column(db.String(20), nullable=True) # NO NECESARIOS
-    foco_headlamp = db.Column(db.String(20), nullable=True) # Siempre
-    snacks = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    repelente = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    poncho = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    guantes = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    bloqueador = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-    ropa_cambio = db.Column(db.String(20), nullable=True) # SI, NO, OPCIONAL
-
-    # OTRAS RECOMENDACIONES: (CKEDITOR)
+    recogemos_en = db.Column(db.Text, nullable=True)
+    hidratacion = db.Column(db.String(20), nullable=True)
+    litros_hidratacion = db.Column(db.String(20), nullable=True)
+    tennis_ligera = db.Column(db.String(20), nullable=True)
+    tennis_runner = db.Column(db.String(20), nullable=True)
+    tennis_hiking_baja = db.Column(db.String(20), nullable=True)
+    zapato_cana_media = db.Column(db.String(20), nullable=True)
+    zapato_cana_alta = db.Column(db.String(20), nullable=True)
+    bastones = db.Column(db.String(20), nullable=True)
+    foco_headlamp = db.Column(db.String(20), nullable=True)
+    snacks = db.Column(db.String(20), nullable=True)
+    repelente = db.Column(db.String(20), nullable=True)
+    poncho = db.Column(db.String(20), nullable=True)
+    guantes = db.Column(db.String(20), nullable=True)
+    bloqueador = db.Column(db.String(20), nullable=True)
+    ropa_cambio = db.Column(db.String(20), nullable=True)
     otras_recomendaciones = db.Column(db.Text, nullable=True)
-
-    # NORMAS GENERALES: (CKEDITOR)
     normas_generales = db.Column(db.Text, nullable=True)
-
-    # OTRAS INDICACIONES GENERALES: (CKEDITOR)
     otras_indicaciones_generales = db.Column(db.Text, nullable=True)
-
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     fecha_modificacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
 
@@ -543,107 +331,71 @@ class Instruction(db.Model):
         return f"Instruction(Caminata_ID: {self.caminata_id}, Fecha Caminata: {self.fecha_caminata})"
 
 class Song(db.Model):
-    """Modelo de la base de datos para una canción."""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
     artist = db.Column(db.String(255), nullable=True)
     album = db.Column(db.String(255), nullable=True)
-    file_path = db.Column(db.String(500), unique=True, nullable=False) # Ruta al archivo de audio
-    cover_image_path = db.Column(db.String(500), nullable=True) # Ruta a la carátula
-
-    # Relación con Playlist (muchas a muchas)
-    # CORRECCIÓN: back_populates debe apuntar a la propiedad 'songs' en Playlist
-    playlists = db.relationship('Playlist', secondary=playlist_songs, backref='songs') # CAMBIO A backref
+    file_path = db.Column(db.String(500), unique=True, nullable=False)
+    cover_image_path = db.Column(db.String(500), nullable=True)
+    playlists = db.relationship('Playlist', secondary=playlist_songs, backref='songs')
 
     def __repr__(self):
         return f'<Song {self.title} by {self.artist}>'
 
 class Playlist(db.Model):
-    """Modelo de la base de datos para una lista de reproducción."""
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False, unique=True)
     
-    # ELIMINADO: La relación 'songs' se creará automáticamente por el backref en Song
-    # songs = db.relationship('Song', secondary='playlist_songs', back_populates='playlists')
-
     def __repr__(self):
         return f'<Playlist {self.name}>'
 
-# La tabla de asociación playlist_songs se mantiene como está, ya que es correcta.
-# playlist_songs = db.Table('playlist_songs',
-#     db.Column('playlist_id', db.Integer, db.ForeignKey('playlist.id'), primary_key=True),
-#     db.Column('song_id', db.Integer, db.ForeignKey('song.id'), primary_key=True)
-# )
-
-# NUEVO MODELO: Itinerario
 class Itinerario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     caminata_id = db.Column(db.Integer, db.ForeignKey('caminata.id'), nullable=False)
     caminata = db.relationship('Caminata', backref='itinerarios')
-
     lugar_salida = db.Column(db.String(255), nullable=True)
     hora_salida = db.Column(db.Time, nullable=True)
-    puntos_recogida = db.Column(db.Text, nullable=True) # Almacenar como JSON de strings
-    contenido_itinerario = db.Column(db.Text, nullable=True) # CKEditor completo
-    pasaremos_a_comer = db.Column(db.String(20), nullable=True) # "No aplica", "Si", "No"
-
+    puntos_recogida = db.Column(db.Text, nullable=True)
+    contenido_itinerario = db.Column(db.Text, nullable=True)
+    pasaremos_a_comer = db.Column(db.String(20), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     fecha_modificacion = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=True)
 
     def __repr__(self):
         return f"Itinerario(Caminata: {self.caminata.nombre}, Fecha: {self.caminata.fecha})"
 
-# Podrías agregar un modelo para Carátula (CoverArt) si quisieras una gestión más granular,
-# pero por simplicidad, la ruta de la carátula se incluye en Song por ahora.
-# class CoverArt(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     path = db.Column(db.String(500), unique=True, nullable=False)
-#     song_id = db.Column(db.Integer, db.ForeignKey('song.id'), unique=True)
-#     song = db.relationship('Song', backref=db.backref('cover_art', uselist=False))
-
-
 class AboutUs(db.Model):
-    __tablename__ = 'about_us' # Nombre de la tabla en la base de datos
-
+    __tablename__ = 'about_us'
     id = db.Column(db.Integer, primary_key=True)
-    logo_filename = db.Column(db.String(255), nullable=False) # Nombre del archivo del logo
-    logo_info = db.Column(db.Text, nullable=True) # Información del logo (para el modal)
-    title = db.Column(db.String(255), nullable=False) # Título de la sección
-    detail = db.Column(db.Text, nullable=False) # Contenido principal (con CKEditor)
+    logo_filename = db.Column(db.String(255), nullable=False)
+    logo_info = db.Column(db.Text, nullable=True)
+    title = db.Column(db.String(255), nullable=False)
+    detail = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     def __repr__(self):
         return f"<AboutUs {self.title}>"
 
-# NUEVO MODELO: Ruta
 class Ruta(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(255), nullable=False)
-    # CAMBIO: El campo 'provincia' ahora puede almacenar las nuevas categorías
-    # Se mantiene el nombre 'provincia' para evitar una migración de base de datos más compleja
-    # pero lógicamente ahora representa la 'categoría' de la ruta.
     provincia = db.Column(db.String(50), nullable=False) 
-    detalle = db.Column(db.Text, nullable=True) # Para CKEditor o texto largo
-    enlace_video = db.Column(db.String(500), nullable=True) # Enlace compatible con Facebook/YouTube
-    
-    # NUEVOS CAMPOS: fecha y precio
-    fecha = db.Column(db.Date, nullable=True) # Campo para la fecha de la ruta
-    precio = db.Column(db.Float, nullable=True) # Campo para el precio de la ruta
-
-    # NUEVOS CAMPOS PARA ARCHIVOS DE MAPA
+    detalle = db.Column(db.Text, nullable=True)
+    enlace_video = db.Column(db.String(500), nullable=True)
+    fecha = db.Column(db.Date, nullable=True)
+    precio = db.Column(db.Float, nullable=True)
     gpx_file_url = db.Column(db.String(255), nullable=True)
     kml_file_url = db.Column(db.String(255), nullable=True)
     kmz_file_url = db.Column(db.String(255), nullable=True)
+    dificultad = db.Column(db.String(50), nullable=False, default='Básico')
 
     def __repr__(self):
-        return f"Ruta(Nombre: {self.nombre}, Categoría: {self.provincia}, Fecha: {self.fecha}, Precio: {self.precio})" # Actualizado el __repr__
+        return f"Ruta(Nombre: {self.nombre}, Categoría: {self.provincia}, Fecha: {self.fecha}, Precio: {self.precio})"
 
-# NUEVO MODELO: PushSubscription (para notificaciones push)
 class PushSubscription(db.Model):
-    __tablename__ = 'push_subscriptions' # Nombre de la tabla en la base de datos
+    __tablename__ = 'push_subscriptions'
     id = db.Column(db.Integer, primary_key=True)
-    # user_id es opcional, si quieres asociar suscripciones a usuarios específicos
     user_id = db.Column(db.String(120), nullable=True) 
     endpoint = db.Column(db.String(500), unique=True, nullable=False)
     p256dh_key = db.Column(db.String(255), nullable=False)
@@ -653,7 +405,6 @@ class PushSubscription(db.Model):
     def __repr__(self):
         return f"<PushSubscription {self.endpoint}>"
 
-    # Método para obtener la suscripción en el formato que pywebpush espera
     def to_dict(self):
         return {
             "endpoint": self.endpoint,
@@ -663,39 +414,117 @@ class PushSubscription(db.Model):
             }
         }
 
-# Después de añadir el modelo, recuerda ejecutar una migración de base de datos
-# si estás usando Flask-Migrate (ej: flask db migrate, flask db upgrade)
-# Si no usas Flask-Migrate, necesitarás recrear tu base de datos o añadir la tabla manualmente.
-
-# NUEVO MODELO: File (para la gestión de archivos)
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     original_filename = db.Column(db.String(255), nullable=False)
-    unique_filename = db.Column(db.String(255), unique=True, nullable=False) # Nombre único en el servidor
-    file_path = db.Column(db.String(500), nullable=False) # Ruta relativa desde static/uploads/files/
-    file_type = db.Column(db.String(50), nullable=False) # 'image', 'audio', 'video', 'document', 'map', 'other'
+    unique_filename = db.Column(db.String(255), unique=True, nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_type = db.Column(db.String(50), nullable=False)
     mime_type = db.Column(db.String(100), nullable=False)
     upload_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    
-    # Relación con el usuario que subió el archivo
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     uploader = db.relationship('User', backref='uploaded_files')
-
-    is_visible = db.Column(db.Boolean, default=True, nullable=False) # Si debe mostrarse en la lista general
-    is_used = db.Column(db.Boolean, default=False, nullable=False) # Si está siendo utilizado por otra entidad/vista
+    is_visible = db.Column(db.Boolean, default=True, nullable=False)
+    is_used = db.Column(db.Boolean, default=False, nullable=False)
 
     def __repr__(self):
         return f"<File {self.original_filename} ({self.file_type})>"
 
-# NUEVO MODELO: SiteStats para estadísticas generales del sitio
 class SiteStats(db.Model):
-    __tablename__ = 'site_stats' # Define el nombre de la tabla explícitamente
-
+    __tablename__ = 'site_stats'
     id = db.Column(db.Integer, primary_key=True)
     visits = db.Column(db.Integer, default=0, nullable=False)
-    # Podrías añadir más campos aquí para otras métricas si es necesario
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         return f"<SiteStats (ID: {self.id}, Visits: {self.visits})>"
 
+class Poliza(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    coordinador_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coordinador = db.relationship('User', foreign_keys=[coordinador_id])
+    aseguradora_nombre = db.Column(db.String(150), nullable=True)
+    asesor_nombre = db.Column(db.String(150), nullable=True)
+    aseguradora_telefono = db.Column(db.String(20), nullable=True)
+    aseguradora_email = db.Column(db.String(120), nullable=True)
+    asesor_telefono = db.Column(db.String(20), nullable=True)
+    asegurado_registrado_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    asegurado_registrado = db.relationship('User', foreign_keys=[asegurado_registrado_id], backref='polizas_asegurado')
+    asegurado_nombre_manual = db.Column(db.String(150), nullable=True)
+    asegurado_primer_apellido = db.Column(db.String(100), nullable=True)
+    asegurado_segundo_apellido = db.Column(db.String(100), nullable=True)
+    asegurado_telefono = db.Column(db.String(20), nullable=True)
+    asegurado_email = db.Column(db.String(120), nullable=True)
+    genero = db.Column(db.String(50), nullable=True)
+    costo_tramite = db.Column(db.Float, default=1000.0, nullable=True)
+    otros_detalles = db.Column(db.Text, nullable=True)
+    fecha_registro = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    fecha_vencimiento = db.Column(db.Date, nullable=True)
+    precio_poliza = db.Column(db.Float, nullable=True)
+    monto_cancelacion = db.Column(db.Float, nullable=True)
+    banco = db.Column(db.String(100), nullable=True)
+    cuenta_deposito = db.Column(db.String(100), nullable=True)
+    sinpe_deposito = db.Column(db.String(20), nullable=True)
+    beneficiarios = db.relationship('Beneficiario', backref='poliza', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        asegurado = self.asegurado_registrado.nombre if self.asegurado_registrado else self.asegurado_nombre_manual
+        return f'<Poliza {self.id} para {asegurado}>'
+
+class Beneficiario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    poliza_id = db.Column(db.Integer, db.ForeignKey('poliza.id', ondelete='CASCADE'), nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)
+    primer_apellido = db.Column(db.String(100), nullable=True)
+    segundo_apellido = db.Column(db.String(100), nullable=True)
+    cedula = db.Column(db.String(20), nullable=True)
+    parentesco = db.Column(db.String(50), nullable=True)
+    porcentaje = db.Column(db.Float, nullable=True)
+
+    def __repr__(self):
+        return f'<Beneficiario {self.nombre} para Póliza {self.poliza_id}>'
+        
+# --- MODELOS DE RIFAS ---
+
+class Rifa(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(255), nullable=False)
+    detalle = db.Column(db.Text, nullable=True)
+    fecha_rifa = db.Column(db.Date, nullable=True)
+    hora_rifa = db.Column(db.Time, nullable=True)
+    cantidad_numeros = db.Column(db.Integer, nullable=False, default=99)
+    fecha_inicio = db.Column(db.Date, nullable=True)
+    hora_inicio = db.Column(db.Time, nullable=True)
+    caracteristicas = db.Column(db.Text, nullable=True)
+    nota_rifa = db.Column(db.Text, nullable=True)
+    imagen_flyer_url = db.Column(db.String(255), nullable=True)
+    activa = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    precio = db.Column(db.Float, nullable=True) # Agregada la columna de precio
+
+    def __repr__(self):
+        return f'<Rifa {self.nombre}>'
+
+class Boleto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rifa_id = db.Column(db.Integer, db.ForeignKey('rifa.id'), nullable=False)
+    numero = db.Column(db.Integer, nullable=False)
+    vendido = db.Column(db.Boolean, default=False)
+    nombre_cliente = db.Column(db.String(255), nullable=True)
+    telefono_cliente = db.Column(db.String(50), nullable=True)
+    precio_unitario = db.Column(db.Float, nullable=False)
+    fecha_venta = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('rifa_id', 'numero', name='_rifa_numero_uc'),)
+
+    def __repr__(self):
+        return f'<Boleto {self.numero} de Rifa {self.rifa_id}>'
+
+class Ganador(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rifa_id = db.Column(db.Integer, db.ForeignKey('rifa.id'), nullable=False)
+    boleto_id = db.Column(db.Integer, db.ForeignKey('boleto.id'), nullable=False)
+    fecha_sorteo = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Ganador de Rifa {self.rifa_id}>'
