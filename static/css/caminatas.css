@@ -1,0 +1,223 @@
+/* Estilos para la vista de caminatas */
+
+/* Estilos para caminatas finalizadas */
+.caminata-finalizada {
+    filter: grayscale(100%);
+    opacity: 0.8;
+}
+
+/* Contenedores para las diferentes vistas */
+.grid-list-content { 
+    display: block; 
+}
+
+.image-only-content { 
+    display: none; 
+}
+
+/* Estilos de imagen para respetar proporciones (común para todas las vistas) */
+.card-img-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: calc(1920 / 1280 * 100%); /* Proporción 3:2 original */
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+    background-color: #f8f9fa; /* Fondo claro para el letterboxing */
+}
+
+.card-img-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Usar 'contain' para no recortar */
+}
+
+/* --- VISTA DE CUADRÍCULA (GRID) --- */
+#caminatasContent.grid-view .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+#caminatasContent.grid-view .text-wrapper {
+    flex-grow: 1;
+}
+
+#caminatasContent.grid-view .card-title,
+#caminatasContent.grid-view .card-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#caminatasContent.grid-view .etapa-title {
+    text-align: center;
+}
+
+#caminatasContent.grid-view .precio-text {
+    text-align: right;
+}
+
+/* --- VISTA DE LISTA (LIST) --- */
+#caminatasContent.list-view > .col {
+    margin-top: 0 !important;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed #ddd;
+    margin-bottom: 0.5rem;
+}
+
+#caminatasContent.list-view > .col:last-child {
+    border-bottom: none;
+}
+
+#caminatasContent.list-view .card {
+    flex-direction: row;
+    align-items: center;
+    box-shadow: none !important;
+    border: none !important;
+    height: auto !important;
+    padding: 0.5rem;
+    background-color: transparent !important;
+}
+
+#caminatasContent.list-view .card-img-wrapper {
+    display: block !important;
+    width: 80px;
+    height: 80px;
+    padding-top: 0 !important;
+    flex-shrink: 0;
+    border-radius: 8px;
+    margin-right: 1rem;
+}
+
+#caminatasContent.list-view .card-img-top {
+    position: static;
+    border-radius: 8px;
+}
+
+#caminatasContent.list-view .card-body {
+    flex-grow: 1;
+    padding: 0 !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+#caminatasContent.list-view .text-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+#caminatasContent.list-view .card-title,
+#caminatasContent.list-view .card-text {
+    white-space: normal;
+    word-break: break-word;
+    text-align: left;
+    margin-bottom: 0.1rem;
+}
+
+#caminatasContent.list-view .card-body hr {
+    display: none !important;
+}
+
+#caminatasContent.list-view .mt-auto {
+    flex-shrink: 0;
+    margin-top: 0 !important;
+}
+
+@media (max-width: 576px) {
+    #caminatasContent.list-view .card-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    #caminatasContent.list-view .text-wrapper {
+        width: 100%;
+    }
+    
+    #caminatasContent.list-view .mt-auto {
+        width: 100%;
+        margin-top: 0.5rem !important;
+    }
+}
+
+/* --- VISTA DE GALERÍA (GALLERY) --- */
+#caminatasContent.gallery-view {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+@media (min-width: 576px) {
+    #caminatasContent.gallery-view {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 992px) {
+    #caminatasContent.gallery-view {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+#caminatasContent.gallery-view > .col {
+    margin-top: 0 !important;
+    padding: 0 !important;
+    flex: none !important;
+    max-width: none !important;
+    width: auto !important;
+}
+
+#caminatasContent.gallery-view .grid-list-content {
+    display: none !important;
+}
+
+#caminatasContent.gallery-view .image-only-content {
+    display: block !important;
+    height: 100%;
+}
+
+.image-only-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: calc(1920 / 1280 * 100%);
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.image-only-content img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+/* Estilos para la notificación toast */
+#toast-notification {
+    position: fixed;
+    z-index: 3000;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 30px;
+    font-size: 17px;
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s, visibility 0.5s;
+}
+
+#toast-notification.show {
+    visibility: visible;
+    opacity: 1;
+}

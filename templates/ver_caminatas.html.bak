@@ -4,27 +4,18 @@
 
 {% block head_content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/caminatas-optimized.css') }}">
-<style>
-    /* Estilos para el mensaje de notificación */
-    #toast-notification {
-        position: fixed;
         z-index: 3000;
         left: 50%;
-        transform: translateX(-50%);
         bottom: 30px;
         font-size: 17px;
-        background-color: #333;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
         opacity: 0;
-        visibility: hidden;
         transition: opacity 0.5s, visibility 0.5s;
     }
     #toast-notification.show {
         visibility: visible;
         opacity: 1;
     }
+
     /* 1. Estilos para caminatas finalizadas */
     .caminata-finalizada {
         filter: grayscale(100%);
@@ -203,8 +194,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container ">
+    
     <div class="policy-section text-center">
+        <!-- BOTÓN DE PÓLIZAS -->
         <a href="https://wa.me/50686227500?text=Hola%20Estoy%20interesad%40%20en%20adquirir%20una%20poliza%20de%20Caminante.%20Brindame%20la%20informaci%C3%B3n%20y%20para%20ello%20aportar%C3%A9%20mi%20nombre%20completo" 
            target="_blank" 
            class="btn btn-success rounded-pill px-4 py-2 mb-4">
@@ -273,6 +266,7 @@
             </form>
         </div>
     </div>
+
 
     {% if caminatas %}
        <hr class="text-warning">
@@ -374,25 +368,25 @@
         const gridViewBtn = document.getElementById('gridViewBtn');
         const listViewBtn = document.getElementById('listViewBtn');
         const galleryViewBtn = document.getElementById('galleryViewBtn'); 
-        const caminatasContainer = document.getElementById('caminatasContent');
+        const caminatasContent = document.getElementById('caminatasContent');
         const savedView = localStorage.getItem('caminatasView') || 'grid';
 
         function setView(viewType) {
-            caminatasContainer.classList.remove('list-view', 'gallery-view', 'grid-view');
-            caminatasContainer.classList.remove('row', 'g-4', 'row-cols-1', 'row-cols-md-3', 'row-cols-lg-4');
+            caminatasContent.classList.remove('list-view', 'gallery-view', 'grid-view');
+            caminatasContent.classList.remove('row', 'g-4', 'row-cols-1', 'row-cols-md-3', 'row-cols-lg-4');
             const gridListContents = document.querySelectorAll('.grid-list-content');
             const imageOnlyContents = document.querySelectorAll('.image-only-content');
 
             if (viewType === 'list') {
-                caminatasContainer.classList.add('list-view', 'row', 'g-4', 'row-cols-1'); 
+                caminatasContent.classList.add('list-view', 'row', 'g-4', 'row-cols-1'); 
                 gridListContents.forEach(el => el.style.display = 'block');
                 imageOnlyContents.forEach(el => el.style.display = 'none');
             } else if (viewType === 'gallery') {
-                caminatasContainer.classList.add('gallery-view');
+                caminatasContent.classList.add('gallery-view');
                 gridListContents.forEach(el => el.style.display = 'none');
                 imageOnlyContents.forEach(el => el.style.display = 'block');
             } else { // Grid view (default)
-                caminatasContainer.classList.add('grid-view', 'row', 'g-4', 'row-cols-1', 'row-cols-md-3', 'row-cols-lg-4');
+                caminatasContent.classList.add('grid-view', 'row', 'g-4', 'row-cols-1', 'row-cols-md-3', 'row-cols-lg-4');
                 gridListContents.forEach(el => el.style.display = 'block');
                 imageOnlyContents.forEach(el => el.style.display = 'none');
             }

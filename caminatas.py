@@ -114,18 +114,35 @@ def generate_unique_filename(original_filename, upload_folder):
 
 @caminatas_bp.route('/ver_caminatas')
 def ver_caminatas():
-    all_caminatas = Caminata.query.order_by(Caminata.fecha.desc()).all()
+    # Obtener el parámetro de ordenación (por defecto: fecha descendente)
+    sort_by = request.args.get('sort', 'fecha_desc')
+    
+    # Consulta base
+    query = Caminata.query
+    
+    # Aplicar filtro de búsqueda si existe
     search_actividad = request.args.get('actividad')
-
     if search_actividad:
-        caminatas = Caminata.query.filter_by(actividad=search_actividad).all()
+        query = query.filter(Caminata.actividad.ilike(f'%{search_actividad}%'))
+    
+    # Aplicar ordenación según el parámetro
+    if sort_by == 'fecha_asc':
+        caminatas = query.order_by(Caminata.fecha.asc()).all()
+    elif sort_by == 'fecha_desc':
+        caminatas = query.order_by(Caminata.fecha.desc()).all()
+    elif sort_by == 'precio_asc':
+        caminatas = query.order_by(Caminata.precio.asc()).all()
+    elif sort_by == 'precio_desc':
+        caminatas = query.order_by(Caminata.precio.desc()).all()
     else:
-        caminatas = Caminata.query.all()
-
+        # Por defecto, ordenar por fecha descendente
+        caminatas = query.order_by(Caminata.fecha.desc()).all()
+    
     return render_template(
         'ver_caminatas.html', 
         caminatas=caminatas, 
-        search_actividad=search_actividad
+        search_actividad=search_actividad,
+        current_sort=sort_by
     )
   
 # Ruta para crear una nueva caminata

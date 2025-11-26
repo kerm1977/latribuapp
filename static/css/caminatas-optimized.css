@@ -1,0 +1,210 @@
+/* Estilos optimizados para la vista de caminatas */
+
+/* Ajustes generales de márgenes */
+body { padding-top: 0; }
+
+/* Contenedor principal */
+.container { 
+    margin-top: 90px;
+    padding-top: 0;
+}
+
+/* Ajustes para móviles */
+@media (max-width: 767.98px) {
+    .container { margin-top: 80px; }
+    .btn-policy-container {
+        position: relative;
+        z-index: 10;
+        padding-top: 15px;
+    }
+}
+
+/* Navbar fijo */
+.navbar.fixed-top {
+    position: fixed;
+    width: 100%;
+    z-index: 1030;
+}
+
+/* Contenedor de botones de ordenación */
+.sort-buttons-container {
+    position: relative;
+    z-index: 5;
+    background: var(--background-color);
+    padding: 15px 0;
+    margin: 0 0 20px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Botones de ordenación */
+.sort-buttons {
+    gap: 6px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 10px auto;
+    max-width: 100%;
+    padding: 0 15px;
+}
+
+.sort-buttons .btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    margin: 0;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sort-buttons .btn i { font-size: 1.2em; }
+
+.sort-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: var(--hover-color);
+}
+
+.sort-buttons .btn.active {
+    background-color: var(--primary-color);
+    color: #212529;
+    border-color: var(--primary-color);
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 400px) {
+    .sort-buttons { gap: 4px; padding: 0 5px; }
+    .sort-buttons .btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 17px;
+    }
+    .sort-buttons .btn i { font-size: 1.1em; }
+}
+
+/* Botones flotantes */
+.fab-container {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.fab-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    transition: all 0.3s ease;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.fab-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+/* Contenedor de botones de compartir */
+.fab-container-share {
+    position: fixed;
+    right: 20px;
+    bottom: 120px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.fab-button-share {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    transition: all 0.3s ease;
+    color: white;
+    border: none;
+    text-decoration: none;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.fab-button-share:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.fab-button-share.whatsapp { background-color: #25D366; }
+.fab-button-share.copy-link { background-color: #0d6efd; }
+
+/* Notificación toast */
+#toast-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+#toast-notification.show {
+    opacity: 1;
+}
+
+/* Estilos para la vista de galería */
+#caminatasContent.gallery-view > .col {
+    margin-top: 0 !important;
+    padding: 0 !important;
+    flex: none !important;
+    max-width: none !important;
+}
+
+/* Mejoras de rendimiento */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+}
+
+/* Optimización de imágenes */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Mejoras de rendimiento para animaciones */
+@media (prefers-reduced-motion: reduce) {
+    *, 
+    *::before, 
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
