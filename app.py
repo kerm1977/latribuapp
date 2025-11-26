@@ -21,18 +21,13 @@ from flask_mail import Mail, Message
 from config import Config
 from auth_setup import oauth_bp, init_oauth
 from models import (db, bcrypt, migrate, User, Project, Note, Caminata,
-                    AbonoCaminata, caminata_participantes, Pagos, CalendarEvent,
-                    Instruction, Song, Playlist, Itinerario, AboutUs)
+                    AbonoCaminata, caminata_participantes, Song, Playlist, Itinerario, AboutUs)
 from version import version_bp, Version
 # --- Importación de Blueprints (Módulos de la App) ---
 from contactos import contactos_bp
 from perfil import perfil_bp
-from proyecto import proyecto_bp
 from notas import notas_bp
 from caminatas import caminatas_bp
-from pagos import pagos_bp
-from calendario import calendario_bp
-from instrucciones import instrucciones_bp
 from player import player_bp
 from itinerario import itinerario_bp
 from aboutus import aboutus_bp
@@ -41,7 +36,6 @@ from polizas import polizas_bp
 from intern import intern_bp
 from files import files_bp
 from btns import btns_bp
-from transporte import transporte_bp
 
 
 # ---------------------------------------------------------------------------- #
@@ -367,25 +361,20 @@ def internal_server_error(e):
 #                            REGISTRO DE BLUEPRINTS                            #
 # ---------------------------------------------------------------------------- #
 
-# --- Se registran todos los módulos (Blueprints) de la aplicación ---
-app.register_blueprint(contactos_bp)
+# Registrar blueprints
+app.register_blueprint(version_bp)
+app.register_blueprint(contactos_bp, url_prefix='/contactos')
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
-app.register_blueprint(proyecto_bp)
-app.register_blueprint(notas_bp)
+app.register_blueprint(notas_bp, url_prefix='/notas')
 app.register_blueprint(caminatas_bp, url_prefix='/caminatas')
-app.register_blueprint(pagos_bp, url_prefix='/pagos')
-app.register_blueprint(calendario_bp, url_prefix='/calendario')
-app.register_blueprint(instrucciones_bp, url_prefix='/instrucciones')
-app.register_blueprint(player_bp)
+app.register_blueprint(player_bp, url_prefix='/player')
 app.register_blueprint(itinerario_bp, url_prefix='/itinerario')
 app.register_blueprint(aboutus_bp, url_prefix='/aboutus')
 app.register_blueprint(rutas_bp, url_prefix='/rutas')
-app.register_blueprint(version_bp, url_prefix='/version')
-app.register_blueprint(files_bp, url_prefix='/files')
-app.register_blueprint(btns_bp)
-app.register_blueprint(polizas_bp)
+app.register_blueprint(polizas_bp, url_prefix='/polizas')
 app.register_blueprint(intern_bp, url_prefix='/intern')
-app.register_blueprint(transporte_bp)
+app.register_blueprint(files_bp, url_prefix='/files')
+app.register_blueprint(btns_bp, url_prefix='/btns')
 app.register_blueprint(oauth_bp) # Blueprint para OAuth
 
 
